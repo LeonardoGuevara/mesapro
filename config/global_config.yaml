@@ -1,0 +1,25 @@
+directories_config:
+  open_pose_python: '/home/leo/rasberry_ws/src/mesapro/openpose/build/python'
+  open_pose_models: "/home/leo/rasberry_ws/src/mesapro/openpose/models"
+  gesture_classifier_model: "/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+  training_set: '/home/leo/aa_data/new_data/training/'
+  testing_set: '/home/leo/aa_data/new_data/testing/' 
+  
+action_recog_config:
+  n_joints: 19       #19 body joints from openpose output (25 available)
+  n_features: 36     #19 distances + 17 angels = 36 features
+  posture_labels: ["no_gesture","both_arms","both_hands","crouched_down","left_arm","left_hand","left_picking","right_arm","right_hand"]
+  action_labels: ["mostly_static", "approching_slowly", "approching_faster", "moving_away_slowly", "moving_away_faster"]
+  orientation_labels: ["facing_the_robot", "giving_the_back", "left_side", "right_side"]
+###############################################
+# 0 "no_gesture"
+# 1 "crouched_down"
+# 2 "l_picking"
+# 3 "r_arm_raised"
+# 4 "r_hand_raised"
+# 5 "l_arm_raised"
+# 6 "l_hand_raised"
+# 7 "rl_arms_raised"
+# 8 "rl_hands_raised"
+# 9 "r_picking" 
+################################################
