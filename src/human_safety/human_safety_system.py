@@ -2,22 +2,14 @@
 
 #required packages
 import rospy #tf
-import geometry_msgs.msg
-from geometry_msgs.msg import PoseArray
 import message_filters #to sync the messages
-#from sklearn.ensemble import RandomForestClassifier
-from sensor_msgs.msg import Image
 import sys
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 from numpy import linalg as LA
-from cv_bridge import CvBridge, CvBridgeError
-import joblib
 import os
-import cv2
 import yaml
 from mesapro.msg import human_msg
-#from human_data.msg import action
 ##########################################################################################
 
 #Importing global parameters from .yaml file
