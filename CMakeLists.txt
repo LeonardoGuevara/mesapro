@@ -53,6 +53,7 @@ add_message_files(
 #   Message1.msg
 #   Message2.msg
   human_msg.msg
+  hri_msg.msg
 )
 
 ## Generate services in the 'srv' folder
