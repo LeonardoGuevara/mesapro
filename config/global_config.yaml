@@ -14,6 +14,6 @@ action_recog_config:
 ################################################
 human_safety_config:
   hri_status: ["no_human","safe_interaction","risky_interact","critical_interact"]
-  audio_message: ["no_message","ask_for_identity","ask_for_approaching","ask_for_continue_operation","ask_for_free_space","alert_before_row_transition","alert_when_human_detected","alert_during_UVC"]
+  audio_message: ["no_message","ask_for_identity","ask_for_approaching","ask_for_continue_operation","ask_for_free_space","alert_before_row_transition","alert_while_approaching","alert_during_UVC"]
   safety_stop: ["normal_operation","reduced_speed","safety_stop"]
 ###############################################
