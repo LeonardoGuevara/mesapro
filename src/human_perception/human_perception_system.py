@@ -17,7 +17,6 @@ import os
 import cv2
 import yaml
 from mesapro.msg import human_msg
-#from human_data.msg import action
 ##########################################################################################
 
 #Importing global parameters from .yaml file
@@ -56,7 +55,7 @@ pub_hz=0.01 #publising rate in seconds
 n_joints=ar_param[0][1]
 n_features=ar_param[1][1]
 posture_labels=ar_param[2][1]
-action_labels=ar_param[3][1]
+motion_labels=ar_param[3][1]
 orientation_labels=ar_param[4][1]
 n_labels=len(posture_labels)
 #General purposes variables
@@ -78,7 +77,7 @@ class human_class:
         self.n_human=1 # considering up to 1 human to track initially
         self.position=np.zeros([self.n_human,2]) #[x,y] from lidar
         self.posture=np.zeros([self.n_human,2]) #from camera [posture_label,posture_probability]
-        self.action=np.zeros([self.n_human,1]) #from camera
+        self.motion=np.zeros([self.n_human,1]) #from camera
         self.centroid=np.zeros([self.n_human,2]) #x,y (pixels) of the human centroid, from camera
         self.features=np.zeros([self.n_human,n_features]) #distances and angles of each skeleton, from camera
         self.orientation=np.zeros([self.n_human,1]) # it can be "front" or "back" if the human is facing the robot or not , from camera
@@ -88,7 +87,7 @@ class human_class:
         #Variables to store the info of relevant humans tracked along the time
         self.position_track=np.zeros([self.n_human,2])
         self.posture_track=np.zeros([self.n_human,2])
-        self.action_track=np.zeros([self.n_human,1])
+        self.motion_track=np.zeros([self.n_human,1])
         self.centroid_track=np.zeros([self.n_human,2])
         self.features_track=np.zeros([self.n_human,n_features])
         self.orientation_track=np.zeros([self.n_human,1])
@@ -148,15 +147,15 @@ def camera_callback(ros_image, ros_depth):
     else: #if there is at least 1 human skeleton detected
         if len(human.posture)!=len(data[:,0,0]): #to readjust the vectors length in case there are more/less humans than expected
             human.posture=np.zeros([len(data[:,0,0]),2])
-            human.action=np.zeros([len(data[:,0,0]),1])
+            human.motion=np.zeros([len(data[:,0,0]),1])
             human.centroid=np.zeros([len(data[:,0,0]),2]) 
             human.features=np.zeros([len(data[:,0,0]),n_features]) 
             human.orientation=np.zeros([len(data[:,0,0]),1])
             human.distance=np.zeros([len(data[:,0,0]),1]) 
         #Feature extraction
         [human.features,human.posture,human.orientation,human.distance,human.centroid]=feature_extraction_3D(data,depth_array,n_joints,human)
-        #Human action inference
-        #[human.action]=human_action_inference(human.n_human,human.position,human.posture,human.action,human.centroid,human.orientation,human.distance)
+        #Human motion inference
+        #[human.motion]=human_motion_inference(human)
         
         human.image=datum.cvOutputData
     new_data[1]=1 # update flag for new data
@@ -299,14 +298,14 @@ def human_tracking(human,new_data):
     n_human=human.n_human
     position=human.position_track
     posture=human.posture_track
-    action=human.action_track
+    motion=human.motion_track
     centroid=human.centroid_track
     features=human.features_track
     orientation=human.orientation_track
     distance=human.distance_track
     position_new=human.position
     posture_new=human.posture
-    action_new=human.action
+    motion_new=human.motion
     centroid_new=human.centroid
     features_new=human.features
     orientation_new=human.orientation
@@ -352,7 +351,7 @@ def human_tracking(human,new_data):
                 n_human=n_human-1
         position=position[np.array(index_to_keep)]
         posture=posture[np.array(index_to_keep)]
-        action=action[np.array(index_to_keep)]
+        motion=motion[np.array(index_to_keep)]
         centroid=centroid[np.array(index_to_keep)]
         features=features[np.array(index_to_keep)]
         orientation=orientation[np.array(index_to_keep)]
@@ -367,7 +366,7 @@ def human_tracking(human,new_data):
                 n_human=n_human+1
                 position=np.append(position,[position_new[k,:]],axis=0)
                 posture=np.append(posture,np.zeros([1,2]),axis=0)
-                action=np.append(action,np.zeros([1,1]),axis=0)
+                motion=np.append(motion,np.zeros([1,1]),axis=0)
                 centroid=np.append(centroid,np.zeros([1,2]),axis=0)
                 features=np.append(features,np.zeros([1,n_features]),axis=0)
                 orientation=np.append(orientation,np.zeros([1,1]),axis=0)
@@ -397,7 +396,7 @@ def human_tracking(human,new_data):
                 new_index=list(diff[k,:]).index(min(diff[k,:]))
                 #position[k,:]=position_new[new_index,:]
                 posture[k,:]=posture_new[new_index,:]
-                action[k,:]=action_new[new_index,:]
+                motion[k,:]=motion_new[new_index,:]
                 centroid[k,:]=centroid_new[new_index,:]
                 features[k,:]=features_new[new_index,:]
                 orientation[k,:]=orientation_new[new_index,:]
@@ -422,7 +421,7 @@ def human_tracking(human,new_data):
                 n_human=n_human-1
         position=position[np.array(index_to_keep)]
         posture=posture[np.array(index_to_keep)]
-        action=action[np.array(index_to_keep)]
+        motion=motion[np.array(index_to_keep)]
         centroid=centroid[np.array(index_to_keep)]
         features=features[np.array(index_to_keep)]
         orientation=orientation[np.array(index_to_keep)]
@@ -436,7 +435,7 @@ def human_tracking(human,new_data):
                 n_human=n_human+1
                 position=np.append(position,np.zeros([1,2]),axis=0)
                 posture=np.append(posture,[posture_new[k,:]],axis=0)
-                action=np.append(action,[action_new[k,:]],axis=0)
+                motion=np.append(motion,[motion_new[k,:]],axis=0)
                 centroid=np.append(centroid,[centroid_new[k,:]],axis=0)
                 features=np.append(features,[features_new[k,:]],axis=0)
                 orientation=np.append(orientation,[orientation_new[k,:]],axis=0)
@@ -446,7 +445,7 @@ def human_tracking(human,new_data):
 
                 
         
-    return data_source,counter,n_human,position,posture,action,centroid,features,orientation,distance
+    return data_source,counter,n_human,position,posture,motion,centroid,features,orientation,distance
 
 def critical_human_selection(human):
     n_human=human.n_human
@@ -505,7 +504,7 @@ if __name__ == '__main__':
             print(new_data)
             #Human tracking
             #print("data_source_before",list(human.data_source[:,0]))
-            [human.data_source,human.counter,human.n_human,human.position_track,human.posture_track,human.action_track,human.centroid_track,human.features_track,human.orientation_track,human.distance_track]=human_tracking(human,new_data)
+            [human.data_source,human.counter,human.n_human,human.position_track,human.posture_track,human.motion_track,human.centroid_track,human.features_track,human.orientation_track,human.distance_track]=human_tracking(human,new_data)
             human.critical_index=critical_human_selection(human)
             print("data_source_after",list(human.data_source[:,0]))
             if new_data[0]==1:
@@ -516,7 +515,7 @@ if __name__ == '__main__':
             print("position_x_tracked",list(human.position_track[:,0]))
             
         #Publish        
-        msg.action = list(human.action_track[:,0])
+        msg.motion = list(human.motion_track[:,0])
         msg.position_x = list(human.position_track[:,0])
         msg.position_y = list(human.position_track[:,1])
         msg.distance = list(human.distance_track[:,0])
