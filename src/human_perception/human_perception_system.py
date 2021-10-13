@@ -489,7 +489,7 @@ if __name__ == '__main__':
     # Initialize our node       
     human=human_class()  
     robot=robot_class()
-    rospy.init_node('human_gesture_recognition',anonymous=True)
+    rospy.init_node('human_perception_system',anonymous=True)
     # Setup and call subscription
     image_sub = message_filters.Subscriber('camera/camera1/color/image_raw', Image)
     depth_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
