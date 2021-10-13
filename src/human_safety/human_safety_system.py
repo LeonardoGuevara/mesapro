@@ -41,13 +41,14 @@ class robot_class:
         #declaration and initial values of important variables
         self.position=np.zeros([3,1]) #[x,y,theta]
         self.control=np.zeros([2,1]) #[w,v]
-        self.operation=0 #0 means UVC treatment, 1 means approaching to a picker in logistics
+        self.operation=0 #0 means UVC treatment, 1 means approaching to a picker, 2 moving to the picker location, 3 moving away from the picker, 4 wait for human command to approach, 5 wait for human command to move away 
         self.call_a_robot_goal=np.array([5,0,0])
         self.topo_goal=np.array([5,0])
         
 class human_class:
     def __init__(self): #It is done only the first iteration
         #declaration and initial values of important variables
+        self.posture=[0]
         self.motion=[0] 
         self.position_x=[0] 
         self.position_y=[0] 
@@ -63,41 +64,14 @@ class hri_class:
         self.safety_stop=0      
 
 def hri_callback(human_info):
+    human.posture=human_info.posture
     human.motion=human_info.motion   
     human.position_x=human_info.position_x
     human.position_y=human_info.position_y
     human.distance=human_info.distance
     human.sensor=human_info.sensor
     human.critical_index=human_info.critical_index
-    ################################################################################################################                  
-    ##hri_status############
-    if len(human.sensor) and (human.motion*human.position_x*human.position_y*human.distance*human.sensor*human.critical_index==0): #None human detected
-        hri.status=0
-        hri.audio_message=0
-        hri.safety_stop=0
-    else: #if at least one human was detected
-        if human.sensor!=2: #if data is from lidar or lidar+camera
-            distance=sqrt((human.position_x[critical_index])**2+(human.position_y[critical_index])**2)
-        else: #if data is from camera
-            distance=human.distance[critical_index]    
-        if robot.operation==0: #UV-C treatment
-            if distance>9: #if human is above 7m from the robot
-                hri.status=1
-            elif distance>7 and distance<9:
-                hri.status=2
-            else:
-                hri.status=3              
-        if robot.operation==1: #logistics
-            if distance
-   
-   
-    ################################################################################################################                  
-    ##audio_message##########
-
-    ################################################################################################################                  
-    ##safety_stop###########
-
-
+    
 ###############################################################################################
 # Main Script
 
@@ -117,7 +91,60 @@ if __name__ == '__main__':
     rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	      
         main_counter=main_counter+1   
-            
+        ############################################################################################
+        ##hri_status############
+        if len(human.sensor) and (human.posture*human.motion*human.position_x*human.position_y*human.distance*human.sensor*human.critical_index==0): #None human detected
+            hri.status=0
+            hri.audio_message=0
+            hri.safety_stop=0
+        else: #if at least one human was detected
+            if human.sensor!=2: #if data is from lidar or lidar+camera
+                distance=sqrt((human.position_x[critical_index])**2+(human.position_y[critical_index])**2)
+            else: #if data is from camera
+                distance=human.distance[critical_index]    
+            if robot.operation==0: #UV-C treatment
+                if distance>9: #if human is above 7m from the robot
+                    hri.status=1
+                    hri.audio_message=7
+                    hri.safety_stop=0
+                elif distance>7 and distance<=9: # if human is between 7-9m
+                    hri.status=2
+                    hri.audio_message=7
+                    hri.safety_stop=0
+                else: #if human is within 7m
+                    hri.status=3
+                    hri.audio_message=7
+                    hri.safety_stop=2
+            if robot.operation==1: #logistics
+                if distance>7: #if human is above 7m
+                    hri.status=1
+                    hri.audio_message=0
+                    hri.safety_stop=0
+                elif distance>3.6 and distance<=7: #if human is between 3.6-7m
+                    hri.status=1
+                    hri.safety_stop=0
+                    if robot.operation==2:
+                        hri.audio_message=6
+                elif distance>1.2 and distance<=3.6: #if human is between 1.2-3.6m
+                    hri.status=2
+                    hri.safety_stop=1
+                    if robot.operation==4 and human.posture[human.critical_index]==1 and human.sensor[human.critical_index]!=1 and hri_audio_message==1: #picker is identifying itself as the picker who call the robot
+                        hri.audio_message=1
+                    if robot.operation==2
+                else: #if human is within 1.2m
+                    hri.status=3
+                    hri.audio_message=0
+                    hri.safety_stop=2
+    ################################################################################################################                  
+    ##audio_message##########
+
+    ################################################################################################################                  
+    ##safety_stop###########
+
+
+        
+        
+        ############################################################################################
         #Publish        
         msg.hri_status = hri.status
         msg.audio_message = hri.audio_message
