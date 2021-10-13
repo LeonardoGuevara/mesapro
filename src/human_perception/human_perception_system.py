@@ -514,7 +514,9 @@ if __name__ == '__main__':
             print("distance_tracked",list(human.distance_track[:,0]))
             print("position_x_tracked",list(human.position_track[:,0]))
             
-        #Publish        
+        #Publish     
+        msg.posture = list(human.posture_track[:,0])
+        msg.posture_prob = list(human.posture_track[:,1])
         msg.motion = list(human.motion_track[:,0])
         msg.position_x = list(human.position_track[:,0])
         msg.position_y = list(human.position_track[:,1])
