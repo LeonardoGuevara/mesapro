@@ -42,6 +42,7 @@ class robot_class:
         self.position=np.zeros([3,1]) #[x,y,theta]
         self.control=np.zeros([2,1]) #[w,v]
         self.operation=0 #0 means UVC treatment, 1 means approaching to a picker, 2 moving to the picker location, 3 moving away from the picker, 4 wait for human command to approach, 5 wait for human command to move away 
+        self.operation_new=0
         self.call_a_robot_goal=np.array([5,0,0])
         self.topo_goal=np.array([5,0])
         
@@ -102,7 +103,8 @@ if __name__ == '__main__':
                 distance=sqrt((human.position_x[critical_index])**2+(human.position_y[critical_index])**2)
             else: #if data is from camera
                 distance=human.distance[critical_index]    
-            if robot.operation==0: #UV-C treatment
+            ###UV-C treatment#######################################
+            if robot.operation==0: 
                 if distance>9: #if human is above 7m from the robot
                     hri.status=1
                     hri.audio_message=7
@@ -115,31 +117,58 @@ if __name__ == '__main__':
                     hri.status=3
                     hri.audio_message=7
                     hri.safety_stop=2
-            if robot.operation==1: #logistics
+            ##LOGISTICS###############################################
+            if robot.operation==1: 
                 if distance>7: #if human is above 7m
                     hri.status=1
                     hri.audio_message=0
                     hri.safety_stop=0
                 elif distance>3.6 and distance<=7: #if human is between 3.6-7m
+                    #NORMAL CASE
                     hri.status=1
                     hri.safety_stop=0
-                    if robot.operation==2:
-                        hri.audio_message=6
+                    hri.audio_message=0
+                    #SPECIAL CASES
+                    #In case the picker wants identifying him/herself before the robot ask for it
+                    if robot.operation==2 #if robot is movint to the picker location
+                        if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==1: #picker is identifying itself as the picker who call the robot
+                            robot.operation_new=1 #make the robot approach to the picker from this point
+                            hri.audio_message=6 #alert to make the picker aware of the robot approaching to him/her
+                    #In case the picker wants the robot to stop before the robot approach more to him/her
+                    if robot.operation==2 #if robot is movint to the picker location
+                        if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==2:  #picker is ordering the robot to stop (using both hands)
+                            robot.operation_new=4 #make the robot wait till the picker perform the order to approach
+                    #in case the picker make the robot stop, and now requires the robot service
+                    if robot.operation==4: #if robot is waiting for human command to approach
+                         if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==7:  #picker is ordering the robot to approach to him/her (using right arm)
+                            robot.operation_new=1 #make the robot wait till the picker perform the order to approach
                 elif distance>1.2 and distance<=3.6: #if human is between 1.2-3.6m
+                    #NORMAL CASE
                     hri.status=2
                     hri.safety_stop=1
-                    if robot.operation==4 and human.posture[human.critical_index]==1 and human.sensor[human.critical_index]!=1 and hri_audio_message==1: #picker is identifying itself as the picker who call the robot
-                        hri.audio_message=1
-                    if robot.operation==2
+                    if robot.operation==4: #if robot is waiting for human command to approach
+                        hri.audio_message=1 #asking the picker to identified him/her
+                        if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==1: #picker is identifying itself as the picker who call the robot (using both arms)
+                            robot.operation_new=1 #approaching to the picker
+                        if human.sensor[human.critical_index]==1 and human.motion[human.critical_index]==0: #picker is mostly static (for at least 3 sec)
+                            robot.operation_new=1 #approaching to the picker
+                    elif robot.operation==1: #if robot is approaching to the picker
+                        hri.audio_message=6 #alert to make the picker aware of the robot approaching to him/her
+                        if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==2: #picker is ordering the robot to stop (using both hands)
+                            robot.operation_new=5 #to make the robot till the picker perform the order to move away
+                    elif robot.operation==5: #if robot is waiting for the human command to move away
+                        if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==8: #picker is ordering the robot to move away (using right hand)
+                            robot.operation_new=1 #approaching to the picker
+                        if human.sensor[human.critical_index]==1 and human.motion[human.critical_index]==0: #picker is mostly static (for at least 3 sec)
+                            robot.operation_new=1 #approaching to the picker
+                    #SPECIAL CASES
                 else: #if human is within 1.2m
                     hri.status=3
                     hri.audio_message=0
                     hri.safety_stop=2
-    ################################################################################################################                  
-    ##audio_message##########
-
-    ################################################################################################################                  
-    ##safety_stop###########
+                #0 means UVC treatment, 1 means approaching to a picker, 2 moving to the picker location, 3 moving away from the picker, 4 wait for human command to approach, 5 wait for human command to move away 
+        
+        robot.operation=robot.operation_new
 
 
         
