@@ -181,6 +181,7 @@ if __name__ == '__main__':
                         robot.operation_new=5 #to make the robot wait till the picker perform the order to move away
                     if human.sensor[human.critical_index]!=1 and (human.posture[human.critical_index]==8 | human.posture[human.critical_index]==6): #picker is ordering the robot to move away (using right hand) or picker is picking again
                         robot.operation_new=3 #to make the robot move away from the picker 
+                        hri.status=2
                         hri.safety_stop=1
                 #0 means UVC treatment, 1 means approaching to a picker, 2 moving to the picker location, 3 moving away from the picker, 4 wait for human command to approach, 5 wait for human command to move away 
         
