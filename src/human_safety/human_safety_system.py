@@ -130,45 +130,61 @@ if __name__ == '__main__':
                     hri.audio_message=0
                     #SPECIAL CASES
                     #In case the picker wants identifying him/herself before the robot ask for it
-                    if robot.operation==2 #if robot is movint to the picker location
+                    if robot.operation==2 #if robot is moving to the picker location
                         if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==1: #picker is identifying itself as the picker who call the robot
                             robot.operation_new=1 #make the robot approach to the picker from this point
                             hri.audio_message=6 #alert to make the picker aware of the robot approaching to him/her
                     #In case the picker wants the robot to stop before the robot approach more to him/her
-                    if robot.operation==2 #if robot is movint to the picker location
+                    if robot.operation==2 #if robot is moving to the picker location
                         if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==2:  #picker is ordering the robot to stop (using both hands)
                             robot.operation_new=4 #make the robot wait till the picker perform the order to approach
                     #in case the picker make the robot stop, and now requires the robot service
                     if robot.operation==4: #if robot is waiting for human command to approach
                          if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==7:  #picker is ordering the robot to approach to him/her (using right arm)
                             robot.operation_new=1 #make the robot wait till the picker perform the order to approach
+                    #In case the picker make the robot move way from him/she
+                    if robot.operation==2 or robot.operation==4: #if robot is waiting for human command to approach
+                        if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==8: #picker is ordering the robot to move away (using right hand)
+                            robot.operation_new=3 #to make the robot move away from the picker
                 elif distance>1.2 and distance<=3.6: #if human is between 1.2-3.6m
                     #NORMAL CASE
                     hri.status=2
                     hri.safety_stop=1
+                    hri.audio_message=0
                     if robot.operation==4: #if robot is waiting for human command to approach
-                        hri.audio_message=1 #asking the picker to identified him/her
+                        hri.audio_message=1 #asking the picker if he/she called the robot
                         if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==1: #picker is identifying itself as the picker who call the robot (using both arms)
-                            robot.operation_new=1 #approaching to the picker
+                            robot.operation_new=1 #to make the robot approach to the picker
                         if human.sensor[human.critical_index]==1 and human.motion[human.critical_index]==0: #picker is mostly static (for at least 3 sec)
-                            robot.operation_new=1 #approaching to the picker
+                            robot.operation_new=1 #to make the robot approach to the picker
+                        if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==8: #picker is replying that he/she is not who call the robot (using right hand)
+                            robot.operation_new=3 #to make the robot move away from the picker
                     elif robot.operation==1: #if robot is approaching to the picker
                         hri.audio_message=6 #alert to make the picker aware of the robot approaching to him/her
                         if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==2: #picker is ordering the robot to stop (using both hands)
-                            robot.operation_new=5 #to make the robot till the picker perform the order to move away
-                    elif robot.operation==5: #if robot is waiting for the human command to move away
+                            robot.operation_new=5 #to make the robot wait till the picker perform the order to move away
                         if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==8: #picker is ordering the robot to move away (using right hand)
-                            robot.operation_new=1 #approaching to the picker
-                        if human.sensor[human.critical_index]==1 and human.motion[human.critical_index]==0: #picker is mostly static (for at least 3 sec)
-                            robot.operation_new=1 #approaching to the picker
-                    #SPECIAL CASES
+                            robot.operation_new=3 #to make the robot move away from the picker
+                    elif robot.operation==5: #if robot is waiting for the human command to move away
+                        if human.sensor[human.critical_index]!=1 and (human.posture[human.critical_index]==8 | human.posture[human.critical_index]==6): #picker is ordering the robot to move away (using right hand) or picker is picking again
+                            robot.operation_new=3 #to make the robot move away from the picker
+                        if human.sensor[human.critical_index]==1 and human.motion[human.critical_index]==3: #robot moves away when picker is moving away slowly 
+                            robot.operation_new=3 #to make the robot move away from the picker
                 else: #if human is within 1.2m
                     hri.status=3
                     hri.audio_message=0
                     hri.safety_stop=2
+                    #SPECIAL CASES
+                    if robot.operation==1: #if robot is approaching to the picker
+                        robot.operation_new=5 #to make the robot wait till the picker perform the order to move away
+                    if robot.operation==2: #if robot is moving to the picker location
+                        robot.operation_new=5 #to make the robot wait till the picker perform the order to move away
+                    if human.sensor[human.critical_index]!=1 and (human.posture[human.critical_index]==8 | human.posture[human.critical_index]==6): #picker is ordering the robot to move away (using right hand) or picker is picking again
+                        robot.operation_new=3 #to make the robot move away from the picker 
+                        hri.safety_stop=1
                 #0 means UVC treatment, 1 means approaching to a picker, 2 moving to the picker location, 3 moving away from the picker, 4 wait for human command to approach, 5 wait for human command to move away 
         
-        robot.operation=robot.operation_new
+        #robot.operation=robot.operation_new
 
 
         
