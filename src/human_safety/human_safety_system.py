@@ -21,6 +21,7 @@ a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 direct_param=list(dict.items(parsed_yaml_file["directories_config"]))
 ar_param=list(dict.items(parsed_yaml_file["action_recog_config"]))
+hs_param=list(dict.items(parsed_yaml_file["human_safety_config"]))
 #Setup ROS publiser
 pub = rospy.Publisher('human_safety_info', human_msg)
 msg = human_msg()
@@ -36,6 +37,7 @@ class robot_class:
         #declaration and initial values of important variables
         self.position=np.zeros([3,1]) #[x,y,theta]
         self.control=np.zeros([2,1]) #[w,v]
+        self.operation=0 #0 means UVC treatment, 1 means approaching to a picker in logistics
 
 class human_class:
     def __init__(self): #It is done only the first iteration
@@ -59,16 +61,16 @@ def hri_callback(ros_image, ros_depth):
 
 
 ################################################################################################################                  
-def hri_status(human):
+##hri_status############
     
 ################################################################################################################                  
-def aware_status(human):
+##aware_status###########
 
 ################################################################################################################                  
-def audio_message(human):
+##audio_message##########
 
 ################################################################################################################                  
-def safety_stop(human):
+##safety_stop###########
 
 
 ###############################################################################################
@@ -81,10 +83,11 @@ if __name__ == '__main__':
     robot=robot_class()
     rospy.init_node('human_safety_system',anonymous=True)
     # Setup and call subscription
-    human_sub = message_filters.Subscriber('human_info', human_msg)
-    robot_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
-    ts = message_filters.ApproximateTimeSynchronizer([human_sub, robot_sub], 1, 0.01)
-    ts.registerCallback(hri_callback)
+    #human_sub = message_filters.Subscriber('human_info', human_msg)
+    #robot_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
+    #ts = message_filters.ApproximateTimeSynchronizer([human_sub, robot_sub], 1, 0.01)
+    #ts.registerCallback(hri_callback)
+    rospy.Subscriber('human_info',human_msg,hri_callback)  
     #Rate setup
     rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	      
