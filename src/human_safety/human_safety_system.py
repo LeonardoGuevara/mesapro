@@ -65,14 +65,15 @@ class hri_class:
         self.safety_stop=0      
 
 def hri_callback(human_info):
-    human.posture=human_info.posture
-    human.motion=human_info.motion   
-    human.position_x=human_info.position_x
-    human.position_y=human_info.position_y
-    human.distance=human_info.distance
-    human.sensor=human_info.sensor
-    human.critical_index=human_info.critical_index
-    
+    if len(human_info.sensor)!=0: #only if there is a new human_info data
+        human.posture=human_info.posture
+        human.motion=human_info.motion   
+        human.position_x=human_info.position_x
+        human.position_y=human_info.position_y
+        human.distance=human_info.distance
+        human.sensor=human_info.sensor
+        human.critical_index=human_info.critical_index
+        
 ###############################################################################################
 # Main Script
 
@@ -94,7 +95,7 @@ if __name__ == '__main__':
         main_counter=main_counter+1   
         ############################################################################################
         ##hri_status############
-        if len(human.sensor)==1 and (human.posture[0]+human.motion[0]+human.position_x[0]+human.position_y[0]+human.distance[0]+human.sensor[0]==0): #None human detected
+        if len(human.sensor)==1 and (human.posture[0]+human.position_x[0]+human.position_y[0]+human.distance[0]+human.sensor[0]==0): #None human detected
             hri.status=0
             hri.audio_message=0
             hri.safety_stop=0

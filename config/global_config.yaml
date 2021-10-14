@@ -9,7 +9,7 @@ action_recog_config:
   n_joints: 19       #19 body joints from openpose output (25 available)
   n_features: 36     #19 distances + 17 angels = 36 features
   posture_labels: ["no_gesture","both_arms","both_hands","crouched_down","left_arm","left_hand","picking","right_arm","right_hand"]
-  motion_labels: ["mostly_static", "approching_slowly", "approching_faster", "moving_away_slowly", "moving_away_faster"]
+  motion_labels: ["not_defined","mostly_static", "approching_slowly", "approching_faster", "moving_away_slowly", "moving_away_faster"]
   orientation_labels: ["facing_the_robot", "giving_the_back", "left_side", "right_side"]
 ################################################
 human_safety_config:

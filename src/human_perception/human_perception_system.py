@@ -83,7 +83,6 @@ class human_class:
         self.features=np.zeros([self.n_human,n_features]) #distances and angles of each skeleton, from camera
         self.orientation=np.zeros([self.n_human,1]) # it can be "front" or "back" if the human is facing the robot or not , from camera
         self.distance=np.zeros([self.n_human,1])  # distance between the robot and the average of the skeleton joints distances taken from the depth image, from camera
-        self.legs=np.zeros([self.n_human,2]) #xy position of the legs detected by the LiDAR
         
         #Variables to store the info of relevant humans tracked along the time
         self.position_track=np.zeros([self.n_human,2])
@@ -93,7 +92,6 @@ class human_class:
         self.features_track=np.zeros([self.n_human,n_features])
         self.orientation_track=np.zeros([self.n_human,1])
         self.distance_track=np.zeros([self.n_human,1]) 
-        self.legs_track=np.zeros([self.n_human,2])
         self.counter=np.zeros([self.n_human,1]) #counter vector to determine for how many cycles a human tracked was not longer detected, counter>0 means is not longer detected, counter<=0 means is being detected
         self.data_source=np.zeros([self.n_human,1]) # it can be 0 if the data is from camera and Lidar, 1 if the data is  only from the LiDAR or 2 if the data is only from de camera
         self.critical_index=0 #index of the closest human to the robot
@@ -459,7 +457,7 @@ def critical_human_selection():
     centroid=human.centroid_track
     posture=human.position_track
     image=human.image
-    closest_distance=1000
+    closest_distance=1000 #initial value
     closest_index=0
     for k in range(0,n_human):
         if counter[k]<0 and data_source[k]==2 and posture[k,1]>0.7:# if data was taken from camera
@@ -520,10 +518,11 @@ if __name__ == '__main__':
         #Publish     
         msg.posture = list(human.posture_track[:,0])
         msg.posture_prob = list(human.posture_track[:,1])
-        msg.motion = list(human.motion_track[:,0])
+        #msg.motion = list(human.motion_track[:,0])
         msg.position_x = list(human.position_track[:,0])
         msg.position_y = list(human.position_track[:,1])
         msg.distance = list(human.distance_track[:,0])
+        msg.orientation = list(human.orientation_track[:,0])
         msg.sensor = list(human.data_source[:,0])
         msg.critical_index = human.critical_index 
         pub.publish(msg)
