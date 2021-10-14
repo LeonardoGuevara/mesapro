@@ -43,6 +43,7 @@ params["model_folder"] = open_pose_models
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
 opWrapper.start()
+datum = op.Datum()
 #Initializating cv_bridge
 bridge = CvBridge()
 #Setup ROS publiser
@@ -61,7 +62,7 @@ n_labels=len(posture_labels)
 #General purposes variables
 #n_pixels_x=0 #number of pixels in x axis per each frame from the camera, initial value
 main_counter=0
-visualization='on' #to show or not a window with the human detection on the photos
+visualization='off' #to show or not a window with the human detection on the photos
 new_data=[0,0]     #flag to know if a new data from LiDAR or Camera is available, first element is for LiDAR, second for Camera
 #########################################################################################################################
 
@@ -77,7 +78,7 @@ class human_class:
         self.n_human=1 # considering up to 1 human to track initially
         self.position=np.zeros([self.n_human,2]) #[x,y] from lidar
         self.posture=np.zeros([self.n_human,2]) #from camera [posture_label,posture_probability]
-        self.motion=np.zeros([self.n_human,1]) #from camera
+        self.motion=np.zeros([self.n_human,1]) #from lidar + camara
         self.centroid=np.zeros([self.n_human,2]) #x,y (pixels) of the human centroid, from camera
         self.features=np.zeros([self.n_human,n_features]) #distances and angles of each skeleton, from camera
         self.orientation=np.zeros([self.n_human,1]) # it can be "front" or "back" if the human is facing the robot or not , from camera
@@ -122,9 +123,11 @@ def lidar_callback(legs):
         if k<len(human.position): #if there are less human detected than before
             human.position=human.position[0:k,:]    
         new_data[0]=1 # update flag for new data
-    #print("lidar_data",list(human.position))
-            
-    #print("LENGNT HUMAN POSition",len(human.position))
+        #print("lidar_data",list(human.position))
+        #Human motion inference
+        #[human.motion]=human_motion_inference(human)
+                
+        #print("LENGNT HUMAN POSition",len(human.position))
 
 def camera_callback(ros_image, ros_depth):
     print("DATA FROM CAMERA")
@@ -136,7 +139,7 @@ def camera_callback(ros_image, ros_depth):
     except CvBridgeError as e:
         rospy.logerr("CvBridge Error: {0}".format(e))
     #Process and display images
-    datum = op.Datum()
+    #datum = op.Datum()
     datum.cvInputData = color_image
     opWrapper.emplaceAndPop(op.VectorDatum([datum]))
     #Keypoints extraction using OpenPose
@@ -145,17 +148,9 @@ def camera_callback(ros_image, ros_depth):
         print('No human detected from camera')
         human.counter=human.counter+1
     else: #if there is at least 1 human skeleton detected
-        if len(human.posture)!=len(data[:,0,0]): #to readjust the vectors length in case there are more/less humans than expected
-            human.posture=np.zeros([len(data[:,0,0]),2])
-            human.motion=np.zeros([len(data[:,0,0]),1])
-            human.centroid=np.zeros([len(data[:,0,0]),2]) 
-            human.features=np.zeros([len(data[:,0,0]),n_features]) 
-            human.orientation=np.zeros([len(data[:,0,0]),1])
-            human.distance=np.zeros([len(data[:,0,0]),1]) 
         #Feature extraction
-        [human.features,human.posture,human.orientation,human.distance,human.centroid]=feature_extraction_3D(data,depth_array,n_joints,human)
-        #Human motion inference
-        #[human.motion]=human_motion_inference(human)
+        [human.features,human.posture,human.orientation,human.distance,human.centroid]=feature_extraction_3D(data,depth_array,n_joints,n_features)
+        print("HUMAN DISTANCE",list(human.distance))
         
         human.image=datum.cvOutputData
     new_data[1]=1 # update flag for new data
@@ -163,12 +158,19 @@ def camera_callback(ros_image, ros_depth):
 
 
 ################################################################################################################            
-def feature_extraction_3D(poseKeypoints,depth_array,n_joints,human):
-    features=human.features
-    posture=human.posture
-    orientation=human.orientation
-    distance=human.distance
-    centroid=human.centroid
+def feature_extraction_3D(poseKeypoints,depth_array,n_joints,n_features):
+    if len(human.posture)!=len(poseKeypoints[:,0,0]): #to readjust the vectors length in case there are more/less humans than expected
+        posture=np.zeros([len(poseKeypoints[:,0,0]),2])
+        centroid=np.zeros([len(poseKeypoints[:,0,0]),2]) 
+        features=np.zeros([len(poseKeypoints[:,0,0]),n_features]) 
+        orientation=np.zeros([len(poseKeypoints[:,0,0]),1])
+        distance=np.zeros([len(poseKeypoints[:,0,0]),1]) 
+    else:
+        features=human.features
+        posture=human.posture
+        orientation=human.orientation
+        distance=human.distance
+        centroid=human.centroid
     for kk in range(0,len(poseKeypoints[:,0,0])):
         #Orientation inference using nose, ears, eyes keypoints
         #orientation[kk,:]=0 # facing the robot by default
@@ -292,7 +294,7 @@ def feature_extraction_3D(poseKeypoints,depth_array,n_joints,human):
         #print("Distance:",distance[kk,:])
     return features, posture, orientation, distance , centroid
         
-def human_tracking(human,new_data):
+def human_tracking():
     data_source=human.data_source
     counter=human.counter
     n_human=human.n_human
@@ -331,6 +333,7 @@ def human_tracking(human,new_data):
                 new_index=list(diff[k,:]).index(min(diff[k,:]))
                 #new_index=list(potential_match).index(1)
                 position[k,:]=position_new[new_index,:]
+                motion[k,:]=motion_new[new_index,:]
                 counter[k]=counter[k]-1
                 new_human_counter[new_index]=1 #it is not a new human
                 if data_source[k,:]==2: #if before it was only from camera
@@ -366,7 +369,7 @@ def human_tracking(human,new_data):
                 n_human=n_human+1
                 position=np.append(position,[position_new[k,:]],axis=0)
                 posture=np.append(posture,np.zeros([1,2]),axis=0)
-                motion=np.append(motion,np.zeros([1,1]),axis=0)
+                motion=np.append(motion,[motion_new[k,:]],axis=0)
                 centroid=np.append(centroid,np.zeros([1,2]),axis=0)
                 features=np.append(features,np.zeros([1,n_features]),axis=0)
                 orientation=np.append(orientation,np.zeros([1,1]),axis=0)
@@ -396,7 +399,7 @@ def human_tracking(human,new_data):
                 new_index=list(diff[k,:]).index(min(diff[k,:]))
                 #position[k,:]=position_new[new_index,:]
                 posture[k,:]=posture_new[new_index,:]
-                motion[k,:]=motion_new[new_index,:]
+                #motion[k,:]=motion_new[new_index,:]
                 centroid[k,:]=centroid_new[new_index,:]
                 features[k,:]=features_new[new_index,:]
                 orientation[k,:]=orientation_new[new_index,:]
@@ -435,7 +438,7 @@ def human_tracking(human,new_data):
                 n_human=n_human+1
                 position=np.append(position,np.zeros([1,2]),axis=0)
                 posture=np.append(posture,[posture_new[k,:]],axis=0)
-                motion=np.append(motion,[motion_new[k,:]],axis=0)
+                motion=np.append(motion,np.zeros([1,1]),axis=0)
                 centroid=np.append(centroid,[centroid_new[k,:]],axis=0)
                 features=np.append(features,[features_new[k,:]],axis=0)
                 orientation=np.append(orientation,[orientation_new[k,:]],axis=0)
@@ -447,7 +450,7 @@ def human_tracking(human,new_data):
         
     return data_source,counter,n_human,position,posture,motion,centroid,features,orientation,distance
 
-def critical_human_selection(human):
+def critical_human_selection():
     n_human=human.n_human
     counter=human.counter
     data_source=human.data_source
@@ -501,18 +504,18 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():	      
         main_counter=main_counter+1
         if new_data!=[0,0]:
-            print(new_data)
+            #print(new_data)
             #Human tracking
             #print("data_source_before",list(human.data_source[:,0]))
-            [human.data_source,human.counter,human.n_human,human.position_track,human.posture_track,human.motion_track,human.centroid_track,human.features_track,human.orientation_track,human.distance_track]=human_tracking(human,new_data)
-            human.critical_index=critical_human_selection(human)
-            print("data_source_after",list(human.data_source[:,0]))
+            [human.data_source,human.counter,human.n_human,human.position_track,human.posture_track,human.motion_track,human.centroid_track,human.features_track,human.orientation_track,human.distance_track]=human_tracking()
+            human.critical_index=critical_human_selection()
+            #print("data_source",list(human.data_source[:,0]))
             if new_data[0]==1:
                 new_data[0]=0
             if new_data[1]==1:
                 new_data[1]=0
             print("distance_tracked",list(human.distance_track[:,0]))
-            print("position_x_tracked",list(human.position_track[:,0]))
+            #print("position_x_tracked",list(human.position_track[:,0]))
             
         #Publish     
         msg.posture = list(human.posture_track[:,0])

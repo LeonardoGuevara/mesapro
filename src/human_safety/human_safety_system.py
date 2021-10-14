@@ -17,7 +17,7 @@ from mesapro.msg import hri_msg
 
 #Importing global parameters from .yaml file
 src_direct=os.getcwd()
-config_direct=src_direct[0:len(src_direct)-20]+"config/"
+config_direct=src_direct[0:len(src_direct)-16]+"config/"
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 direct_param=list(dict.items(parsed_yaml_file["directories_config"]))
@@ -41,10 +41,10 @@ class robot_class:
         #declaration and initial values of important variables
         self.position=np.zeros([3,1]) #[x,y,theta]
         self.control=np.zeros([2,1]) #[w,v]
-        self.operation=0 #0 means UVC treatment, 1 means approaching to a picker, 2 moving to the picker location, 3 moving away from the picker, 4 wait for human command to approach, 5 wait for human command to move away 
+        self.operation=2 #0 means UVC treatment, 1 means approaching to a picker, 2 moving to the picker location, 3 moving away from the picker, 4 wait for human command to approach, 5 wait for human command to move away 
         self.operation_new=0
-        self.call_a_robot_goal=np.array([5,0,0])
-        self.topo_goal=np.array([5,0])
+        #self.call_a_robot_goal=np.array([5,0,0])
+        #self.topo_goal=np.array([5,0])
         
 class human_class:
     def __init__(self): #It is done only the first iteration
@@ -56,7 +56,7 @@ class human_class:
         self.distance=[0]
         self.sensor=[0]
         self.critical_index=0
-        self.goal_index=0
+        #self.goal_index=0
         
 class hri_class:
     def __init__(self): #It is done only the first iteration
@@ -94,16 +94,17 @@ if __name__ == '__main__':
         main_counter=main_counter+1   
         ############################################################################################
         ##hri_status############
-        if len(human.sensor) and (human.posture*human.motion*human.position_x*human.position_y*human.distance*human.sensor*human.critical_index==0): #None human detected
+        if len(human.sensor)==1 and (human.posture[0]+human.motion[0]+human.position_x[0]+human.position_y[0]+human.distance[0]+human.sensor[0]==0): #None human detected
             hri.status=0
             hri.audio_message=0
             hri.safety_stop=0
         else: #if at least one human was detected
-            if human.sensor!=2: #if data is from lidar or lidar+camera
-                distance=sqrt((human.position_x[critical_index])**2+(human.position_y[critical_index])**2)
+            if human.sensor[human.critical_index]!=2: #if data is from lidar or lidar+camera
+                distance=sqrt((human.position_x[human.critical_index])**2+(human.position_y[human.critical_index])**2)
             else: #if data is from camera
-                distance=human.distance[critical_index]    
+                distance=human.distance[human.critical_index]    
             ###UV-C treatment#######################################
+            print("Distance",distance)
             if robot.operation==0: 
                 if distance>9: #if human is above 7m from the robot
                     hri.status=1
@@ -118,7 +119,7 @@ if __name__ == '__main__':
                     hri.audio_message=7
                     hri.safety_stop=2
             ##LOGISTICS###############################################
-            if robot.operation==1: 
+            if robot.operation>=1: 
                 if distance>7: #if human is above 7m
                     hri.status=1
                     hri.audio_message=0
@@ -130,12 +131,12 @@ if __name__ == '__main__':
                     hri.audio_message=0
                     #SPECIAL CASES
                     #In case the picker wants identifying him/herself before the robot ask for it
-                    if robot.operation==2 #if robot is moving to the picker location
+                    if robot.operation==2: #if robot is moving to the picker location
                         if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==1: #picker is identifying itself as the picker who call the robot
                             robot.operation_new=1 #make the robot approach to the picker from this point
                             hri.audio_message=6 #alert to make the picker aware of the robot approaching to him/her
                     #In case the picker wants the robot to stop before the robot approach more to him/her
-                    if robot.operation==2 #if robot is moving to the picker location
+                    if robot.operation==2: #if robot is moving to the picker location
                         if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==2:  #picker is ordering the robot to stop (using both hands)
                             robot.operation_new=4 #make the robot wait till the picker perform the order to approach
                     #in case the picker make the robot stop, and now requires the robot service
@@ -166,7 +167,7 @@ if __name__ == '__main__':
                         if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==8: #picker is ordering the robot to move away (using right hand)
                             robot.operation_new=3 #to make the robot move away from the picker
                     elif robot.operation==5: #if robot is waiting for the human command to move away
-                        if human.sensor[human.critical_index]!=1 and (human.posture[human.critical_index]==8 | human.posture[human.critical_index]==6): #picker is ordering the robot to move away (using right hand) or picker is picking again
+                        if human.sensor[human.critical_index]!=1 and (human.posture[human.critical_index]==8 or human.posture[human.critical_index]==6): #picker is ordering the robot to move away (using right hand) or picker is picking again
                             robot.operation_new=3 #to make the robot move away from the picker
                         if human.sensor[human.critical_index]==1 and human.motion[human.critical_index]==3: #robot moves away when picker is moving away slowly 
                             robot.operation_new=3 #to make the robot move away from the picker
@@ -179,7 +180,7 @@ if __name__ == '__main__':
                         robot.operation_new=5 #to make the robot wait till the picker perform the order to move away
                     if robot.operation==2: #if robot is moving to the picker location
                         robot.operation_new=5 #to make the robot wait till the picker perform the order to move away
-                    if human.sensor[human.critical_index]!=1 and (human.posture[human.critical_index]==8 | human.posture[human.critical_index]==6): #picker is ordering the robot to move away (using right hand) or picker is picking again
+                    if human.sensor[human.critical_index]!=1 and (human.posture[human.critical_index]==8 or human.posture[human.critical_index]==6): #picker is ordering the robot to move away (using right hand) or picker is picking again
                         robot.operation_new=3 #to make the robot move away from the picker 
                         hri.status=2
                         hri.safety_stop=1
