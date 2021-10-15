@@ -1,13 +1,17 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="bag_map" default="/home/leo/aa_data/new_data/no_data/people_detection_zotac_2_2021-10-06-12-07-08.bag" />
-    <arg name="bag_sensors" default="/home/leo/aa_data/new_data/training//both_arms/without_cart_both_arms_1.bag" />
+    <arg name="bag_sensors" default="/home/leo/aa_data/new_data/training/both_arms/without_cart_both_arms_1.bag" />
+    <arg name="bag_legs" default="/home/leo/Leo/Data_Collection/First\ Data\ collected_clockhouse/clockhouse_vanity/2021-02-24-00-09-46.bag" />	
 
     <node pkg="rosbag" type="play" name="rosbag_play_map"
     args="--loop $(arg bag_map) --topics /map /no_go_map"/>  
 
     <node pkg="rosbag" type="play" name="rosbag_play_sensors"
     args="--loop $(arg bag_sensors) --topics /scan /camera/camera1/aligned_depth_to_color/image_raw /camera/camera1/color/image_raw /tf"/>  
+    
+    <node pkg="rosbag" type="play" name="rosbag_play_legs"
+    args="--loop $(arg bag_legs) --topics /people_tracker/pose_array"/> 
      
 </launch>
 
