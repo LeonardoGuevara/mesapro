@@ -28,7 +28,7 @@ pub = rospy.Publisher('human_safety_info', hri_msg)
 msg = hri_msg()
 pub_hz=0.01 #publising rate in seconds
 #Extraction of Human variables
-action_labels=ar_param[3][1]
+motion_labels=ar_param[3][1]
 hri_status_label=hs_param[0][1]
 audio_message_label=hs_param[1][1] 
 safety_stop_label=hs_param[2][1]
@@ -42,7 +42,7 @@ class robot_class:
         self.position=np.zeros([3,1]) #[x,y,theta]
         self.control=np.zeros([2,1]) #[w,v]
         self.operation=2 #0 means UVC treatment, 1 means approaching to a picker, 2 moving to the picker location, 3 moving away from the picker, 4 wait for human command to approach, 5 wait for human command to move away 
-        self.operation_new=0
+        self.operation_new=self.operation
         #self.call_a_robot_goal=np.array([5,0,0])
         #self.topo_goal=np.array([5,0])
         
@@ -95,7 +95,9 @@ if __name__ == '__main__':
         main_counter=main_counter+1   
         ############################################################################################
         ##hri_status############
-        if len(human.sensor)==1 and (human.posture[0]+human.position_x[0]+human.position_y[0]+human.distance[0]+human.sensor[0]==0): #None human detected
+        if len(human.sensor)==1 and (human.posture[0]+human.position_x[0]+human.position_y[0]+human.distance[0])==0: #None human detected
+            #print("HOLAAAA")
+            #print(human.distance)
             hri.status=0
             hri.audio_message=0
             hri.safety_stop=0
@@ -149,6 +151,9 @@ if __name__ == '__main__':
                         if human.sensor[human.critical_index]!=1 and human.posture[human.critical_index]==8: #picker is ordering the robot to move away (using right hand)
                             robot.operation_new=3 #to make the robot move away from the picker
                 elif distance>1.2 and distance<=3.6: #if human is between 1.2-3.6m
+                    ##################################################
+                    #robot.operation=4
+                    ##############################################
                     #NORMAL CASE
                     hri.status=2
                     hri.safety_stop=1
@@ -188,9 +193,12 @@ if __name__ == '__main__':
                 #0 means UVC treatment, 1 means approaching to a picker, 2 moving to the picker location, 3 moving away from the picker, 4 wait for human command to approach, 5 wait for human command to move away 
         
         #robot.operation=robot.operation_new
-
-
-        
+        ########################################################################3
+        print("CURRENT OPERATION",robot.operation)
+        if robot.operation!=robot.operation_new:
+            print("NEW OPERATION",robot.operation_new) 
+            robot.operation=robot.operation_new
+        ############################################################################            
         
         ############################################################################################
         #Publish        
