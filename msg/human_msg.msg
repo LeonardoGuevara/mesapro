@@ -7,5 +7,7 @@ float64[] centroid_y
 float64[] distance
 float64[] orientation
 float64[] sensor
+float64[] sensor_t0
+float64[] sensor_t1
 float64[] motion
 int64 critical_index

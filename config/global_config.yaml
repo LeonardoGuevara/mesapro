@@ -13,7 +13,10 @@ action_recog_config:
   orientation_labels: ["facing_the_robot", "giving_the_back", "left_side", "right_side"]
 ################################################
 human_safety_config:
-  hri_status: ["no_human","safe_interaction","risky_interact","critical_interact"]
-  audio_message: ["no_message","ask_for_identity","ask_for_approaching","ask_for_continue_operation","ask_for_free_space","alert_before_row_transition","alert_while_approaching","alert_during_UVC"]
-  safety_stop: ["normal_operation","reduced_speed","safety_stop"]
+  hri_status: ["no_human","safety_hri","risky_hri","dangerous_hri"]
+  audio_message: ["no_message","ask_for_next_action","ask_for_free_space","alert_row_transition","alert_approaching","alert_presence","alert_UVC"]
+  safety_action: ["normal_operation","reduce_speed","safety_stop","waiting_command"]
+  human_command: ["no_command","approach","move_away","stop","yes","no"]
 ###############################################
+robot_config:
+  operation: ["UV-C_treatment","moving_to_picker_location", "wait_for_command_to_approach", "approaching_to_picker","wait_for_command_to_move_away", "moving_away_from_picker"]

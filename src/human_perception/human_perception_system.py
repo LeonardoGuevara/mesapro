@@ -907,6 +907,8 @@ if __name__ == '__main__':
         msg.distance = list(human.distance_track[:,0])
         msg.orientation = list(human.orientation_track[:,0])
         msg.sensor = list(human.sensor[:,0])
+        msg.sensor_t0 = list(human.time_track[:,0])
+        msg.sensor_t1 = list(human.time_track[:,1])
         msg.critical_index = human.critical_index 
         pub.publish(msg)
         

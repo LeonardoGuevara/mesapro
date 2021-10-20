@@ -7,9 +7,10 @@
     <node pkg="rosbag" type="play" name="rosbag_play_map"
     args="--loop $(arg bag_map) --topics /map /no_go_map"/>  
 
+    <node pkg="rosbag" type="play" name="rosbag_play_sensors"
+    args="--loop $(arg bag_sensors) --topics /scan /camera/camera1/aligned_depth_to_color/image_raw /camera/camera1/color/image_raw /tf"/>  
     
-    <node pkg="rosbag" type="play" name="rosbag_play_legs"
-    args="--loop $(arg bag_legs) --topics /people_tracker/pose_array"/>
+    
      
 </launch>
 
