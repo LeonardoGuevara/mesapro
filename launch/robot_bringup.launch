@@ -1,0 +1,109 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="robot_model" default="$(find rasberry_bringup)/config/robots/robot_008.yaml"/>
+  <arg name="model_extras" default=""/>
+  <arg name="simple_sim" default="true"/>
+  <arg name="datum_file" default=""/>
+
+  <arg name="ekf_publish_tf" default="false" />
+  <arg name="robot_name" default="" />
+  <arg name="tf_prefix" default="" />
+  <arg name="with_teleoperation" default="false" />
+  <arg name="teleop_controller" default="$(find thorvald_teleop)/config/xbox.yaml" />
+  <arg name="joy_dev" default="/dev/input/js0" />
+  
+  <arg name="can_interface_type" default="enc_pcb_v1rev6" />
+  <arg name="can_interface_name" default="/dev/ttyUSB0" />
+
+  <!-- Robot starting pose arguments for simulation  -->
+  <arg name="start_pose_x" default="20.2" if="$(arg simple_sim)"/>
+  <arg name="start_pose_y" default="4.6" if="$(arg simple_sim)"/>
+  <arg name="start_pose_z" default="0" if="$(arg simple_sim)"/>
+  <arg name="start_pose_R" default="0" if="$(arg simple_sim)"/>
+  <arg name="start_pose_P" default="0" if="$(arg simple_sim)"/>
+  <arg name="start_pose_Y" default="3.14" if="$(arg simple_sim)"/>
+
+  <arg name="world_name" default="riseholme"/>
+  <arg name="world" default="$(find rasberry_gazebo)/worlds/$(arg world_name).world" if="$(arg simple_sim)"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
+  <arg name="with_actors" default="true" />
+  <arg name="with_gui" default="true" if="$(arg simple_sim)" />
+  <arg name="include_plants" default="false"/>
+  <arg name="include_calibration_pod" default="false"/>
+
+  <!-- model bringup -->
+  <include file="$(find thorvald_description)/launch/model.launch">
+    <arg name="robot_name" value="$(arg robot_name)" />
+    <arg name="tf_prefix" value="$(arg tf_prefix)" />
+    <arg name="robot_model" value="$(arg robot_model)" />
+    <arg name="model_extras" value="$(arg model_extras)" />
+    <arg name="datum_file" value="$(arg datum_file)" />
+  </include>
+
+  <!-- base bringup-->
+  <include file="$(find thorvald_base)/launch/base_bringup.launch" if="$(arg simple_sim)">
+    <arg name="robot_model" value="$(arg robot_model)" />
+    <arg name="simple_sim" value="$(arg simple_sim)" />
+    <arg name="enable_odom_tf" value="false"/>
+    <arg name="can_interface_type" value="$(arg can_interface_type)" />
+    <arg name="can_interface_name" value="$(arg can_interface_name)" />
+  </include>
+
+  <!-- base bringup-->
+  <include file="$(find thorvald_base)/launch/base_bringup.launch" unless="$(arg simple_sim)">
+    <arg name="robot_model" value="$(arg robot_model)" />
+    <arg name="simple_sim" value="$(arg simple_sim)" />
+    <arg name="enable_odom_tf" value="false" if="$(arg ekf_publish_tf)"/>
+    <arg name="can_interface_type" value="$(arg can_interface_type)" />
+    <arg name="can_interface_name" value="$(arg can_interface_name)" />
+  </include>
+
+  <!-- teleop bringup -->
+  <include file="$(find thorvald_teleop)/launch/teleop_xbox.launch" if="$(arg with_teleoperation)">
+    <arg name="joy_dev" value="$(arg joy_dev)" />
+    <arg name="teleop_controller" value="$(arg teleop_controller)" />
+  </include>
+
+  <!-- twist mux bringup -->
+  <include file="$(find thorvald_twist_mux)/launch/twist_mux.launch" />
+
+  <!-- Launch the Gazebo world.  -->
+  <include file="$(find rasberry_gazebo)/launch/world.launch" if="$(arg simple_sim)">
+   <arg name="world" default="$(arg world)"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
+   <arg name="gui" value="$(arg with_gui)"/>
+  </include>
+
+  <!-- spawn robot in gazebo -->
+  <node pkg="gazebo_ros" type="spawn_model" name="spawner" args="-urdf -param /robot_description -model thorvald_ii -x $(arg start_pose_x) -y $(arg start_pose_y) -z $(arg start_pose_z) -R $(arg  start_pose_R)  -P $(arg start_pose_P)  -Y $(arg start_pose_Y)" if="$(arg simple_sim)"/>
+
+  <!-- Include actors in the Gazebo world? -->
+  <!-- SPAWN YOUR ACTORS HERE -->
+
+  <!-- First actor -->
+  <include file="$(find rasberry_gazebo)/launch/spawn_actor.launch" if="$(arg with_actors)">
+    <arg name="actor_name" value="actor00" />
+    <arg name="start_pose_x" value="7.9" />
+    <arg name="start_pose_y" value="4.6" />
+    <arg name="start_pose_z" value="0" />
+    <arg name="start_pose_R" value="0" />
+    <arg name="start_pose_P" value="0" />
+    <arg name="start_pose_Y" value="0" />
+  </include>
+
+  <!-- Second actor -->
+  <include file="$(find rasberry_gazebo)/launch/spawn_actor.launch" if="$(arg with_actors)">	
+    <arg name="actor_name" value="actor01" />
+    <arg name="start_pose_x" value="7.52" />
+    <arg name="start_pose_y" value="-2" />
+    <arg name="start_pose_z" value="0" />
+    <arg name="start_pose_R" value="0" />
+    <arg name="start_pose_P" value="0" />
+    <arg name="start_pose_Y" value="0" />
+  </include>
+
+  <!-- Strawberry plant models -->
+  <include file="$(find rasberry_gazebo)/launch/strawberry_spawn_multi.launch" if="$(arg include_plants)"/>
+
+  <!-- Spawn calibration pod -->
+  <include file="$(find rasberry_gazebo)/launch/calibration_pod.launch" if="$(arg include_calibration_pod)"/>
+
+</launch>

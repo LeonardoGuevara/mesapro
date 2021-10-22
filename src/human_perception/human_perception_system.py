@@ -101,7 +101,7 @@ class human_class:
         self.orientation_track=np.zeros([self.n_human,1])
         self.distance_track=np.zeros([self.n_human,1]) 
         self.sensor=np.zeros([self.n_human,1]) # it can be 0 if the data is from camera and Lidar, 1 if the data is  only from the LiDAR or 2 if the data is only from de camera
-        self.critical_index=0 #index of the closest human to the robot
+        #self.critical_index=0 #index of the closest human to the robot
         self.motion_track=np.zeros([self.n_human,1]) #from lidar + camara
         self.time_track=np.ones([self.n_human,2])*(time.time()-time_init) #Vector with the time when a new data is collected from lidar or camera
         self.speed_track=np.zeros([self.n_human,1]) #human speed 
@@ -787,7 +787,7 @@ def critical_human_selection():
     distance=human.distance_track
     position=human.position_track
     centroid=human.centroid_track
-    posture=human.position_track
+    posture=human.posture_track
     image=human.image
     closest_distance=1000 #initial value
     closest_index=0
@@ -796,11 +796,16 @@ def critical_human_selection():
             if distance[k,0]<=closest_distance:
                 closest_index=k
                 closest_distance=distance[k,0]
-        if counter[k,0]<0 and sensor[k]!=2:# if data was taken from lidar or lidar+camera
-            distance_lidar=sqrt((position[k,0])**2+(position[k,1])**2)
-            if distance_lidar<=closest_distance:
-                closest_index=k
-                closest_distance=distance_lidar         
+        if sensor[k]!=2:# if data was taken from lidar or lidar+camera
+            if counter[k,0]<=counter[k,1]: #lidar data was tracked for longer
+                distance_lidar=sqrt((position[k,0])**2+(position[k,1])**2)
+                if distance_lidar<=closest_distance:
+                    closest_index=k
+                    closest_distance=distance_lidar  
+            else:
+                if distance[k,0]<=closest_distance:
+                    closest_index=k
+                    closest_distance=distance[k,0]
     closest_centroid=centroid[closest_index,:]    
     #print(human.posture)
     if visualization=='on':
@@ -872,13 +877,13 @@ if __name__ == '__main__':
         if new_data[1]==1:
             new_data[1]=0
         #Critical human selection
-        human.critical_index=critical_human_selection()
+        #human.critical_index=critical_human_selection()
         #print("sensor",list(human.sensor[:,0]))
         
         #print("distance_tracked",list(human.distance_track[:,0]))
         print("position_x_tracked",list(human.position_track[:,0]))
         #print("position_y_tracked",list(human.position_track[:,1]))
-        #print("area",list(human.area))
+        print("area",list(human.area))
         print("sensor",list(human.sensor[:,0]))
         #print("counter",list(human.counter))
         print("counter_old",list(human.counter_old))
@@ -906,10 +911,13 @@ if __name__ == '__main__':
         msg.centroid_y =list(human.centroid_track[:,1])
         msg.distance = list(human.distance_track[:,0])
         msg.orientation = list(human.orientation_track[:,0])
+        msg.area = list(human.area[:,0])
         msg.sensor = list(human.sensor[:,0])
         msg.sensor_t0 = list(human.time_track[:,0])
         msg.sensor_t1 = list(human.time_track[:,1])
-        msg.critical_index = human.critical_index 
+        msg.sensor_c0 = list(human.counter_old[:,0])
+        msg.sensor_c1 = list(human.counter_old[:,1])
+        #msg.critical_index = human.critical_index 
         pub.publish(msg)
         
         rate.sleep() #to keep fixed the publishing loop rate

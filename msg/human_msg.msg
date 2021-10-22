@@ -9,5 +9,8 @@ float64[] orientation
 float64[] sensor
 float64[] sensor_t0
 float64[] sensor_t1
+float64[] sensor_c0
+float64[] sensor_c1
 float64[] motion
-int64 critical_index
+float64[] area
+
