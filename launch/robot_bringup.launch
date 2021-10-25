@@ -21,7 +21,7 @@
   <arg name="start_pose_z" default="0" if="$(arg simple_sim)"/>
   <arg name="start_pose_R" default="0" if="$(arg simple_sim)"/>
   <arg name="start_pose_P" default="0" if="$(arg simple_sim)"/>
-  <arg name="start_pose_Y" default="3.14" if="$(arg simple_sim)"/>
+  <arg name="start_pose_Y" default="3.1415926" if="$(arg simple_sim)"/>
 
   <arg name="world_name" default="riseholme"/>
   <arg name="world" default="$(find rasberry_gazebo)/worlds/$(arg world_name).world" if="$(arg simple_sim)"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
@@ -105,5 +105,6 @@
 
   <!-- Spawn calibration pod -->
   <include file="$(find rasberry_gazebo)/launch/calibration_pod.launch" if="$(arg include_calibration_pod)"/>
+
 
 </launch>

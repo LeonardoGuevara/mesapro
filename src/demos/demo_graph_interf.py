@@ -80,6 +80,10 @@ def camera_callback(ros_image):
     #new_data[0]=1
     center_coordinates = (int(human.centroid_x), int(human.centroid_y)) 
     color_image = cv2.circle(human.image, center_coordinates, 5, (255, 0, 0), 20)
+    #font = cv2.FONT_HERSHEY_SIMPLEX
+    #color_image = cv2.putText(color_image,"Human", center_coordinates , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    #cv2.imshow("Human tracking",color_image)
+    #color_image = np.zeros((560,830,3), np.uint8) 
     demo_outputs(color_image)
     
 
@@ -125,32 +129,35 @@ def demo_outputs(color_image):
         #print(hri.critical_index)
         #color_image = np.zeros((460,880,3), np.uint8) 
         font = cv2.FONT_HERSHEY_SIMPLEX
+        
+        #Print HUMAN ACTION
+        color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 40) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 70) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"orientation:  "+orientation_labels[int(human.orientation)],(50, 100) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 130) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"posture:     "+posture_labels[int(human.posture)],(50, 160) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        
         #Print HUMAN PERCEPTION INFO
-        color_image = cv2.putText(color_image,"HUMAN_PERCEPTION",(500, 50) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,posture_labels[int(human.posture)],(500, 80) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,orientation_labels[int(human.orientation)],(500, 110) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,motion_labels[int(human.motion)],(500, 140) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"sensor: "+sensor,(500, 170) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
         if sensor=="camera":
-            color_image = cv2.putText(color_image,"distance: "+str(round(human.distance,2)),(500, 200) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 190) , font, 0.7,(0, 0, 255), 2, cv2.LINE_AA)
         if sensor=="camera+lidar":
-            color_image = cv2.putText(color_image,"distance: "+str(round(human.distance,2)),(500, 200) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"x: "+str(round(human.position_x,2)),(500, 230), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"y: "+str(round(human.position_y,2)),(500, 260) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 190) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 220), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 250) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         #Print SAFETY SYMTEM INFO    
-        color_image = cv2.putText(color_image,"SAFETY_SYSTEM",(50, 250) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"status: "+hri_status_label[int(hri.status)],(50, 280) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"audio: "+audio_message_label[int(hri.audio_message)],(50, 310) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"human command: "+human_command_label[int(hri.human_command)],(50, 340) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 280) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"hri status:           "+hri_status_label[int(hri.status)],(50, 310) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"audio message:     "+audio_message_label[int(hri.audio_message)],(50, 340) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"human command:   "+human_command_label[int(hri.human_command)],(50, 370) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"safety action:        "+safety_action_label[int(hri.safety_action)],(50, 400) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         
         
         #Print ROBOT OPERATION INFO
-        color_image = cv2.putText(color_image,"ROBOT_OPERATION",(50, 370) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"operation: "+operation_label[int(robot.operation)],(50, 400) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"safety action: "+safety_action_label[int(hri.safety_action)],(50, 430) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"***ROBOT OPERATION***",(50, 430) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"operation:   "+operation_label[int(robot.operation)],(50, 460) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         
         
-        cv2.imshow("Human tracking",color_image)
+        cv2.imshow("System outputs",color_image)
         cv2.waitKey(5)
         if new_data[0]==1:
             new_data[0]=0
@@ -182,7 +189,7 @@ if __name__ == '__main__':
         main_counter=main_counter+1
         #if new_data!=[0,0]:
         if demo==2:  
-            color_image = np.zeros((460,880,3), np.uint8) 
+            color_image = np.zeros((500,650,3), np.uint8) 
             demo_outputs(color_image)
         print(main_counter)    
         print("Distance",round(human.distance,2))

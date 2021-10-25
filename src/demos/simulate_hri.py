@@ -3,6 +3,7 @@
 #required packages
 import rospy #tf
 import geometry_msgs.msg, nav_msgs.msg
+from sensor_msgs.msg import Joy
 import message_filters #to sync the messages
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
@@ -34,13 +35,16 @@ pub_thorvald=rospy.Publisher('/turtle1/cmd_vel',geometry_msgs.msg.Twist, queue_s
 msg_control= geometry_msgs.msg.Twist()
 pub_hz=0.01 #publising rate in seconds
 #For Motion inference and matching
-speed_threshold=[0.1,1]  # [static, slow motion] m/s
+speed_threshold=[0.2,0.4]  # [static, slow motion] m/s
 areas_angle=[150,100,80,30,0] #in degrees
-#For robot simulation
+n_samples=10 #number of samples used for the motion inference
+#For human/robot simulation
 robot_speed=[0.5,0.1,0] #[normal speed, reduced speed, stop]
+picker_speed=[1, 0.5] #average picker speed [angular,linear]
 #General purposes variables
 main_counter=0
 new_data=[0,0,0,0] #flag to know if the safety_msg and gazebo_info has been received
+simulation=0 #flag to control the simulation with a button
 demo=2 #which demo is been simulated?
 #########################################################################################################################
 
@@ -64,6 +68,8 @@ class human_class:
         self.centroid=np.zeros([2,2])
         self.area=np.zeros([2,1])
         self.speed=np.zeros([2,1]) 
+        self.speed_buffer=np.zeros([2,n_samples]) #buffer with the human speed recorded during n_points
+        self.counter_motion=np.zeros([2,1]) # vector with the number of samples that have been recorded for motion inference
         self.time=np.zeros([2,1])# time of data recorded for each human
         
         self.p0_input=np.zeros([2,1])
@@ -113,27 +119,37 @@ def actor00_callback(p1):
         distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
         #to include the thorlvard dimensions
         distance_new=distance_new-1
-        if distance_new<0:
-            distance_new=0
-        human.speed[0,0]= (distance_new-human.distance[0,0])/(time_new-human.time[0])
+        #if distance_new<0:
+        #    distance_new=0
+        human.speed[0,0]= (distance_new-human.distance[0,0])/(time_new-human.time[0])+robot.input[1]
+        k=0
+        if human.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
+            human.speed_buffer[k,int(human.counter_motion[k])]=human.speed[k,:]
+            human.counter_motion[k]=human.counter_motion[k]+1
+        else: #to removed old data and replace for newer data
+            human.speed_buffer[k,0:n_samples-1]=human.speed_buffer[k,1:n_samples]
+            human.speed_buffer[k,n_samples-1]=human.speed[k,:]
         human.distance[0,0]=distance_new
         human.time[0]=time_new
         ii=0
-        speed_mean=human.speed[ii,0]
-        if abs(speed_mean)>=0 and abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
-            human.motion[ii]=1
-        elif abs(speed_mean)>=speed_threshold[0] and abs(speed_mean)<speed_threshold[1]: #if human is moving slowly
-            if speed_mean<0:
-                human.motion[ii]=2
-            else:
-                human.motion[ii]=4
-        else: #if human is moving fast
-            if speed_mean<0:
-                human.motion[ii]=3
-            else:
-                human.motion[ii]=5
+        if human.counter_motion[ii]>=n_samples:
+            speed_mean=np.mean(human.speed_buffer[ii,:])
+            if abs(speed_mean)>=0 and abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
+                human.motion[ii]=1
+            elif abs(speed_mean)>=speed_threshold[0] and abs(speed_mean)<speed_threshold[1]: #if human is moving slowly
+                if speed_mean<0:
+                    human.motion[ii]=2
+                else:
+                    human.motion[ii]=4
+            else: #if human is moving fast
+                if speed_mean<0:
+                    human.motion[ii]=3
+                else:
+                    human.motion[ii]=5
+        else:
+            human.motion[ii]=0
         #Human Area (using only y-position in global frame)
-        print("AREA ERROR",abs(pose[0]-robot.position[0]))
+        #print("AREA ERROR",abs(pose[0]-robot.position[0]))
         if abs(pose[1]-robot.position[1])<=2:
             human.area[0,0]=2
         else:
@@ -150,6 +166,8 @@ def actor01_callback(p2):
         #Positions from gazebo
         pose=odometry(p2)
         #Human orientation
+        #print("pose",pose[2])
+        #print("position",robot.position[2])
         if abs(pose[2]-robot.position[2])>pi:
             human.orientation[1,0]=0 #always facing the robot
         else:
@@ -159,25 +177,35 @@ def actor01_callback(p2):
         distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
         #to include the thorlvard dimensions
         distance_new=distance_new-1
-        if distance_new<0:
-            distance_new=0
-        human.speed[1,0]= (distance_new-human.distance[1,0])/(time_new-human.time[1])
+        #if distance_new<0:
+        #   distance_new=0
+        human.speed[1,0]= (distance_new-human.distance[1,0])/(time_new-human.time[1])+robot.input[1]
+        k=1
+        if human.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
+            human.speed_buffer[k,int(human.counter_motion[k])]=human.speed[k,:]
+            human.counter_motion[k]=human.counter_motion[k]+1
+        else: #to removed old data and replace for newer data
+            human.speed_buffer[k,0:n_samples-1]=human.speed_buffer[k,1:n_samples]
+            human.speed_buffer[k,n_samples-1]=human.speed[k,:]
         human.distance[1,0]=distance_new
         human.time[1]=time_new
         ii=1
-        speed_mean=human.speed[ii,0]
-        if abs(speed_mean)>=0 and abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
-            human.motion[ii]=1
-        elif abs(speed_mean)>=speed_threshold[0] and abs(speed_mean)<speed_threshold[1]: #if human is moving slowly
-            if speed_mean<0:
-                human.motion[ii]=2
-            else:
-                human.motion[ii]=4
-        else: #if human is moving fast
-            if speed_mean<0:
-                human.motion[ii]=3
-            else:
-                human.motion[ii]=5
+        if human.counter_motion[ii]>=n_samples:
+            speed_mean=np.mean(human.speed_buffer[ii,:])
+            if abs(speed_mean)>=0 and abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
+                human.motion[ii]=1
+            elif abs(speed_mean)>=speed_threshold[0] and abs(speed_mean)<speed_threshold[1]: #if human is moving slowly
+                if speed_mean<0:
+                    human.motion[ii]=2
+                else:
+                    human.motion[ii]=4
+            else: #if human is moving fast
+                if speed_mean<0:
+                    human.motion[ii]=3
+                else:
+                    human.motion[ii]=5
+        else:
+            human.motion[ii]=0
         #Human Area (using only y-position in global frame)
         if abs(pose[1]-robot.position[1])<=1:
             human.area[1,0]=2
@@ -207,7 +235,61 @@ def odometry(odom):
     theta=np.unwrap([theta])[0]
     pose= np.array([pos.position.x, pos.position.y, theta])
     return pose
-     
+
+def joy_callback(data):
+    #print("JOY NEW DATA")
+    global simulation
+    buttons=data.buttons
+    axes=data.axes
+    if np.shape(axes)[0]!=0:
+        #Picker01
+        if axes[0]!=0:
+            human.p1_input[0]=axes[0]*picker_speed[0]
+        if axes[1]!=0:
+            human.p1_input[1]=axes[1]*picker_speed[1]
+        #Picker00
+        if axes[2]!=0:
+            human.p0_input[0]=axes[2]*picker_speed[0]
+        if axes[3]!=0:
+            human.p0_input[1]=axes[3]*picker_speed[1]
+    else: 
+        pass
+    
+    if np.shape(buttons)[0]>0:
+        if buttons[4]>0: #L1 to control picker01 gesture
+            if buttons[0]>0: #square is two arms (approach) 
+                human.posture[1,0]=1
+            if buttons[1]>0: #triangle is right hand (stop)
+                human.posture[1,0]=8
+            if buttons[2]>0: #circle is two hands (move away)
+                human.posture[1,0]=2
+        elif buttons[6]>0: #R1 to control picker00 gesture
+                if buttons[0]>0: #square is two arms (approach) 
+                    human.posture[0,0]=1
+                if buttons[1]>0: #triangle is right hand (stop)
+                    human.posture[0,0]=8
+                if buttons[2]>0: #circle is two hands (move away)
+                    human.posture[0,0]=2
+        elif buttons[3]>0: #X to control the simulation
+            if simulation==0:
+                simulation=1 #to start simulation
+            if human.posture[0,0]!=0:
+                human.posture[0,0]=0 #to reset human gesture
+            if human.posture[1,0]!=0:
+                human.posture[1,0]=0 #to reset human gesture
+            if human.p1_input[0]!=0:
+                human.p1_input[0]=0 #to reset human motion
+            if human.p1_input[1]!=0:
+                human.p1_input[1]=0 #to reset human motion
+            if human.p0_input[0]!=0:
+                human.p0_input[0]=0 #to reset human motion
+            if human.p0_input[1]!=0:
+                human.p0_input[1]=0 #to reset human motion
+            #if simulation==1:
+            #    simulation=0
+            #print("simulation",simulation)
+    else:
+        pass  
 
 ###############################################################################################
 # Main Script
@@ -279,6 +361,7 @@ if __name__ == '__main__':
         rospy.Subscriber('actor00/odom',nav_msgs.msg.Odometry,actor00_callback)  
         rospy.Subscriber('actor01/odom',nav_msgs.msg.Odometry,actor01_callback)   
         rospy.Subscriber('odometry/gazebo',nav_msgs.msg.Odometry,robot_callback)  
+        rospy.Subscriber('joy',Joy,joy_callback)  
         #picker00_sub = message_filters.Subscriber('actor00/odom',nav_msgs.msg.Odometry)
         #picker01_sub = message_filters.Subscriber('actor01/odom',nav_msgs.msg.Odometry)
         #robot_sub = message_filters.Subscriber('odometry/gazebo',nav_msgs.msg.Odometry)
@@ -287,88 +370,96 @@ if __name__ == '__main__':
         #Rate setup
         rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
         while not rospy.is_shutdown():	      
-            main_counter=main_counter+1   
+            main_counter=main_counter+1  
+            #print("simulation",simulation)
+            if simulation==1:
+                ############################################################################################
+                if new_data[0]==1 or new_data[1]==1 or new_data[2]==1 or new_data[3]==1:
+                    if robot.operation==1: #if robot is moving to picker location 
+                        #print("ROBOT OPERATION 1")
+                        robot.input[1]=robot_speed[0] #normal speed
+                        if hri.status==2: #if distance <=3.6m
+                           #print("DISTANCE <3.6m")
+                            robot.operation=2 #wait for command to approach
+                            robot.input[1]=robot_speed[2] #stop
+                        if hri.human_command==1: #if human command is "approach"
+                            robot.operation=3 
+                            robot.input[1]=robot_speed[1] #reduced speed
+                        if hri.human_command==2: #if human command is "move_away"
+                            robot.operation=5
+                            robot.input[1]=-robot_speed[0] #normal speed, reverse
+                        if hri.human_command==3: #if human command is "stop"
+                            robot.operation=2 #wait for command to approach
+                            robot.input[1]=robot_speed[2] #stop
+                    
+                    elif robot.operation==2: #if robot is waiting for a human command to approach
+                        robot.input[1]=robot_speed[2] #stop
+                        if hri.human_command==1: #if human command is "approach"
+                            robot.operation=3 
+                            robot.input[1]=robot_speed[1] #reduced speed
+                        if hri.human_command==2: #if human command is "move_away"
+                            robot.operation=5
+                            robot.input[1]=-robot_speed[0] #normal speed, reverse
+                    elif robot.operation==3: #if robot is approaching to picker (already identified)
+                        robot.input[1]=robot_speed[1] #reduced speed
+                        if hri.status==3: #if distance <=1.2m
+                            robot.operation=4 #wait for command to move away
+                            robot.input[1]=robot_speed[2] #stop
+                        if hri.human_command==2: #if human command is "move_away"
+                            robot.operation=5
+                            robot.input[1]=-robot_speed[0] #normal speed, reverse
+                        if hri.human_command==3: #if human command is "stop"
+                            robot.operation=4 #wait for command to move away
+                            robot.input[1]=robot_speed[2] #stop
+                    elif robot.operation==4: #if robot is waiting for a human command to move away
+                        robot.input[1]=robot_speed[2] #stop
+                        if hri.human_command==1: #if human command is "approach"
+                            robot.operation=3 
+                            robot.input[1]=robot_speed[1] #reduced speed
+                        if hri.human_command==2: #if human command is "move_away"
+                            robot.operation=5
+                            robot.input[1]=-robot_speed[0] #normal speed, reverse
+                    elif robot.operation==5: #if robot is moving away from the picker (it can be after collecting tray or because of human command)
+                        robot.input[1]=-robot_speed[0] #normal speed, reverse
+                        if hri.human_command==1: #if human command is "approach"
+                            robot.operation=3 
+                            robot.input[1]=robot_speed[1] #reduced speed
+                        if hri.human_command==3: #if human command is "stop"
+                            robot.operation=2 #wait for command to approach
+                            robot.input[1]=robot_speed[2] #stop
+                    else: #uv-c treatment
+                        robot.operation=0
+                        robot.input[1]=robot_speed[0] #normal speed
+                    
+                    #To recalculate reduced_speed according to the distance between robot and human
+                    if robot.input[1]==robot_speed[1] or hri.safety_action==1:
+                        dist=human.distance[hri.critical_index,0]
+                        robot.input[1]=0.192*dist-0.192 #0m/s at 1m and 0.5m/s at 3.6m    
+                        if robot.input[1]<0:
+                            robot.input[1]=robot_speed[2] #stop
+                        if robot.input[1]>=robot_speed[0]:
+                            robot.input[1]==robot_speed[0] #normal speed
+                    
+                    #To make the robot stop when a safety_stop is required or when the robot is waiting for a human command
+                    if hri.safety_action>=2:
+                        robot.input[1]=robot_speed[2] #stop
+                    
+                    if new_data[0]==1:    
+                        new_data[0]=0
+                    if new_data[1]==1:
+                        new_data[1]=0
+                    if new_data[2]==1:
+                        new_data[2]=0
+                    if new_data[3]==1:
+                        new_data[3]=0
             ############################################################################################
-            if new_data[0]==1 or new_data[1]==1 or new_data[2]==1 or new_data[3]==1:
-                if robot.operation==1: #if robot is moving to picker location 
-                    print("ROBOT OPERATION 1")
-                    robot.input[1]=robot_speed[0] #normal speed
-                    if hri.status==2: #if distance <=3.6m
-                        print("DISTANCE <3.6m")
-                        robot.operation=2 #wait for command to approach
-                        robot.input[1]=robot_speed[2] #stop
-                    if hri.human_command==1: #if human command is "approach"
-                        robot.operation=3 
-                        robot.input[1]=robot_speed[1] #reduced speed
-                    if hri.human_command==2: #if human command is "move_away"
-                        robot.operation=5
-                        robot.input[1]=-robot_speed[0] #normal speed, reverse
-                    if hri.human_command==3: #if human command is "stop"
-                        robot.operation=2 #wait for command to approach
-                        robot.input[1]=robot_speed[2] #stop
-                
-                elif robot.operation==2: #if robot is waiting for a human command to approach
-                    robot.input[1]=robot_speed[2] #stop
-                    if hri.human_command==1: #if human command is "approach"
-                        robot.operation=3 
-                        robot.input[1]=robot_speed[1] #reduced speed
-                    if hri.human_command==2: #if human command is "move_away"
-                        robot.operation=5
-                        robot.input[1]=-robot_speed[0] #normal speed, reverse
-                elif robot.operation==3: #if robot is approaching to picker (already identified)
-                    robot.input[1]=robot_speed[1] #reduced speed
-                    if hri.status==3: #if distance <=1.2m
-                        robot.operation=4 #wait for command to move away
-                        robot.input[1]=robot_speed[2] #stop
-                    if hri.human_command==2: #if human command is "move_away"
-                        robot.operation=5
-                        robot.input[1]=-robot_speed[0] #normal speed, reverse
-                    if hri.human_command==3: #if human command is "stop"
-                        robot.operation=4 #wait for command to move away
-                        robot.input[1]=robot_speed[2] #stop
-                elif robot.operation==4: #if robot is waiting for a human command to move away
-                    robot.input[1]=robot_speed[2] #stop
-                    if hri.human_command==2: #if human command is "move_away"
-                        robot.operation=5
-                        robot.input[1]=-robot_speed[0] #normal speed, reverse
-                elif robot.operation==5: #if robot is moving away from the picker (it can be after collecting tray or because of human command)
-                    robot.input[1]=-robot_speed[0] #normal speed, reverse
-                    if hri.human_command==1: #if human command is "approach"
-                        robot.operation=3 
-                        robot.input[1]=robot_speed[1] #reduced speed
-                    if hri.human_command==3: #if human command is "stop"
-                        robot.operation=2 #wait for command to approach
-                        robot.input[1]=robot_speed[2] #stop
-                else: #uv-c treatment
-                    robot.operation=0
-                    robot.input[1]=robot_speed[0] #normal speed
-                
-                #To recalculate reduced_speed according to the distance between robot and human
-                if robot.input[1]==robot_speed[1] or hri.safety_action==1:
-                    dist=human.distance[hri.critical_index,0]
-                    robot.input[1]=0.208*dist-0.25    
-                    if robot.input[1]<0:
-                        robot.input[1]=robot_speed[2] #stop
-                
-                #To make the robot stop when a safety_stop is required or when the robot is waiting for a human command
-                if hri.safety_action>=2:
-                    robot.input[1]=robot_speed[2] #stop
-                
-                if new_data[0]==1:    
-                    new_data[0]=0
-                if new_data[1]==1:
-                    new_data[1]=0
-                if new_data[2]==1:
-                    new_data[2]=0
-                if new_data[3]==1:
-                    new_data[3]=0
-        ############################################################################################
             #print("human_position",human.position)
             #print("human_position",list(human.position))
             print("human_distance",list(human.distance))
+            print("human_posture",list(human.posture))
             #print("human_orientation",list(human.orientation))
-            print("human_area",list(human.area))
-            print("critical_index",hri.critical_index)
+            #print("human_area",list(human.area))
+            #print("critical_index",hri.critical_index)
             #print("robot_position",robot.position)
             print("robot_operation",robot.operation)
             #Publish Robot new operation
@@ -402,3 +493,18 @@ if __name__ == '__main__':
             msg_control.angular.z = robot.input[0][0]
             pub_thorvald.publish(msg_control)
             rate.sleep() #to keep fixed the publishing loop rate
+            #Reset joystick actions
+            '''
+            if human.p0_input[1]!=0:
+                human.p0_input[1]=0
+            if human.p0_input[0]!=0:
+                human.p0_input[0]=0
+            if human.p1_input[1]!=0:
+                human.p1_input[1]=0
+            if human.p1_input[0]!=0:
+                human.p1_input[0]=0
+            if human.posture[1,0]!=0:
+                human.posture[1,0]=0#no gesture
+            if human.posture[0,0]!=0: #no gesture
+                human.posture[0,0]=0
+            '''
