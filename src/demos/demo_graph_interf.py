@@ -3,6 +3,7 @@
 #required packages
 import rospy #tf
 import message_filters #to sync the messages
+import geometry_msgs.msg
 #from sklearn.ensemble import RandomForestClassifier
 from sensor_msgs.msg import Image
 from math import * #to avoid prefix math.
@@ -37,7 +38,10 @@ operation_label=r_param[0][1]
 new_data=[0,0,0] #data from [human_info, safety_info,robot_info]
 main_counter=0
 pub_hz=0.01
-demo=2
+demo=1
+if demo==1:
+    new_data[1]=1
+    new_data[2]=1
 #########################################################################################################################
 
 class human_class:
@@ -67,7 +71,7 @@ class robot_class:
         #declaration and initial values of important variables
         self.position=np.zeros([3,1]) #[x,y,theta]
         self.operation=2 #["UV-C_treatment","moving_to_picker_location", "wait_for_command_to_approach", "approaching_to_picker","wait_for_command_to_move_away", "moving_away_from_picker"] 
-
+        self.speed=0
         
 def camera_callback(ros_image):
     #print("DATA FROM CAMERA")
@@ -88,6 +92,7 @@ def camera_callback(ros_image):
     
 
 def human_callback(human_info):
+    #print("NEW HUMAN DATA")
     if len(human_info.sensor)!=0 and new_data[0]==0 and new_data[1]==1:# and new_data[0]==1: #only if there is a new human_info data
         human.posture=human_info.posture[hri.critical_index]
         human.motion=human_info.motion[hri.critical_index]   
@@ -97,6 +102,7 @@ def human_callback(human_info):
         human.centroid_y=human_info.centroid_y[hri.critical_index]
         human.distance=human_info.distance[hri.critical_index]
         human.sensor=human_info.sensor[hri.critical_index]
+        human.orientation=human_info.orientation[hri.critical_index]
         new_data[0]=1#        
             
 def safety_callback(safety_info):
@@ -115,8 +121,14 @@ def robot_callback(robot_info):
         robot.position=np.array([robot_info.position_x,robot_info.position_y,robot_info.orientation])
         robot.operation=robot_info.operation
         new_data[2]=1
+
+def gazebo_callback(gazebo_info):
+    robot.speed=gazebo_info.linear.x
+    #print("SPEED")
+    #print(robot.speed)
         
 def demo_outputs(color_image):
+    
     #new_data[0]=1
     if new_data[0]==1 or new_data[1]==1 or new_data[2]==1: #only if there is a new human_info data or robot_data or hri_data
         if human.sensor==0:
@@ -130,40 +142,42 @@ def demo_outputs(color_image):
         #color_image = np.zeros((460,880,3), np.uint8) 
         font = cv2.FONT_HERSHEY_SIMPLEX
         
-        #Print HUMAN ACTION
-        color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 40) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 70) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"orientation:  "+orientation_labels[int(human.orientation)],(50, 100) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 130) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"posture:     "+posture_labels[int(human.posture)],(50, 160) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        
         #Print HUMAN PERCEPTION INFO
+        color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"orientation:  "+orientation_labels[int(human.orientation)],(50, 90) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 120) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"posture:     "+posture_labels[int(human.posture)],(50, 150) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        
+
         if sensor=="camera":
-            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 190) , font, 0.7,(0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 180) , font, 0.7,(0, 0, 255), 2, cv2.LINE_AA)
         if sensor=="camera+lidar":
-            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 190) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 220), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 250) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        #Print SAFETY SYMTEM INFO    
-        color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 280) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"hri status:           "+hri_status_label[int(hri.status)],(50, 310) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"audio message:     "+audio_message_label[int(hri.audio_message)],(50, 340) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"human command:   "+human_command_label[int(hri.human_command)],(50, 370) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"safety action:        "+safety_action_label[int(hri.safety_action)],(50, 400) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        
-        
-        #Print ROBOT OPERATION INFO
-        color_image = cv2.putText(color_image,"***ROBOT OPERATION***",(50, 430) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"operation:   "+operation_label[int(robot.operation)],(50, 460) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        
+            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 180) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 210), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 240) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        if demo==2:
+            #Print SAFETY SYMTEM INFO    
+            color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 270) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"hri status:           "+hri_status_label[int(hri.status)],(50, 300) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"audio message:     "+audio_message_label[int(hri.audio_message)],(50, 330) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"human command:   "+human_command_label[int(hri.human_command)],(50, 360) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"safety action:        "+safety_action_label[int(hri.safety_action)],(50, 390) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            
+            
+            #Print ROBOT OPERATION INFO
+            color_image = cv2.putText(color_image,"***ROBOT OPERATION***",(50, 420) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"operation:   "+operation_label[int(robot.operation)],(50, 450) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"speed:      "+str(round(robot.speed,2))+"m/s",(50, 480) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            
         
         cv2.imshow("System outputs",color_image)
         cv2.waitKey(5)
         if new_data[0]==1:
             new_data[0]=0
-        if new_data[1]==1:
+        if new_data[1]==1 and demo==2:
             new_data[1]=0
-        if new_data[2]==1:
+        if new_data[2]==1 and demo==2:
             new_data[2]=0
 ###############################################################################################
 # Main Script
@@ -173,7 +187,7 @@ if __name__ == '__main__':
     human=human_class()  
     hri=hri_class()
     robot=robot_class()
-    rospy.init_node('human_perception_system',anonymous=True)
+    rospy.init_node('demo_visualization',anonymous=True)
     # Setup and call subscription
     #image_sub = message_filters.Subscriber('camera/camera1/color/image_raw', Image)
     #depth_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
@@ -183,6 +197,8 @@ if __name__ == '__main__':
     rospy.Subscriber('human_info',human_msg,human_callback)
     rospy.Subscriber('human_safety_info',hri_msg,safety_callback)
     rospy.Subscriber('robot_info',robot_msg,robot_callback)
+    if demo==2:
+        rospy.Subscriber('turtle1/cmd_vel',geometry_msgs.msg.Twist,gazebo_callback)
     #Rate setup
     rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	

@@ -40,7 +40,7 @@ areas_angle=[150,100,80,30,0] #in degrees
 n_samples=10 #number of samples used for the motion inference
 #For human/robot simulation
 robot_speed=[0.5,0.1,0] #[normal speed, reduced speed, stop]
-picker_speed=[1, 0.5] #average picker speed [angular,linear]
+picker_speed=[3, 0.5] #average picker speed [angular,linear]
 #General purposes variables
 main_counter=0
 new_data=[0,0,0,0] #flag to know if the safety_msg and gazebo_info has been received
@@ -110,10 +110,10 @@ def actor00_callback(p1):
         #Positions from gazebo
         pose=odometry(p1)
         #Human orientation
-        if abs(pose[2]-robot.position[2])>pi:
-            human.orientation[0,0]=0 #always facing the robot
-        else:
-            human.orientation[0,0]=1 #always giving the back the robot
+        #if abs(pose[2]-robot.position[2])>pi:
+        #    human.orientation[0,0]=0 #always facing the robot
+        #else:
+        #    human.orientation[0,0]=1 #always giving the back the robot
         #Human Motion and distance
         time_new=time.time()-time_init
         distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
@@ -168,10 +168,10 @@ def actor01_callback(p2):
         #Human orientation
         #print("pose",pose[2])
         #print("position",robot.position[2])
-        if abs(pose[2]-robot.position[2])>pi:
-            human.orientation[1,0]=0 #always facing the robot
-        else:
-            human.orientation[1,0]=1 #always giving the back the robot
+        #if abs(pose[2]-robot.position[2])>pi:
+        #    human.orientation[1,0]=0 #always facing the robot
+        #else:
+        #    human.orientation[1,0]=1 #always giving the back the robot
         #Human Motion and distance
         time_new=time.time()-time_init
         distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
@@ -285,6 +285,14 @@ def joy_callback(data):
                 human.p0_input[0]=0 #to reset human motion
             if human.p0_input[1]!=0:
                 human.p0_input[1]=0 #to reset human motion
+        if buttons[9]>0: #option to change the human orientation to back
+            print("OPTIONS")
+            human.orientation[1]=1
+            human.orientation[0]=1
+        if buttons[8]>0: #option to change the human orientation to front
+            print("START")
+            human.orientation[1]=0
+            human.orientation[0]=0
             #if simulation==1:
             #    simulation=0
             #print("simulation",simulation)
@@ -371,7 +379,7 @@ if __name__ == '__main__':
         rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
         while not rospy.is_shutdown():	      
             main_counter=main_counter+1  
-            #print("simulation",simulation)
+            print("main_counter",main_counter)
             if simulation==1:
                 ############################################################################################
                 if new_data[0]==1 or new_data[1]==1 or new_data[2]==1 or new_data[3]==1:
@@ -434,11 +442,13 @@ if __name__ == '__main__':
                     #To recalculate reduced_speed according to the distance between robot and human
                     if robot.input[1]==robot_speed[1] or hri.safety_action==1:
                         dist=human.distance[hri.critical_index,0]
-                        robot.input[1]=0.192*dist-0.192 #0m/s at 1m and 0.5m/s at 3.6m    
-                        if robot.input[1]<0:
-                            robot.input[1]=robot_speed[2] #stop
+                        robot.input[1]=0.138*dist #0m/s at 0m and 0.5m/s at 3.6m    
+                        #if robot.input[1]<0:
+                        #    robot.input[1]=robot_speed[2] #stop
                         if robot.input[1]>=robot_speed[0]:
-                            robot.input[1]==robot_speed[0] #normal speed
+                            robot.input[1]=robot_speed[0] #normal speed limitation
+                        if robot.input[1]<=-robot_speed[0]:
+                            robot.input[1]=-robot_speed[0] #normal speed limitation
                     
                     #To make the robot stop when a safety_stop is required or when the robot is waiting for a human command
                     if hri.safety_action>=2:
@@ -455,13 +465,13 @@ if __name__ == '__main__':
             ############################################################################################
             #print("human_position",human.position)
             #print("human_position",list(human.position))
-            print("human_distance",list(human.distance))
-            print("human_posture",list(human.posture))
-            #print("human_orientation",list(human.orientation))
+            #print("human_distance",list(human.distance))
+            #print("human_posture",list(human.posture))
+            print("human_orientation",list(human.orientation))
             #print("human_area",list(human.area))
             #print("critical_index",hri.critical_index)
             #print("robot_position",robot.position)
-            print("robot_operation",robot.operation)
+            #print("robot_operation",robot.operation)
             #Publish Robot new operation
             rob_msg.operation=robot.operation
             pub_robot.publish(rob_msg)        

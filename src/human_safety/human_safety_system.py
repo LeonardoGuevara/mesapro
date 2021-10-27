@@ -305,7 +305,7 @@ if __name__ == '__main__':
                             #        hri.safety_action=0 #normal operation             
                             #        hri.audio_message=6 #alert of presence
                             #In case the human is not static, or is not facing the robot
-                            if (robot.operation!=5) and (human.motion[hri.critical_index]!=1 or human.orientation==1): 
+                            if (robot.operation!=5) and (human.motion[hri.critical_index]!=1 or human.orientation[hri.critical_index]==1): 
                                 print("HUMANO MOVIENDOsE")
                                 hri.human_command=3 #make the robot stop 
                                 hri.safety_action=3 #waiting new command          

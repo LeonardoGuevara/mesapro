@@ -138,7 +138,7 @@ def lidar_callback(legs):
             time_data[0]=time.time()-time_init # update time when the last data was received
         
 def camera_callback(ros_image, ros_depth):
-    #print("DATA FROM CAMERA")
+    print("DATA FROM CAMERA")
     global image_width
     if new_data[1]==0: #to read a new data only if the previous data was already used
         try:
@@ -880,8 +880,8 @@ if __name__ == '__main__':
         #human.critical_index=critical_human_selection()
         #print("sensor",list(human.sensor[:,0]))
         
-        #print("distance_tracked",list(human.distance_track[:,0]))
-        print("position_x_tracked",list(human.position_track[:,0]))
+        print("distance_tracked",list(human.distance_track[:,0]))
+        #print("position_x_tracked",list(human.position_track[:,0]))
         #print("position_y_tracked",list(human.position_track[:,1]))
         print("area",list(human.area))
         print("sensor",list(human.sensor[:,0]))
@@ -889,10 +889,10 @@ if __name__ == '__main__':
         print("counter_old",list(human.counter_old))
         #print("counter_no_data",list(human.counter_no_data))
         #time_not_data=((time.time()-time_init)*np.ones(len(human.time_track[:,0]),2))-human.time_track
-        #print("time_traked",list(human.time_track))
-        print("speed_track",list(human.speed_track))
+        print("time_traked",list(human.time_track))
+        #print("speed_track",list(human.speed_track))
         #print("counter_motion",list(human.counter_motion[:,0]))
-        print("motion",list(human.motion_track))
+        #print("motion",list(human.motion_track))
         #print("critical_index",human.critical_index)
         #print("motion_buffer",list(human.distance_buffer[human.critical_index,:]))
         #print(human.distance_buffer)
