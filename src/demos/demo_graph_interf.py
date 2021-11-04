@@ -38,7 +38,7 @@ operation_label=r_param[0][1]
 new_data=[0,0,0] #data from [human_info, safety_info,robot_info]
 main_counter=0
 pub_hz=0.01
-demo=1
+demo=1 #demo 1: perception, demo 2: human in gazebo, demo 3: topological navigation
 if demo==1:
     new_data[1]=1
     new_data[2]=1
@@ -156,7 +156,7 @@ def demo_outputs(color_image):
             color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 180) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 210), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 240) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        if demo==2:
+        if demo>=2:
             #Print SAFETY SYMTEM INFO    
             color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 270) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"hri status:           "+hri_status_label[int(hri.status)],(50, 300) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)

@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="site_name" default="riseholme" />
+  <arg name="task" default="transportation" />
+  
+  <arg name="detector_config_common" default="$(find rasberry_navigation)/config/row_detector/row_detector_common_cfg_$(arg site_name)_$(arg task).yaml" />
+  <arg name="detector_config_ellipse" default="$(find rasberry_navigation)/config/row_detector/row_detector_ellipse_cfg_$(arg site_name)_$(arg task).yaml" />
+  <arg name="pole_positions" default="" />
+
+  <arg name="traversal_config" default="$(find rasberry_navigation)/config/row_traversal/row_traversal_cfg_$(arg site_name)_$(arg task).yaml"/>
+
+  <include file="$(find polytunnel_navigation_actions)/launch/row_detector.launch">
+    <arg name="config_common" value="$(arg detector_config_common)" />
+    <arg name="config_ellipse" value="$(arg detector_config_ellipse)" />
+    <arg name="pole_positions" value="$(arg pole_positions)" />
+  </include>
+
+  <node pkg="mesapro" type="in_row_trav.py" name="row_traversal" output="screen">
+    <rosparam file="$(arg traversal_config)" command="load"/>
+    <param name="pole_positions_path" value="$(arg pole_positions)"/>
+  </node>
+
+  <node pkg="polytunnel_navigation_actions" type="row_detector_vis.py" name="row_detector_vis" output="screen" />
+
+</launch>

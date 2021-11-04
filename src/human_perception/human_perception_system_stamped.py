@@ -2,7 +2,7 @@
 
 #required packages
 import rospy #tf
-from geometry_msgs.msg import PoseArray
+from geometry_msgs.msg import PoseArray, PoseStamped
 import message_filters #to sync the messages
 #from sklearn.ensemble import RandomForestClassifier
 from sensor_msgs.msg import Image
@@ -61,7 +61,7 @@ areas_percent=[0,0.2,0.4,0.6,0.8] #in pixels
 areas_angle=[150,100,80,30,0] #in degrees
 meter_threshold=1 #meters
 pixel_threshold=100 #pixels
-tracking_threshold=3
+tracking_threshold=3 
 #Parameters for Motion inference
 n_samples=10 #number of samples used for the motion inference
 speed_threshold=[0.1,1]  # [static, slow motion] m/s
@@ -116,12 +116,13 @@ class human_class:
 def lidar_callback(legs):
     #print("DATA FROM LIDAR")
     if new_data[0]==0: #to read a new data only if the previous data was already used
-        if legs.poses is None: #if there is no human legs detected
+        if legs.pose is None: #if there is no human legs detected
             print('No human detected from lidar')
             #human.counter_old=human.counter_old+1
         else:
             k=0
-            for pose in legs.poses:
+            '''
+            for pose in legs.pose:
                 if k<len(human.position):
                     ##########################################################################################################
                     #THIS DISTANCE NEEDS TO BE CALIBRATED ACCORDING TO THE LIDAR LOCATION RESPECT TO THE FRONT CAMERA POSITION (The camera location is the reference origin)
@@ -134,6 +135,12 @@ def lidar_callback(legs):
                 k=k+1
             if k<len(human.position): #if there are less human detected than before
                 human.position=human.position[0:k,:]    
+            '''
+            ##########################################################################################################
+            #THIS DISTANCE NEEDS TO BE CALIBRATED ACCORDING TO THE LIDAR LOCATION RESPECT TO THE FRONT CAMERA POSITION (The camera location is the reference origin)
+            human.position[0,0] = legs.pose.position.x -0.45 # +6
+            human.position[0,1] = legs.pose.position.y -0.55 #+10
+            ############################################################################################################
             new_data[0]=1 # update flag for new data
             time_data[0]=time.time()-time_init # update time when the last data was received
         
@@ -338,7 +345,7 @@ def human_tracking():
     
     #####New LiDAR info#####################################################################################        
     if new_data[0]==1:
-        print("NEW DATA LIDAR")
+        #print("NEW DATA LIDAR")
         error_threshold=meter_threshold #meters
         diff=np.zeros([n_human,len(position_new[:,0])]) #vector with the error between distances
         area_new=np.zeros([len(position_new[:,0]),1]) #vector with the area of the image where the new human is detected
@@ -493,7 +500,7 @@ def human_tracking():
     #print("SEGUNDO",counter_reference)   
     #####New camera info###########################################################################################################
     if new_data[1]==1: 
-        print("NEW DATA CAMERA")
+        #print("NEW DATA CAMERA")
         diff=np.zeros([n_human,len(centroid_new[:,0])])
         area_new=np.zeros([len(centroid_new[:,0]),1]) #vector with the area of the image where the new human is detected
         new_human_flag=np.zeros([len(centroid_new[:,0]),1]) #assuming all are new humans
@@ -862,7 +869,7 @@ if __name__ == '__main__':
     depth_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
     ts = message_filters.ApproximateTimeSynchronizer([image_sub, depth_sub], 1, 0.01)
     ts.registerCallback(camera_callback)
-    rospy.Subscriber('/people_tracker/pose_array',PoseArray,lidar_callback)    
+    rospy.Subscriber('/people_tracker/pose',PoseStamped,lidar_callback)    
     #Rate setup
     rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	
@@ -880,10 +887,12 @@ if __name__ == '__main__':
         #human.critical_index=critical_human_selection()
         #print("sensor",list(human.sensor[:,0]))
         
-        print("distance_tracked",list(human.distance_track[:,0]))
+        #print("distance_tracked",list(human.distance_track[:,0]))
         #print("position_x_tracked",list(human.position_track[:,0]))
         #print("position_y_tracked",list(human.position_track[:,1]))
-        print("area",list(human.area))
+        #print("area",list(human.area))
+        print("distance_camera",human.distance[0,:])
+        print("distance_lidar",sqrt(human.position[0,0]**2+human.position[0,1]**2))
         print("sensor",list(human.sensor[:,0]))
         #print("counter",list(human.counter))
         print("counter_old",list(human.counter_old))

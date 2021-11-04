@@ -72,6 +72,7 @@ class hri_class:
         #self.goal_index=0 #index of the human whom location is considered as goal
 
 def human_callback(human_info):
+    #print("NEW HUMAN DATA")
     if len(human_info.sensor)!=0 and new_data[0]==0: #only if there is a new human_info data
         human.posture=human_info.posture
         human.posture_prob=human_info.posture_prob
@@ -87,7 +88,7 @@ def human_callback(human_info):
         human.sensor_c0=human_info.sensor_c0
         human.sensor_c1=human_info.sensor_c1       
         new_data[0]=1
-
+        
 def robot_callback(robot_info):
     if new_data[1]==0: #only if there is a new human_info data
         robot.position=np.array([robot_info.position_x,robot_info.position_y,robot_info.orientation])
@@ -122,7 +123,7 @@ def critical_human_selection():
                 if distance[k]<=closest_distance:
                     closest_index=k
                     closest_distance=distance[k]
-    #print("closest_distance", closest_distance)
+    print("closest_distance", closest_distance)
     critical_index=closest_index
     if operation>=1: #if robot operation is logistics
         if area[closest_index]==2: #if the closest human is in front of the robot (i.e. same row)
