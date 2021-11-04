@@ -33,7 +33,6 @@ picker_speed=[3, 0.5] #average picker speed [angular,linear]
 main_counter=0
 new_data=[0,0,0,0] #flag to know if the safety_msg and gazebo_info has been received
 simulation=0 #flag to control the simulation with a button
-demo=2 #demo 2: human in gazebo, demo 3: topological navigation
 #########################################################################################################################
 
 class human_class:
@@ -274,11 +273,11 @@ def joy_callback(data):
             if human.p0_input[1]!=0:
                 human.p0_input[1]=0 #to reset human motion
         if buttons[9]>0: #option to change the human orientation to back
-            print("OPTIONS")
+            #print("OPTIONS")
             human.orientation[1]=1
             human.orientation[0]=1
         if buttons[8]>0: #option to change the human orientation to front
-            print("START")
+            #print("START")
             human.orientation[1]=0
             human.orientation[0]=0
             #if simulation==1:
@@ -294,152 +293,151 @@ def joy_callback(data):
 if __name__ == '__main__':
     time_init=time.time()       
     # Initialize our node       
-    if demo==2:
-        human=human_class()
-        hri=hri_class()  
-        robot=robot_class()
-        #Setup ROS publiser
-        pub_robot = rospy.Publisher('robot_info', robot_msg)
-        rob_msg = robot_msg()
-        pub_human = rospy.Publisher('human_info', human_msg)
-        msg = human_msg()
-        pub_picker00=rospy.Publisher('actor00/cmd_vel',geometry_msgs.msg.Twist, queue_size=10)
-        pub_picker01=rospy.Publisher('actor01/cmd_vel',geometry_msgs.msg.Twist, queue_size=10)
-        pub_thorvald=rospy.Publisher('/turtle1/cmd_vel',geometry_msgs.msg.Twist, queue_size=10)
-        msg_control= geometry_msgs.msg.Twist()
-        pub_hz=0.01 #publising rate in seconds
-        rospy.init_node('demo_actuation',anonymous=True)
-        # Setup and call subscription
-        rospy.Subscriber('human_safety_info',hri_msg,safety_callback)  
-        rospy.Subscriber('actor00/odom',nav_msgs.msg.Odometry,actor00_callback_d2)  
-        rospy.Subscriber('actor01/odom',nav_msgs.msg.Odometry,actor01_callback_d2)   
-        rospy.Subscriber('odometry/gazebo',nav_msgs.msg.Odometry,robot_callback_d2)  
-        rospy.Subscriber('joy',Joy,joy_callback)  
-        #Rate setup
-        rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
-        while not rospy.is_shutdown():	      
-            main_counter=main_counter+1  
-            print("main_counter",main_counter)
-            if simulation==1:
-                ############################################################################################
-                if new_data[0]==1 or new_data[1]==1 or new_data[2]==1 or new_data[3]==1:
-                    if robot.operation==1: #if robot is moving to picker location 
-                        #print("ROBOT OPERATION 1")
-                        robot.input[1]=robot_speed[0] #normal speed
-                        if hri.status==2: #if distance <=3.6m
-                           #print("DISTANCE <3.6m")
-                            robot.operation=2 #wait for command to approach
-                            robot.input[1]=robot_speed[2] #stop
-                        if hri.human_command==1: #if human command is "approach"
-                            robot.operation=3 
-                            robot.input[1]=robot_speed[1] #reduced speed
-                        if hri.human_command==2: #if human command is "move_away"
-                            robot.operation=5
-                            robot.input[1]=-robot_speed[0] #normal speed, reverse
-                        if hri.human_command==3: #if human command is "stop"
-                            robot.operation=2 #wait for command to approach
-                            robot.input[1]=robot_speed[2] #stop
-                    
-                    elif robot.operation==2: #if robot is waiting for a human command to approach
-                        robot.input[1]=robot_speed[2] #stop
-                        if hri.human_command==1: #if human command is "approach"
-                            robot.operation=3 
-                            robot.input[1]=robot_speed[1] #reduced speed
-                        if hri.human_command==2: #if human command is "move_away"
-                            robot.operation=5
-                            robot.input[1]=-robot_speed[0] #normal speed, reverse
-                    elif robot.operation==3: #if robot is approaching to picker (already identified)
-                        robot.input[1]=robot_speed[1] #reduced speed
-                        if hri.status==3: #if distance <=1.2m
-                            robot.operation=4 #wait for command to move away
-                            robot.input[1]=robot_speed[2] #stop
-                        if hri.human_command==2: #if human command is "move_away"
-                            robot.operation=5
-                            robot.input[1]=-robot_speed[0] #normal speed, reverse
-                        if hri.human_command==3: #if human command is "stop"
-                            robot.operation=4 #wait for command to move away
-                            robot.input[1]=robot_speed[2] #stop
-                    elif robot.operation==4: #if robot is waiting for a human command to move away
-                        robot.input[1]=robot_speed[2] #stop
-                        if hri.human_command==1: #if human command is "approach"
-                            robot.operation=3 
-                            robot.input[1]=robot_speed[1] #reduced speed
-                        if hri.human_command==2: #if human command is "move_away"
-                            robot.operation=5
-                            robot.input[1]=-robot_speed[0] #normal speed, reverse
-                    elif robot.operation==5: #if robot is moving away from the picker (it can be after collecting tray or because of human command)
-                        robot.input[1]=-robot_speed[0] #normal speed, reverse
-                        if hri.human_command==1: #if human command is "approach"
-                            robot.operation=3 
-                            robot.input[1]=robot_speed[1] #reduced speed
-                        if hri.human_command==3: #if human command is "stop"
-                            robot.operation=2 #wait for command to approach
-                            robot.input[1]=robot_speed[2] #stop
-                    else: #uv-c treatment
-                        robot.operation=0
-                        robot.input[1]=robot_speed[0] #normal speed
-                    
-                    #To recalculate reduced_speed according to the distance between robot and human
-                    if robot.input[1]==robot_speed[1] or hri.safety_action==1:
-                        dist=human.distance[hri.critical_index,0]
-                        robot.input[1]=0.138*dist #0m/s at 0m and 0.5m/s at 3.6m    
-                        #if robot.input[1]<0:
-                        #    robot.input[1]=robot_speed[2] #stop
-                        if robot.input[1]>=robot_speed[0]:
-                            robot.input[1]=robot_speed[0] #normal speed limitation
-                        if robot.input[1]<=-robot_speed[0]:
-                            robot.input[1]=-robot_speed[0] #normal speed limitation                   
-                    #To make the robot stop when a safety_stop is required or when the robot is waiting for a human command
-                    if hri.safety_action>=2:
-                        robot.input[1]=robot_speed[2] #stop
-                    
-                    if new_data[0]==1:    
-                        new_data[0]=0
-                    if new_data[1]==1:
-                        new_data[1]=0
-                    if new_data[2]==1:
-                        new_data[2]=0
-                    if new_data[3]==1:
-                        new_data[3]=0
+    human=human_class()
+    hri=hri_class()  
+    robot=robot_class()
+    #Setup ROS publiser
+    pub_robot = rospy.Publisher('robot_info', robot_msg)
+    rob_msg = robot_msg()
+    pub_human = rospy.Publisher('human_info', human_msg)
+    msg = human_msg()
+    pub_picker00=rospy.Publisher('actor00/cmd_vel',geometry_msgs.msg.Twist, queue_size=10)
+    pub_picker01=rospy.Publisher('actor01/cmd_vel',geometry_msgs.msg.Twist, queue_size=10)
+    pub_thorvald=rospy.Publisher('/turtle1/cmd_vel',geometry_msgs.msg.Twist, queue_size=10)
+    msg_control= geometry_msgs.msg.Twist()
+    pub_hz=0.01 #publising rate in seconds
+    rospy.init_node('demo_actuation',anonymous=True)
+    # Setup and call subscription
+    rospy.Subscriber('human_safety_info',hri_msg,safety_callback)  
+    rospy.Subscriber('actor00/odom',nav_msgs.msg.Odometry,actor00_callback_d2)  
+    rospy.Subscriber('actor01/odom',nav_msgs.msg.Odometry,actor01_callback_d2)   
+    rospy.Subscriber('odometry/gazebo',nav_msgs.msg.Odometry,robot_callback_d2)  
+    rospy.Subscriber('joy',Joy,joy_callback)  
+    #Rate setup
+    rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
+    while not rospy.is_shutdown():	      
+        main_counter=main_counter+1  
+        print("main_counter",main_counter)
+        if simulation==1:
             ############################################################################################
-            #print("human_position",human.position)
-            #print("human_position",list(human.position))
-            #print("human_distance",list(human.distance))
-            #print("human_posture",list(human.posture))
-            print("human_orientation",list(human.orientation))
-            #print("human_area",list(human.area))
-            #print("critical_index",hri.critical_index)
-            #print("robot_position",robot.position)
-            #print("robot_operation",robot.operation)
-            #Publish Robot new operation
-            rob_msg.operation=robot.operation
-            pub_robot.publish(rob_msg)        
-            #Publish Human_info from Gazebo
-            msg.posture = list(human.posture[:,0])
-            msg.posture_prob = list(human.posture[:,1])
-            msg.motion = list(human.motion[:,0])
-            msg.position_x = list(human.position[:,0])
-            msg.position_y = list(human.position[:,1])
-            msg.centroid_x =list(human.centroid[:,0])
-            msg.centroid_y =list(human.centroid[:,1])
-            msg.distance = list(human.distance[:,0])
-            msg.orientation = list(human.orientation[:,0])
-            msg.area = list(human.area[:,0])
-            msg.sensor = list(human.sensor[:,0])
-            msg.sensor_t0 = list(human.sensor_t[:,0])
-            msg.sensor_t1 = list(human.sensor_t[:,1])
-            msg.sensor_c0 = list(human.sensor_c[:,0])
-            msg.sensor_c1 = list(human.sensor_c[:,1])
-            pub_human.publish(msg)    
-            #Publish Gazebo commands
-            msg_control.linear.x = human.p0_input[1][0]
-            msg_control.angular.z = human.p0_input[0][0]
-            pub_picker00.publish(msg_control)
-            msg_control.linear.x = human.p1_input[1][0]
-            msg_control.angular.z = human.p1_input[0][0]
-            pub_picker01.publish(msg_control)
-            msg_control.linear.x = robot.input[1][0]
-            msg_control.angular.z = robot.input[0][0]
-            pub_thorvald.publish(msg_control)
-            rate.sleep() #to keep fixed the publishing loop rate
+            if new_data[0]==1 or new_data[1]==1 or new_data[2]==1 or new_data[3]==1:
+                if robot.operation==1: #if robot is moving to picker location 
+                    #print("ROBOT OPERATION 1")
+                    robot.input[1]=robot_speed[0] #normal speed
+                    if hri.status==2: #if distance <=3.6m
+                       #print("DISTANCE <3.6m")
+                        robot.operation=2 #wait for command to approach
+                        robot.input[1]=robot_speed[2] #stop
+                    if hri.human_command==1: #if human command is "approach"
+                        robot.operation=3 
+                        robot.input[1]=robot_speed[1] #reduced speed
+                    if hri.human_command==2: #if human command is "move_away"
+                        robot.operation=5
+                        robot.input[1]=-robot_speed[0] #normal speed, reverse
+                    if hri.human_command==3: #if human command is "stop"
+                        robot.operation=2 #wait for command to approach
+                        robot.input[1]=robot_speed[2] #stop
+                
+                elif robot.operation==2: #if robot is waiting for a human command to approach
+                    robot.input[1]=robot_speed[2] #stop
+                    if hri.human_command==1: #if human command is "approach"
+                        robot.operation=3 
+                        robot.input[1]=robot_speed[1] #reduced speed
+                    if hri.human_command==2: #if human command is "move_away"
+                        robot.operation=5
+                        robot.input[1]=-robot_speed[0] #normal speed, reverse
+                elif robot.operation==3: #if robot is approaching to picker (already identified)
+                    robot.input[1]=robot_speed[1] #reduced speed
+                    if hri.status==3: #if distance <=1.2m
+                        robot.operation=4 #wait for command to move away
+                        robot.input[1]=robot_speed[2] #stop
+                    if hri.human_command==2: #if human command is "move_away"
+                        robot.operation=5
+                        robot.input[1]=-robot_speed[0] #normal speed, reverse
+                    if hri.human_command==3: #if human command is "stop"
+                        robot.operation=4 #wait for command to move away
+                        robot.input[1]=robot_speed[2] #stop
+                elif robot.operation==4: #if robot is waiting for a human command to move away
+                    robot.input[1]=robot_speed[2] #stop
+                    if hri.human_command==1: #if human command is "approach"
+                        robot.operation=3 
+                        robot.input[1]=robot_speed[1] #reduced speed
+                    if hri.human_command==2: #if human command is "move_away"
+                        robot.operation=5
+                        robot.input[1]=-robot_speed[0] #normal speed, reverse
+                elif robot.operation==5: #if robot is moving away from the picker (it can be after collecting tray or because of human command)
+                    robot.input[1]=-robot_speed[0] #normal speed, reverse
+                    if hri.human_command==1: #if human command is "approach"
+                        robot.operation=3 
+                        robot.input[1]=robot_speed[1] #reduced speed
+                    if hri.human_command==3: #if human command is "stop"
+                        robot.operation=2 #wait for command to approach
+                        robot.input[1]=robot_speed[2] #stop
+                else: #uv-c treatment
+                    robot.operation=0
+                    robot.input[1]=robot_speed[0] #normal speed
+                
+                #To recalculate reduced_speed according to the distance between robot and human
+                if robot.input[1]==robot_speed[1] or hri.safety_action==1:
+                    dist=human.distance[hri.critical_index,0]
+                    robot.input[1]=0.138*dist #0m/s at 0m and 0.5m/s at 3.6m    
+                    #if robot.input[1]<0:
+                    #    robot.input[1]=robot_speed[2] #stop
+                    if robot.input[1]>=robot_speed[0]:
+                        robot.input[1]=robot_speed[0] #normal speed limitation
+                    if robot.input[1]<=-robot_speed[0]:
+                        robot.input[1]=-robot_speed[0] #normal speed limitation                   
+                #To make the robot stop when a safety_stop is required or when the robot is waiting for a human command
+                if hri.safety_action>=2:
+                    robot.input[1]=robot_speed[2] #stop
+                
+                if new_data[0]==1:    
+                    new_data[0]=0
+                if new_data[1]==1:
+                    new_data[1]=0
+                if new_data[2]==1:
+                    new_data[2]=0
+                if new_data[3]==1:
+                    new_data[3]=0
+        ############################################################################################
+        #print("human_position",human.position)
+        #print("human_position",list(human.position))
+        #print("human_distance",list(human.distance))
+        #print("human_posture",list(human.posture))
+        print("human_orientation",list(human.orientation))
+        #print("human_area",list(human.area))
+        #print("critical_index",hri.critical_index)
+        #print("robot_position",robot.position)
+        #print("robot_operation",robot.operation)
+        #Publish Robot new operation
+        rob_msg.operation=robot.operation
+        pub_robot.publish(rob_msg)        
+        #Publish Human_info from Gazebo
+        msg.posture = list(human.posture[:,0])
+        msg.posture_prob = list(human.posture[:,1])
+        msg.motion = list(human.motion[:,0])
+        msg.position_x = list(human.position[:,0])
+        msg.position_y = list(human.position[:,1])
+        msg.centroid_x =list(human.centroid[:,0])
+        msg.centroid_y =list(human.centroid[:,1])
+        msg.distance = list(human.distance[:,0])
+        msg.orientation = list(human.orientation[:,0])
+        msg.area = list(human.area[:,0])
+        msg.sensor = list(human.sensor[:,0])
+        msg.sensor_t0 = list(human.sensor_t[:,0])
+        msg.sensor_t1 = list(human.sensor_t[:,1])
+        msg.sensor_c0 = list(human.sensor_c[:,0])
+        msg.sensor_c1 = list(human.sensor_c[:,1])
+        pub_human.publish(msg)    
+        #Publish Gazebo commands
+        msg_control.linear.x = human.p0_input[1][0]
+        msg_control.angular.z = human.p0_input[0][0]
+        pub_picker00.publish(msg_control)
+        msg_control.linear.x = human.p1_input[1][0]
+        msg_control.angular.z = human.p1_input[0][0]
+        pub_picker01.publish(msg_control)
+        msg_control.linear.x = robot.input[1][0]
+        msg_control.angular.z = robot.input[0][0]
+        pub_thorvald.publish(msg_control)
+        rate.sleep() #to keep fixed the publishing loop rate
    
