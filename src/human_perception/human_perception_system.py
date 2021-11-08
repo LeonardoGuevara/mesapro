@@ -57,17 +57,19 @@ posture_labels=ar_param[2][1]
 motion_labels=ar_param[3][1]
 orientation_labels=ar_param[4][1]
 #Parameters for Matching
-areas_percent=[0,0.2,0.4,0.6,0.8] #in pixels
-areas_angle=[150,100,80,30,0] #in degrees
+areas_percent=[0,0.25,0.41,0.58,0.75] #in pixels
+#areas_percent=[0,0.25,0.35,0.65,0.75] #in pixels
+areas_angle=[130,100,80,50,0] #in degrees
 meter_threshold=1 #meters
 pixel_threshold=100 #pixels
-tracking_threshold=3
+tracking_threshold=3 #times a data is received
 #Parameters for Motion inference
-n_samples=10 #number of samples used for the motion inference
+n_samples=8 #number of samples used for the motion inference
 speed_threshold=[0.1,1]  # [static, slow motion] m/s
 #Paremeters for human Tracking
 image_width=840 #initial value in pixels, it will be updated when the first image is taken from the camera
 threshold_no_data=2 #seconds needed to remove a human from tracking list
+posture_threshold=0.7 #minimum probability from openpose to start tracking new human using camera info
 #General purposes variables
 main_counter=0
 visualization='off' #to show or not a window with the human detection on the photos
@@ -85,7 +87,7 @@ class human_class:
     def __init__(self): #It is done only the first iteration
         #Variables to store temporally the info of human detectection at each time instant
         self.n_human=1 # considering up to 1 human to track initially
-        self.position=np.zeros([self.n_human,2]) #[x,y] from lidar
+        self.position=np.zeros([self.n_human,2]) #[x,y] from lidar local frame
         self.posture=np.zeros([self.n_human,2]) #from camera [posture_label,posture_probability]
         #self.motion=np.zeros([self.n_human,1]) #from lidar + camara
         self.centroid=np.zeros([self.n_human,2]) #x,y (pixels) of the human centroid, from camera
@@ -125,8 +127,8 @@ def lidar_callback(legs):
                 if k<len(human.position):
                     ##########################################################################################################
                     #THIS DISTANCE NEEDS TO BE CALIBRATED ACCORDING TO THE LIDAR LOCATION RESPECT TO THE FRONT CAMERA POSITION (The camera location is the reference origin)
-                    human.position[k,0] = pose.position.x -0.45 +6
-                    human.position[k,1] = pose.position.y -0.55 +10
+                    human.position[k,0] = pose.position.x -0.55 #+6
+                    human.position[k,1] = pose.position.y +0.45 #+10
                     ############################################################################################################
                 else: #if there are more human detected than before
                     position_new=np.array([pose.position.x,pose.position.y])
@@ -162,6 +164,9 @@ def camera_callback(ros_image, ros_depth):
             #print("HUMAN DISTANCE",list(human.distance))
             
             human.image=datum.cvOutputData
+            
+           
+            
         new_data[1]=1 # update flag for new data
         time_data[1]=time.time()-time_init # update time when the last data was received
             
@@ -276,7 +281,7 @@ def feature_extraction_3D(poseKeypoints,depth_array,n_joints,n_features):
         posture[kk,0]=model_rf.predict([X])
         prob_max=0
         prob=model_rf.predict_proba([X])
-        for ii in range(prob.shape[1]):
+        for ii in range(prob.shape[1]): #depends of the number of gestures to classified
             if prob[0,ii]>=prob_max:
                 prob_max=prob[0,ii]
         posture[kk,1]=prob_max 
@@ -357,7 +362,12 @@ def human_tracking():
                     #Determining the area where the new human is detected
                     ##############################################################################################################################
                     #It depends how to interpret the X-Y frame used by the human leg detector
-                    angle=atan(position_new[kk,1]/position_new[kk,0])
+                    angle=atan(position_new[kk,1]/position_new[kk,0])+(pi/2) # pi/2 is because the lidar XY-frame is 90 degrees rotated
+                    if angle<0: # to keeo the angle positive
+                        angle=angle+2*pi
+                    #if angle>2*pi: #  to keep the angle between 0-360
+                    #    angle=angle-2*pi
+                    print("ANGLE",angle*180/pi)
                     if angle>=areas_angle[4]*(pi/180) and angle<areas_angle[3]*(pi/180):
                         area_new[kk,0]=4
                     elif angle>=areas_angle[3]*(pi/180) and angle<areas_angle[2]*(pi/180):
@@ -520,7 +530,7 @@ def human_tracking():
                     elif centroid_new[kk,0]>=areas_percent[1]*image_width and centroid_new[kk,0]<=areas_percent[2]*image_width:
                         area_new[kk,0]=1
                     elif centroid_new[kk,0]>=areas_percent[0]*image_width and centroid_new[kk,0]<=areas_percent[1]*image_width:
-                        area_new[kk,0]=0                              
+                        area_new[kk,0]=0    
                     if diff[k,kk]<error_threshold and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                         new_index=kk
                         time_diff=time_track[k,1]-time_data[1]                        
@@ -624,7 +634,7 @@ def human_tracking():
             
         #To include a new human to be tracked
         for k in range(0,len(new_human_flag)):
-            if new_human_flag[k]==0:
+            if new_human_flag[k]==0 and posture_new[k,1]>=posture_threshold: # only if the openpose probability is reliable 
                 print('New human tracked from the camera')
                 n_human=n_human+1
                 #Human perception
@@ -780,44 +790,6 @@ def human_tracking():
         
     return sensor,n_human,position,posture,centroid,features,orientation,distance,motion,time_track,speed,speed_buffer,counter_motion,area,counter_old
 
-def critical_human_selection():
-    n_human=human.n_human
-    counter=human.counter_old
-    sensor=human.sensor
-    distance=human.distance_track
-    position=human.position_track
-    centroid=human.centroid_track
-    posture=human.posture_track
-    image=human.image
-    closest_distance=1000 #initial value
-    closest_index=0
-    for k in range(0,n_human):
-        if counter[k,1]<0 and sensor[k]==2 and posture[k,1]>0.7:# if data was taken from camera
-            if distance[k,0]<=closest_distance:
-                closest_index=k
-                closest_distance=distance[k,0]
-        if sensor[k]!=2:# if data was taken from lidar or lidar+camera
-            if counter[k,0]<=counter[k,1]: #lidar data was tracked for longer
-                distance_lidar=sqrt((position[k,0])**2+(position[k,1])**2)
-                if distance_lidar<=closest_distance:
-                    closest_index=k
-                    closest_distance=distance_lidar  
-            else:
-                if distance[k,0]<=closest_distance:
-                    closest_index=k
-                    closest_distance=distance[k,0]
-    closest_centroid=centroid[closest_index,:]    
-    #print(human.posture)
-    if visualization=='on':
-        center_coordinates = (int(closest_centroid[0]), int(closest_centroid[1])) 
-        color_image = cv2.circle(image, center_coordinates, 5, (255, 0, 0), 20)
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        #Print body posture label
-        color_image = cv2.putText(color_image,posture_labels[int(human.posture_track[closest_index,0])],(int(closest_centroid[0]), int(closest_centroid[1])) , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        cv2.imshow("Human tracking",color_image)
-        cv2.waitKey(5)  
-    return closest_index
-
 def human_motion_inference():
     n_human=human.n_human
     speed=human.speed_buffer
@@ -880,16 +852,16 @@ if __name__ == '__main__':
         #human.critical_index=critical_human_selection()
         #print("sensor",list(human.sensor[:,0]))
         
-        print("distance_tracked",list(human.distance_track[:,0]))
+        #print("distance_tracked",list(human.distance_track[:,0]))
         #print("position_x_tracked",list(human.position_track[:,0]))
         #print("position_y_tracked",list(human.position_track[:,1]))
-        print("area",list(human.area))
-        print("sensor",list(human.sensor[:,0]))
+        #print("area",list(human.area))
+        #print("sensor",list(human.sensor[:,0]))
         #print("counter",list(human.counter))
-        print("counter_old",list(human.counter_old))
+        #print("counter_old",list(human.counter_old))
         #print("counter_no_data",list(human.counter_no_data))
         #time_not_data=((time.time()-time_init)*np.ones(len(human.time_track[:,0]),2))-human.time_track
-        print("time_traked",list(human.time_track))
+        #print("time_traked",list(human.time_track))
         #print("speed_track",list(human.speed_track))
         #print("counter_motion",list(human.counter_motion[:,0]))
         #print("motion",list(human.motion_track))
@@ -898,7 +870,10 @@ if __name__ == '__main__':
         #print(human.distance_buffer)
         #print("position_x_tracked",list(human.position_track[:,0]))
         #time_init=time.time()
-        
+        if visualization=='on':
+            #Print body posture label
+            cv2.imshow("Human tracking",human.image)
+            cv2.waitKey(15)  
            
         #print(main_counter)    
         #Publish     

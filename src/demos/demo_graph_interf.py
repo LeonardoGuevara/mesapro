@@ -39,6 +39,7 @@ new_data=[0,0,0] #data from [human_info, safety_info,robot_info]
 main_counter=0
 pub_hz=0.01
 demo=1 #demo 1: perception, demo 2: human in gazebo, demo 3: topological navigation
+no_detection=True  
 if demo==1:
     new_data[1]=1
     new_data[2]=1
@@ -82,8 +83,7 @@ def camera_callback(ros_image):
     except CvBridgeError as e:
         rospy.logerr("CvBridge Error: {0}".format(e))
     #new_data[0]=1
-    center_coordinates = (int(human.centroid_x), int(human.centroid_y)) 
-    color_image = cv2.circle(human.image, center_coordinates, 5, (255, 0, 0), 20)
+    color_image=human.image
     #font = cv2.FONT_HERSHEY_SIMPLEX
     #color_image = cv2.putText(color_image,"Human", center_coordinates , font, 1, (255, 255, 255), 2, cv2.LINE_AA)
     #cv2.imshow("Human tracking",color_image)
@@ -92,6 +92,7 @@ def camera_callback(ros_image):
     
 
 def human_callback(human_info):
+    global no_detection
     #print("NEW HUMAN DATA")
     if len(human_info.sensor)!=0 and new_data[0]==0 and new_data[1]==1:# and new_data[0]==1: #only if there is a new human_info data
         human.posture=human_info.posture[hri.critical_index]
@@ -103,8 +104,12 @@ def human_callback(human_info):
         human.distance=human_info.distance[hri.critical_index]
         human.sensor=human_info.sensor[hri.critical_index]
         human.orientation=human_info.orientation[hri.critical_index]
+        if len(human_info.sensor)==1 and (human_info.posture+human_info.position_x+human_info.position_y+human_info.distance)==0: #None human detected
+            no_detection=True    
+        else:
+            no_detection=False
         new_data[0]=1#        
-            
+                
 def safety_callback(safety_info):
     #print("NEW SAFETY DATA")
     if new_data[1]==0:
@@ -143,41 +148,53 @@ def demo_outputs(color_image):
         font = cv2.FONT_HERSHEY_SIMPLEX
         
         #Print HUMAN PERCEPTION INFO
-        color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"orientation:  "+orientation_labels[int(human.orientation)],(50, 90) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 120) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"posture:     "+posture_labels[int(human.posture)],(50, 150) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        if no_detection or hri.status==0: #None human detected
+            color_image = cv2.putText(color_image,"***NO HUMAN DETECTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+        else:
+            if sensor=="lidar":
+                color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 90) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 120), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 150) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            else:
+                color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"orientation:  "+orientation_labels[int(human.orientation)],(50, 90) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 120) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"posture:     "+posture_labels[int(human.posture)],(50, 150) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                
         
-
-        if sensor=="camera":
-            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 180) , font, 0.7,(0, 0, 255), 2, cv2.LINE_AA)
-        if sensor=="camera+lidar":
-            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 180) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 210), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 240) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        if demo>=2:
-            #Print SAFETY SYMTEM INFO    
-            color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 270) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"hri status:           "+hri_status_label[int(hri.status)],(50, 300) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"audio message:     "+audio_message_label[int(hri.audio_message)],(50, 330) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"human command:   "+human_command_label[int(hri.human_command)],(50, 360) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"safety action:        "+safety_action_label[int(hri.safety_action)],(50, 390) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            
-            
-            #Print ROBOT OPERATION INFO
-            color_image = cv2.putText(color_image,"***ROBOT OPERATION***",(50, 420) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"operation:   "+operation_label[int(robot.operation)],(50, 450) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"speed:      "+str(round(robot.speed,2))+"m/s",(50, 480) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            
+                if sensor=="camera":
+                    color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 180) , font, 0.7,(0, 0, 255), 2, cv2.LINE_AA)
+                if sensor=="camera+lidar":
+                    color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 180) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                    color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 210), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                    color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 240) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                if demo>=2:
+                    #Print SAFETY SYMTEM INFO    
+                    color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 270) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+                    color_image = cv2.putText(color_image,"hri status:           "+hri_status_label[int(hri.status)],(50, 300) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                    color_image = cv2.putText(color_image,"audio message:     "+audio_message_label[int(hri.audio_message)],(50, 330) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                    color_image = cv2.putText(color_image,"human command:   "+human_command_label[int(hri.human_command)],(50, 360) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                    color_image = cv2.putText(color_image,"safety action:        "+safety_action_label[int(hri.safety_action)],(50, 390) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                    
+                    
+                    #Print ROBOT OPERATION INFO
+                    color_image = cv2.putText(color_image,"***ROBOT OPERATION***",(50, 420) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+                    color_image = cv2.putText(color_image,"operation:   "+operation_label[int(robot.operation)],(50, 450) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                    color_image = cv2.putText(color_image,"speed:      "+str(round(robot.speed,2))+"m/s",(50, 480) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                else:
+                    center_coordinates = (int(human.centroid_x), int(human.centroid_y)) 
+                    color_image = cv2.circle(human.image, center_coordinates, 5, (255, 0, 0), 20) 
         
         cv2.imshow("System outputs",color_image)
         cv2.waitKey(5)
         if new_data[0]==1:
             new_data[0]=0
-        if new_data[1]==1 and demo==2:
+        if new_data[1]==1:
             new_data[1]=0
-        if new_data[2]==1 and demo==2:
+        if new_data[2]==1:
             new_data[2]=0
 ###############################################################################################
 # Main Script

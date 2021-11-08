@@ -31,6 +31,8 @@ hri_status_label=hs_param[0][1]
 audio_message_label=hs_param[1][1] 
 safety_action_label=hs_param[2][1]
 human_command_label=hs_param[3][1]
+#Human selection
+posture_threshold=0.6 #minimum probability from the posture recognition
 #General purposes variables
 main_counter=0
 new_data=[0,0] #flag to know if the human_msg or robot_msg has been received
@@ -103,13 +105,15 @@ def critical_human_selection():
     position_x=human.position_x
     position_y=human.position_y
     posture_prob=human.posture_prob
+    posture=human.posture
     operation=robot.operation
     area=human.area
     closest_distance=1000 #initial value
     closest_index=0
     n_human=len(sensor)
+    #CLOSEST HUMAN TRACKED
     for k in range(0,n_human):
-        if sensor_c1[k]<0 and sensor[k]==2 and posture_prob[k]>0.7:# if data was taken from camera
+        if sensor_c1[k]<0 and sensor[k]==2:# and posture_prob[k]>posture_threshold:# if data was taken from camera
             if distance[k]<=closest_distance:
                 closest_index=k
                 closest_distance=distance[k]
@@ -125,13 +129,17 @@ def critical_human_selection():
                     closest_distance=distance[k]
     print("closest_distance", closest_distance)
     critical_index=closest_index
+    #RISK INFERENCE
     if operation>=1: #if robot operation is logistics
-        if area[closest_index]==2: #if the closest human is in front of the robot (i.e. same row)
+        if area[closest_index]>=1 and area[closest_index]<=3: #if the closest human is in front of the robot (i.e. same row)
             risk=1 #there is a risk
+            #if (posture_prob[closest_index]<=posture_threshold and posture[closest_index]!=0 and area[closest_index]!=2): #additional condition only if the data was taken from camera 
+            #    risk=0 #to avoid false positives
         else:
             risk=0 #there is not risk
     else: #for uv-c treatment
         risk=1 #there is a risk
+    
     return critical_index,risk
 
 
