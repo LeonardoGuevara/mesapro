@@ -5,3 +5,5 @@ This repository contains a ROS package for human-aware navigation of agricultura
 ![Overall_system](/Human_perception_and_safety_system.png)
 
 The creation of this package was motivated by the MeSAPro project which aims to ensure autonomy of agricultural robots in scenarios which involves human-robot interactions. The decision making and safety policies of the current version of the safety system were implemented only in transportation robots during harvesting at polytunnels. However, it is planned to create alternative versions for other robot tasks covered by the MeSAPro project such as UV-C treatment and automatic data collection.
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/U68gQpjClaIE/0.jpg)](https://youtu.be/U68gQpjClaI)
