@@ -29,6 +29,8 @@ from threading import Lock
 from mesapro.msg import human_msg, hri_msg, robot_msg
 from sensor_msgs.msg import Joy
 import numpy as np
+from topological_navigation_msgs.msg import NavRoute
+from math import * #to avoid prefix math.
 #######################################################################
 
 
@@ -74,11 +76,9 @@ class TopologicalNavServer(object):
         
         ############################################################################################
         self.robot_operation=6                  # robot operation used for the safety system
-        self.past_operation=100                   # past robot operation
-        self.prev_status = None                  # status of the route following
-        self.goal= "None"                        # Current goal to reach
-        self.goal_move_away="WayPoint139"
-        self.goal_approach="WayPoint83"
+        self.past_operation=100                 # past robot operation
+        self.prev_status = None                 # status of the route following
+        self.goal= "None"                       # Current goal to reach
         self.hri_critical_index=0               # index of the most critical human detected
         self.hri_status= 0                      # human aware navigation flag
         self.hri_safety_action=0                # safety action from the safety system
@@ -311,6 +311,9 @@ class TopologicalNavServer(object):
             self.robot_operation=1 # operation when the robot is moving to the goal
             self.past_operation=self.robot_operation #to give priority to a new human command goal
             self.goal=goal.target
+            #hola=self.find_new_goal()
+            #print("HOLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",hola)
+        
             ###################################################################
             self.navigate(goal.target)
             ###################################################################
@@ -431,6 +434,7 @@ class TopologicalNavServer(object):
         if not self.cancelled:
 
             g_node = self.rsearch.get_node_from_tmap2(target)
+            #print("GOAL NODE", g_node)
             self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
             
             if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
@@ -842,8 +846,10 @@ class TopologicalNavServer(object):
             self.prev_status=status
             self.cancelled=True
             self.goal_reached=True
-            result = True
-            inc = 0    
+            result = False #True
+            inc = 1 #0
+            #self.pub_status(status)
+            #return result, inc
         #######################################################################
         else: #normal operation
             inc = 0
@@ -911,8 +917,9 @@ class TopologicalNavServer(object):
     
             rospy.sleep(rospy.Duration.from_sec(0.5))
             status = self.edge_action_manager.client.get_state()
+            
         ################################################################
-        self.pub_status(status)
+        self.pub_status(status) 
         
         return result, inc
     
@@ -927,15 +934,7 @@ class TopologicalNavServer(object):
             
             self.move_act_pub.publish(String(json.dumps(d)))
         self.prev_status = status
-    #######################################################################################
-    def human_callback(self,human_info):
-        self.human_position_x=human_info.position_x
-        self.human_position_y=human_info.position_y
-        self.human_distance=human_info.distance
-        self.human_sensor=human_info.sensor
-        self.human_sensor_t0=human_info.sensor_t0
-        self.human_sensor_t1=human_info.sensor_t1
-        
+    #######################################################################################        
     
     def safety_callback(self,safety_info):
         self.hri_status=safety_info.hri_status
@@ -946,7 +945,7 @@ class TopologicalNavServer(object):
         
         
     def robot_safety_operation(self):
-        status=self.prev_status
+        #status=self.prev_status
         #TO UPDATE THE ROBOT OPERATION
         if self.hri_status!=0: #if a human is detected            
             if self.robot_operation==1: #if robot is moving to picker location 
@@ -970,7 +969,7 @@ class TopologicalNavServer(object):
                     self.robot_operation=5
                 if self.hri_human_command==3: #if human command is "stop"
                     self.robot_operation=4 #wait for command to move away
-                if status==GoalStatus.SUCCEEDED and self.current_node==self.goal: #if robot reached the goal and it is static
+                if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
                     self.robot_operation=4 #make the robot wait for a command to move away
             elif self.robot_operation==4: #if robot is waiting for a human command to move away
                 if self.hri_human_command==1: #if human command is "approach"
@@ -982,10 +981,10 @@ class TopologicalNavServer(object):
                     self.robot_operation=3 
                 if self.hri_human_command==3: #if human command is "stop"
                     self.robot_operation=2 #wait for command to approach
-                if status==GoalStatus.SUCCEEDED and self.current_node==self.goal: #if robot reached the goal and it is static
+                if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
                     self.robot_operation=6 #make the robot wait for a new goal
             elif self.robot_operation==6: #if robot is waiting for new goal
-                if status==GoalStatus.ACTIVE: #if robot is moving
+                if self.navigation_activated==True: #if robot is moving
                     if self.hri_status==1: #if distance is 3.6m to 7m
                         self.robot_operation=1 #robot operation is "moving to goal"
                 if self.hri_human_command==1: #if human command is "approach"
@@ -996,7 +995,7 @@ class TopologicalNavServer(object):
                 self.robot_operation=0  
                 
         else: #if none human is detected
-            if status==GoalStatus.ACTIVE: #if robot is moving
+            if self.navigation_activated==True: #if robot is moving
                 self.robot_operation=1 #robot operation is "moving to goal"
             if self.current_node==self.goal: #if robot reached the goal
                 self.robot_operation=6 #robot operation is "wait for new goal"
@@ -1010,14 +1009,16 @@ class TopologicalNavServer(object):
         pub_robot = rospy.Publisher('robot_info', robot_msg)
         rob_msg = robot_msg()
         rob_msg.operation=self.robot_operation
+        rob_msg.current_node=self.current_node
+        rob_msg.goal_node=self.goal
         pub_robot.publish(rob_msg)  
         #self.robot_goal_update()
         
     def robot_goal_update(self):
         #status=self.nav_status
         #TO CHANGE THE GOAL ACCORDING TO NEW ROBOT OPERATION
-        print("PAST OPERATION",self.past_operation)
-        print("NEW OPERATION",self.robot_operation)
+        #print("PAST OPERATION",self.past_operation)
+        #print("NEW OPERATION",self.robot_operation)
                 
         if (self.robot_operation==2 or self.robot_operation==4 or self.robot_operation==6):# and status==GoalStatus.ACTIVE: #to make the robot stop
             if self.past_operation!=2 and self.past_operation!=4 and self.past_operation!=6: #a new goal is activated only if it was not activated before
@@ -1031,12 +1032,13 @@ class TopologicalNavServer(object):
         elif self.robot_operation==3 or self.robot_operation==5: #to approch/move away after being waiting
             if self.past_operation!=self.robot_operation: #a new goal is activated only if it was not activated before
                 print("OPERATION CHANGED 2")
-                if self.robot_operation==3: #approach
-                    self.goal=self.goal_approach
-                else: #robot_operation=5, move away
-                    self.goal=self.goal_move_away
-                
                 can_start = False
+                self.goal=self.find_new_goal()
+                #if self.robot_operation==3: #approach
+                #    self.goal="WayPoint84"
+                #else: #robot_operation=5, move away
+                #    self.goal="WayPoint138"
+                
                 self.past_operation=self.robot_operation
                 #self.new_goal= True
                 with self.navigation_lock:
@@ -1044,7 +1046,7 @@ class TopologicalNavServer(object):
                         # we successfully stopped the previous action, claim the title to activate navigation
                         self.navigation_activated = True
                         can_start = True
-                
+               
                 if can_start:
                     self.cancelled = False
                     self.preempted = False
@@ -1057,6 +1059,46 @@ class TopologicalNavServer(object):
                     rospy.logwarn("Could not cancel current navigation action, GO-TO-NODE goal aborted")
                     self._as.set_aborted()
                 self.navigation_activated = False
+    
+    def find_new_goal(self):
+        if self.current_node != "none":
+            parent=self.rsearch.get_node_from_tmap2(self.current_node)
+        else: #to find the closest node when robot is moving between nodes
+            parent, the_edge = self.orig_node_from_closest_edge(self.rsearch.get_node_from_tmap2(self.goal))
+        not_goal = False
+        for edge in parent["node"]["edges"]:
+            if edge["action"]=="row_traversal":
+                not_goal = True
+                break
+        print("PARENT", parent["node"]["name"])
+        while not_goal:
+            children = self.get_connected_nodes_tmap(parent)
+            print("CHILDREN",children)
+            for child_name in children:
+                child = self.rsearch.get_node_from_tmap2(child_name)
+                child_y=child["node"]["pose"]["position"]["y"]
+                parent_y=parent["node"]["pose"]["position"]["y"]
+                if self.robot_operation==3: #approach
+                    if child_y<=parent_y:
+                        parent=child    
+                else: #robot_operation=5, move away
+                    if child_y>=parent_y:
+                        parent=child
+            print("PARENT",parent["node"]["edges"])
+            for edge in parent["node"]["edges"]:
+                if edge["action"]=="move_base":
+                    not_goal = False
+                    break
+        goal=parent["node"]["name"]     
+        print("GOAL ****************** ",goal)
+        return goal
+    
+    def get_connected_nodes_tmap(self, node):
+        children=[]
+        for edge in node["node"]["edges"]:
+            print("EDGE",edge["node"])
+            children.append(edge["node"])
+        return children
     
     def joy_callback(self,data):
         #print("JOY NEW DATA")
@@ -1101,11 +1143,12 @@ if __name__ == "__main__":
     rospy.init_node("topological_navigation")
     mode = "normal"
     server = TopologicalNavServer(rospy.get_name(), mode)
+    ####################################################################################################
     rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	
         #print("ROBOT OPERATION MAIN",server.robot_operation)
         server.robot_goal_update()
         rate.sleep() #to keep fixed the publishing loop rate
-        
+    ###########################################################################################################
     rospy.loginfo("Exiting.")
 ###################################################################################################################

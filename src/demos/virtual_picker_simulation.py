@@ -87,7 +87,11 @@ def actor00_callback(p1):
     distance_new=distance_new-1
     #if distance_new<0:
     #    distance_new=0
-    human.speed[0,0]= (distance_new-human.distance[0,0])/(time_new-human.time[0])+robot.input[1]
+    human.speed[0,0]= ((distance_new-human.distance[0,0])/(time_new-human.time[0]))+robot.input[1]
+    #print("HUMAN SPEED",(distance_new-human.distance[0,0])/(time_new-human.time[0]))
+    print("ROBOT SPEED",robot.input[1])
+    print("TOTAL SPEED", human.speed[0,0])
+    
     k=0
     if human.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
         human.speed_buffer[k,int(human.counter_motion[k])]=human.speed[k,:]
@@ -141,7 +145,7 @@ def actor01_callback(p2):
     distance_new=distance_new-1
     #if distance_new<0:
     #   distance_new=0
-    human.speed[1,0]= (distance_new-human.distance[1,0])/(time_new-human.time[1])+robot.input[1]
+    human.speed[1,0]= ((distance_new-human.distance[1,0])/(time_new-human.time[1]))+robot.input[1]
     k=1
     if human.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
         human.speed_buffer[k,int(human.counter_motion[k])]=human.speed[k,:]
@@ -250,7 +254,7 @@ if __name__ == '__main__':
     rospy.Subscriber('/picker01/posestamped',PoseStamped, actor00_callback)
     rospy.Subscriber('/picker02/posestamped',PoseStamped, actor01_callback)
     rospy.Subscriber('odometry/gazebo',nav_msgs.msg.Odometry,robot_callback_pos)  
-    rospy.Subscriber('/turtle1/cmd_vel',geometry_msgs.msg.Twist,robot_callback_vel)    
+    rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,robot_callback_vel)    
     #Rate setup
     pub_hz=0.01 #publising rate in seconds
     rate = rospy.Rate(1/pub_hz) # ROS Rate in Hz
@@ -299,7 +303,7 @@ if __name__ == '__main__':
         msg.z_m = 0.0
         #msg.flag=0
         pub.publish(msg)
-        print('PICKER 1 -- X: %4.1f Y: %4.1f'%(human.position_global[0][0],human.position_global[0][1]))
+        #print('PICKER 1 -- X: %4.1f Y: %4.1f'%(human.position_global[0][0],human.position_global[0][1]))
         #Publish command for Picker 2
         msg.address= 2
         msg.timestamp_ms=0
@@ -308,7 +312,7 @@ if __name__ == '__main__':
         msg.z_m = 0.0
         #msg.flag=0
         pub.publish(msg)
-        print('PICKER 2 -- X: %4.1f Y: %4.1f'%(human.position_global[1][0],human.position_global[1][1]))
+        #print('PICKER 2 -- X: %4.1f Y: %4.1f'%(human.position_global[1][0],human.position_global[1][1]))
         rate.sleep() #to keep fixed the control loop rate
         #if new_data[0]==1:    
         #    new_data[0]=0

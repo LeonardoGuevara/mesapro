@@ -113,20 +113,20 @@ def critical_human_selection():
     n_human=len(sensor)
     #CLOSEST HUMAN TRACKED
     for k in range(0,n_human):
-        if sensor_c1[k]<0 and sensor[k]==2:# and posture_prob[k]>posture_threshold:# if data was taken from camera
-            if distance[k]<=closest_distance:
-                closest_index=k
-                closest_distance=distance[k]
-        if sensor[k]!=2:# if data was taken from lidar or lidar+camera
-            if sensor_c0[k]<=sensor_c1[k]: #lidar data was tracked for longer
-                distance_lidar=sqrt((position_x[k])**2+(position_y[k])**2)
-                if distance_lidar<=closest_distance:
-                    closest_index=k
-                    closest_distance=distance_lidar  
-            else:
-                if distance[k]<=closest_distance:
-                    closest_index=k
-                    closest_distance=distance[k]
+        #if sensor_c1[k]<0 and sensor[k]==2:# and posture_prob[k]>posture_threshold:# if data was taken from camera
+        if distance[k]<=closest_distance:
+            closest_index=k
+            closest_distance=distance[k]
+        #if sensor[k]!=2:# if data was taken from lidar or lidar+camera
+        #    if sensor_c0[k]<=sensor_c1[k]: #lidar data was tracked for longer
+        #        distance_lidar=sqrt((position_x[k])**2+(position_y[k])**2)
+        #        if distance_lidar<=closest_distance:
+        #            closest_index=k
+        #            closest_distance=distance_lidar  
+        #    else:
+        #        if distance[k]<=closest_distance:
+        #            closest_index=k
+        #            closest_distance=distance[k]
     print("closest_distance", closest_distance)
     critical_index=closest_index
     #RISK INFERENCE
@@ -178,15 +178,15 @@ if __name__ == '__main__':
                     hri.human_command=0 
                 else: #if at least one human was detected
                     #print("HAY AL MENOS UN HUMANO")
-                    if human.sensor[hri.critical_index]==1: #if data is from lidar 
-                        distance=sqrt((human.position_x[hri.critical_index])**2+(human.position_y[hri.critical_index])**2)
-                    elif human.sensor[hri.critical_index]==2: #if data is from camera
-                        distance=human.distance[hri.critical_index]    
-                    else: #data from lidar + camera
-                        if human.sensor_t0[hri.critical_index]>=human.sensor_t1[hri.critical_index]: #if data from lidar is newer than from camera
-                            distance=sqrt((human.position_x[hri.critical_index])**2+(human.position_y[hri.critical_index])**2)
-                        else: #if data from camera is newer than from lidar
-                            distance=human.distance[hri.critical_index] 
+                    #if human.sensor[hri.critical_index]==1: #if data is from lidar 
+                    #    distance=sqrt((human.position_x[hri.critical_index])**2+(human.position_y[hri.critical_index])**2)
+                    #elif human.sensor[hri.critical_index]==2: #if data is from camera
+                    distance=human.distance[hri.critical_index]    
+                    #else: #data from lidar + camera
+                    #    if human.sensor_t0[hri.critical_index]>=human.sensor_t1[hri.critical_index]: #if data from lidar is newer than from camera
+                    #        distance=sqrt((human.position_x[hri.critical_index])**2+(human.position_y[hri.critical_index])**2)
+                    #    else: #if data from camera is newer than from lidar
+                    #        distance=human.distance[hri.critical_index] 
                     print("DISTANCE",distance)
                     ###UV-C treatment#######################################
                     if robot.operation==0:
@@ -315,7 +315,7 @@ if __name__ == '__main__':
                             #        hri.audio_message=6 #alert of presence
                             #In case the human is not static, or is not facing the robot
                             if (robot.operation!=5) and (human.motion[hri.critical_index]!=1 or human.orientation[hri.critical_index]==1): 
-                                print("HUMANO MOVIENDOsE")
+                                print("HUMANO MOVIENDOsE XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
                                 hri.human_command=3 #make the robot stop 
                                 hri.safety_action=3 #waiting new command          
                                 hri.audio_message=1 #message to ask the picker for a new order to approach/move away                       

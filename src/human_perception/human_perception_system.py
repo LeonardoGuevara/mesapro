@@ -60,12 +60,13 @@ orientation_labels=ar_param[4][1]
 areas_percent=[0,0.25,0.41,0.58,0.75] #in pixels
 #areas_percent=[0,0.25,0.35,0.65,0.75] #in pixels
 areas_angle=[130,100,80,50,0] #in degrees
-meter_threshold=1 #meters
+meter_threshold=1.2 #meters
 pixel_threshold=100 #pixels
 tracking_threshold=3 #times a data is received
+w_distance=[0.2,0.8] #weights used for calculating a distance weighted average during matching old with new data
 #Parameters for Motion inference
-n_samples=8 #number of samples used for the motion inference
-speed_threshold=[0.1,1]  # [static, slow motion] m/s
+n_samples=10 #number of samples used for the motion inference
+speed_threshold=[0.5,1.5]  # [static, slow motion] m/s
 #Paremeters for human Tracking
 image_width=840 #initial value in pixels, it will be updated when the first image is taken from the camera
 threshold_no_data=2 #seconds needed to remove a human from tracking list
@@ -349,13 +350,13 @@ def human_tracking():
         area_new=np.zeros([len(position_new[:,0]),1]) #vector with the area of the image where the new human is detected
         new_human_flag=np.zeros([len(position_new[:,0]),1]) #assuming all are new humans
         for k in range(0,n_human): 
-            if sensor[k]==1 or (sensor[k]==0 and counter_old[k,0]<=counter_old[k,1]): #For humans detected by lidar or when lidar was detecting for longer
-                for kk in range(0,len(position_new[:,0])):
-                    diff[k,kk]=sqrt((position[k,0]-position_new[kk,0])**2+(position[k,1]-position_new[kk,1])**2)  
-            else: #if the tracked data was taken only from camera or when camera was detecting for longer
-                for kk in range(0,len(position_new[:,0])):
-                    distance_lidar=sqrt((position_new[kk,0])**2+(position_new[kk,1])**2) 
-                    diff[k,kk]=abs(distance[k,:]-distance_lidar)        
+            #if sensor[k]==1 or (sensor[k]==0 and counter_old[k,0]<=counter_old[k,1]): #For humans detected by lidar or when lidar was detecting for longer
+                #for kk in range(0,len(position_new[:,0])):
+                #    diff[k,kk]=sqrt((position[k,0]-position_new[kk,0])**2+(position[k,1]-position_new[kk,1])**2)  
+            #else: #if the tracked data was taken only from camera or when camera was detecting for longer
+            for kk in range(0,len(position_new[:,0])):
+                distance_lidar=sqrt((position_new[kk,0])**2+(position_new[kk,1])**2) 
+                diff[k,kk]=abs(distance[k,:]-distance_lidar)        
             counter_no_new_data=0 # counter to know if the k-th human tracked is not longer detected
             for kk in range(0,len(position_new[:,0])):
                 if new_human_flag[kk]==0: # Consider the kk-th new human only if it was not matched with another tracked human before
@@ -382,19 +383,20 @@ def human_tracking():
                     #Determine if a new data match with the k-th human tracked
                     if diff[k,kk]<error_threshold and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                         new_index=kk
-                        time_diff=time_track[k,0]-time_data[0]                        
+                        time_diff=time_track[k,0]-time_data[0]    
+                        
                         #Updating speed and time_track
-                        if sensor[k]==1: #k-th human was tracked using lidar data
-                            motion_diff=sqrt(position[k,0]**2+position[k,1]**2)-sqrt(position_new[new_index,0]**2+position_new[new_index,1]**2)
-                        elif sensor[k]==2: #k-th human was tracked using camera data
-                            dist_lidar=sqrt(position_new[new_index,0]**2+position_new[new_index,1]**2)
-                            motion_diff=distance[k,:]-dist_lidar
-                        else: # k-th human was tracked using camera + lidar data
-                            if time_track[k,0]>=time_track[k,1]: # when last data was taken from lidar
-                                motion_diff=sqrt(position[k,0]**2+position[k,1]**2)-sqrt(position_new[new_index,0]**2+position_new[new_index,1]**2)
-                            else: # when last data was taken from camera
-                                dist_lidar=sqrt(position_new[new_index,0]**2+position_new[new_index,1]**2)
-                                motion_diff=distance[k,:]-dist_lidar                               
+                        #if sensor[k]==1: #k-th human was tracked using lidar data
+                        #    motion_diff=sqrt(position[k,0]**2+position[k,1]**2)-sqrt(position_new[new_index,0]**2+position_new[new_index,1]**2)
+                        #elif sensor[k]==2: #k-th human was tracked using camera data
+                        dist_lidar=sqrt(position_new[new_index,0]**2+position_new[new_index,1]**2)
+                        motion_diff=distance[k,:]-dist_lidar
+                        #else: # k-th human was tracked using camera + lidar data
+                        #    if time_track[k,0]>=time_track[k,1]: # when last data was taken from lidar
+                        #        motion_diff=sqrt(position[k,0]**2+position[k,1]**2)-sqrt(position_new[new_index,0]**2+position_new[new_index,1]**2)
+                        #    else: # when last data was taken from camera
+                        #        dist_lidar=sqrt(position_new[new_index,0]**2+position_new[new_index,1]**2)
+                        #        motion_diff=distance[k,:]-dist_lidar                               
                         speed[k,:]=motion_diff/time_diff
                         time_track[k,0]=time_data[0]
                         if counter_motion[k]<n_samples: #while the recorded data is less than n_points                
@@ -403,11 +405,12 @@ def human_tracking():
                         else: #to removed old data and replace for newer data
                             speed_buffer[k,0:n_samples-1]=speed_buffer[k,1:n_samples]
                             speed_buffer[k,n_samples-1]=speed[k,:]
-                        #Updating position, area, counter_old
+                        #Updating position, area, counter_old and distance
                         position[k,:]=position_new[new_index,:]
                         area[k,0]=area_new[new_index,0]
                         counter_old[k,0]=counter_old[k,0]-1
                         new_human_flag[new_index]=1 #it is not a new human
+                        distance[k,:]=w_distance[0]*distance[k,:]+w_distance[1]*dist_lidar
                         #For Update the sensor    
                         if sensor[k]==2: #if before it was only from camera
                             sensor[k,:]=0 #now is from both
@@ -488,6 +491,7 @@ def human_tracking():
                 features=np.append(features,np.zeros([1,n_features]),axis=0)
                 orientation=np.append(orientation,np.zeros([1,1]),axis=0)
                 distance=np.append(distance,np.zeros([1,1]),axis=0)
+                distance[n_human-1,0]=sqrt((position_new[k,0])**2+(position_new[k,1])**2) 
                 sensor=np.append(sensor,np.ones([1,1]),axis=0) #1 because it is a lidar type data
                 #Motion inference
                 motion=np.append(motion,np.zeros([1,1]),axis=0) #new human detection starts with motion label 0 = "not_defined"
@@ -507,16 +511,17 @@ def human_tracking():
         diff=np.zeros([n_human,len(centroid_new[:,0])])
         area_new=np.zeros([len(centroid_new[:,0]),1]) #vector with the area of the image where the new human is detected
         new_human_flag=np.zeros([len(centroid_new[:,0]),1]) #assuming all are new humans
+        error_threshold=meter_threshold #meters
         for k in range(0,n_human):
-            if sensor[k]==2 or (sensor[k]==0 and counter_old[k,0]>counter_old[k,1]): #For humans detected by camera or when camera was detecting for longer
-                error_threshold=pixel_threshold #pixels
-                for kk in range(0,len(centroid_new[:,0])):
-                    diff[k,kk]=sqrt((centroid[k,0]-centroid_new[kk,0])**2+(centroid[k,1]-centroid_new[kk,1])**2)  
-            else:  #if the tracked data was taken only from lidar or when lidar was detecting for longer
-                error_threshold=meter_threshold #meters
-                distance_lidar=sqrt((position[k,0])**2+(position[k,1])**2)
-                for kk in range(0,len(distance_new[:,0])):
-                    diff[k,kk]=abs(distance_lidar-distance_new[kk,:])  
+           #if sensor[k]==2 or (sensor[k]==0 and counter_old[k,0]>counter_old[k,1]): #For humans detected by camera or when camera was detecting for longer
+           #     error_threshold=pixel_threshold #pixels
+           #     for kk in range(0,len(centroid_new[:,0])):
+           #         diff[k,kk]=sqrt((centroid[k,0]-centroid_new[kk,0])**2+(centroid[k,1]-centroid_new[kk,1])**2)  
+           # else:  #if the tracked data was taken only from lidar or when lidar was detecting for longer
+           #     error_threshold=meter_threshold #meters
+           #     distance_lidar=sqrt((position[k,0])**2+(position[k,1])**2)
+            for kk in range(0,len(distance_new[:,0])):
+                diff[k,kk]=abs(distance[k,:]-distance_new[kk,:])
             counter_no_new_data=0 # counter to know if the k-th human tracked is not longer detected
             for kk in range(0,len(centroid_new[:,0])):
                 if new_human_flag[kk]==0: # Consider the kk-th new human only if it was not matched with another tracked human before
@@ -535,17 +540,17 @@ def human_tracking():
                         new_index=kk
                         time_diff=time_track[k,1]-time_data[1]                        
                         #Updating speed and time_track
-                        if sensor[k]==1: #k-th human was tracked using lidar data
-                            dist_lidar=sqrt((position[k,0])**2+(position[k,1])**2)
-                            motion_diff=dist_lidar-distance_new[new_index,:]
-                        elif sensor[k]==2: #k-th human was tracked using camera data
-                            motion_diff=distance[k,:]-distance_new[new_index,:]
-                        else: # k-th human was tracked using camera + lidar data
-                            if time_track[k,0]>=time_track[k,1]: # when last data was taken from lidar
-                                dist_lidar=sqrt((position[k,0])**2+(position[k,1])**2)
-                                motion_diff=dist_lidar-distance_new[new_index,:]
-                            else: # when last data was taken from camera
-                                motion_diff=distance[k,:]-distance_new[new_index,:]
+                        #if sensor[k]==1: #k-th human was tracked using lidar data
+                        #    dist_lidar=sqrt((position[k,0])**2+(position[k,1])**2)
+                        #    motion_diff=dist_lidar-distance_new[new_index,:]
+                        #elif sensor[k]==2: #k-th human was tracked using camera data
+                        motion_diff=distance[k,:]-distance_new[new_index,:]
+                        #else: # k-th human was tracked using camera + lidar data
+                        #    if time_track[k,0]>=time_track[k,1]: # when last data was taken from lidar
+                        #        dist_lidar=sqrt((position[k,0])**2+(position[k,1])**2)
+                        #        motion_diff=dist_lidar-distance_new[new_index,:]
+                        #    else: # when last data was taken from camera
+                        #        motion_diff=distance[k,:]-distance_new[new_index,:]
                         speed[k,:]=motion_diff/time_diff
                         time_track[k,1]=time_data[1]   
                         if counter_motion[k]<n_samples: #while the recorded data is less than n_points                
@@ -559,7 +564,7 @@ def human_tracking():
                         centroid[k,:]=centroid_new[new_index,:]
                         features[k,:]=features_new[new_index,:]
                         orientation[k,:]=orientation_new[new_index,:]
-                        distance[k,:]=distance_new[new_index,:]
+                        distance[k,:]=w_distance[0]*distance[k,:]+w_distance[1]*distance_new[new_index,:]
                         area[k,0]=area_new[new_index,0]
                         counter_old[k,1]=counter_old[k,1]-1
                         new_human_flag[new_index]=1 #it is not a new human
@@ -663,16 +668,16 @@ def human_tracking():
         repeated_index=np.zeros([n_human,1]) #initially all humans are considered different
         error_threshold=meter_threshold #meters            
         for k in range(0,n_human):
-            if sensor[k]==1 or (sensor[k]==0 and counter_old[k,0]<=counter_old[k,1]): #For humans detected by lidar or when lidar was detecting for longer
-                dist_1=sqrt((position[k,0])**2+(position[k,1])**2)
-            else: #For humans detected by camera or when camera was detecting for longer
-                dist_1=distance[k,:]     
+            #if sensor[k]==1 or (sensor[k]==0 and counter_old[k,0]<=counter_old[k,1]): #For humans detected by lidar or when lidar was detecting for longer
+            #    dist_1=sqrt((position[k,0])**2+(position[k,1])**2)
+            #else: #For humans detected by camera or when camera was detecting for longer
+            dist_1=distance[k,:]     
             for i in range (0,n_human):
                 if k!=i and repeated_index[k]==0 and repeated_index[i]==0:
-                    if sensor[i]==1 or (sensor[i]==0 and counter_old[i,0]<=counter_old[i,1]): #For humans detected by lidar or when lidar was detecting for longer
-                        dist_2=sqrt((position[i,0])**2+(position[i,1])**2)
-                    else: #For humans detected by camera or when camera was detecting for longer
-                        dist_2=distance[i,:]   
+                    #if sensor[i]==1 or (sensor[i]==0 and counter_old[i,0]<=counter_old[i,1]): #For humans detected by lidar or when lidar was detecting for longer
+                    #    dist_2=sqrt((position[i,0])**2+(position[i,1])**2)
+                    #else: #For humans detected by camera or when camera was detecting for longer
+                    dist_2=distance[i,:]   
                     dist_diff=abs(dist_1-dist_2)  
                     area_diff=abs(area[k,0]-area[i,0])
                     if dist_diff<=error_threshold and area_diff<=1:

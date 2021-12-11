@@ -107,9 +107,9 @@ class inRowTravServer(object):
         self.human_sensor_t0=[0]                # time counter for the latest data from lidar
         self.human_sensor_t1=[0]                # time counter for the latest data from camera
         self.hri_critical_index=0               # index of the most critical human detected
-        self.hri_status= 0                      # human aware navigation flag
+        #self.hri_status= 0                      # human aware navigation flag
         self.hri_safety_action=0                # safety action from the safety system
-        self.hri_human_command=0                # human command activated by gesture recognition
+        #self.hri_human_command=0                # human command activated by gesture recognition
         self.han_start_dist=3.6                 # Distance to human at which the robot starts to slow down
         self.han_final_dist=0                   # Distance to human at which the robot must stop
         ###########################################################################################################3
@@ -694,15 +694,15 @@ class inRowTravServer(object):
         else: #if a safety action is required
             if self.hri_safety_action==1: #if the speed is reduced while approaching
                 index=self.hri_critical_index
-                if self.human_sensor[index]==1: #if sensor was lidar 
-                    dist=sqrt(self.human_position_x[index]**2+self.human_position_y[index]**2)
-                elif self.human_sensor[index]==1: #if sensor was camera
-                    dist=self.human_distance[index]  
-                else: #if sensor was camera+lidar
-                    if self.human_sensor_t0[index]>=self.human_sensor_t1[index]: #if data from lidar is newer than from camera
-                        dist=sqrt(self.human_position_x[index]**2+self.human_position_y[index]**2)
-                    else: #if data from camera is newer than from lidar
-                        dist=self.human_distance[index]     
+                #if self.human_sensor[index]==1: #if sensor was lidar 
+                #    dist=sqrt(self.human_position_x[index]**2+self.human_position_y[index]**2)
+                #elif self.human_sensor[index]==1: #if sensor was camera
+                dist=self.human_distance[index]  
+                #else: #if sensor was camera+lidar
+                #    if self.human_sensor_t0[index]>=self.human_sensor_t1[index]: #if data from lidar is newer than from camera
+                #        dist=sqrt(self.human_position_x[index]**2+self.human_position_y[index]**2)
+                #    else: #if data from camera is newer than from lidar
+                #        dist=self.human_distance[index]     
                 if dist <= self.han_start_dist:
                     slowdown_delta = self.han_start_dist - self.han_final_dist
                     current_percent = (dist - self.han_final_dist) / slowdown_delta
@@ -798,15 +798,15 @@ class inRowTravServer(object):
         else: #if a safety action is required
             if self.hri_safety_action==1: #if the speed is reduced while approaching
                 index=self.hri_critical_index
-                if self.human_sensor[index]==1: #if sensor was lidar 
-                    dist=sqrt(self.human_position_x[index]**2+self.human_position_y[index]**2)
-                elif self.human_sensor[index]==1: #if sensor was camera
-                    dist=self.human_distance[index]  
-                else: #if sensor was camera+lidar
-                    if self.human_sensor_t0[index]>=self.human_sensor_t1[index]: #if data from lidar is newer than from camera
-                        dist=sqrt(self.human_position_x[index]**2+self.human_position_y[index]**2)
-                    else: #if data from camera is newer than from lidar
-                        dist=self.human_distance[index]     
+                #if self.human_sensor[index]==1: #if sensor was lidar 
+                #    dist=sqrt(self.human_position_x[index]**2+self.human_position_y[index]**2)
+                #elif self.human_sensor[index]==1: #if sensor was camera
+                dist=self.human_distance[index]  
+                #else: #if sensor was camera+lidar
+                #    if self.human_sensor_t0[index]>=self.human_sensor_t1[index]: #if data from lidar is newer than from camera
+                #        dist=sqrt(self.human_position_x[index]**2+self.human_position_y[index]**2)
+                #    else: #if data from camera is newer than from lidar
+                #        dist=self.human_distance[index]     
                 if dist <= self.han_start_dist:
                     slowdown_delta = self.han_start_dist - self.han_final_dist
                     current_percent = (dist - self.han_final_dist) / slowdown_delta
@@ -1231,9 +1231,9 @@ class inRowTravServer(object):
         self.human_sensor_t1=human_info.sensor_t1
     
     def safety_callback(self,safety_info):
-        self.hri_status=safety_info.hri_status
+        #self.hri_status=safety_info.hri_status
         self.hri_safety_action=safety_info.safety_action
-        self.hri_human_command=safety_info.human_command
+        #self.hri_human_command=safety_info.human_command
         self.hri_critical_index=safety_info.critical_index   
     ##############################################################################################    
 if __name__ == '__main__':
