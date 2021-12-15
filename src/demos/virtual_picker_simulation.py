@@ -52,14 +52,21 @@ class robot_class:
         #declaration and initial values of important variables
         #INFORMATION SIMULATED IN GAZEBO 
         self.position=np.zeros([1,3]) #[x,y,theta]
+        self.position_past=np.zeros([1,3]) #[x,y,theta]
         self.input=np.zeros([2,1]) #w,v control signals
+        self.speed=0 #absolute value of speed
+        self.time=0 #time of data received from odometry
 
 def robot_callback_pos(odom):
     #print("ROBOTS NEW DATA")
     #if new_data[3]==0:
     pos = odom.pose.pose
-    pose= np.array([pos.position.x, pos.position.y, 0])
-    robot.position=pose
+    #robot.position_past=robot.position
+    robot.position=np.array([pos.position.x, pos.position.y, 0])
+    #time_new=time.time()-time_init
+    #print("ROBOT POSITION",robot.position) 
+    #robot.speed=sqrt((robot.position_past[0]-pos.position.x)**2+(robot.position_past[1]-pos.position.y)**2)/(time_new-robot.time)
+    #robot.time=time_new
     new_data[3]=1
 
 def robot_callback_vel(rob):
@@ -67,6 +74,7 @@ def robot_callback_vel(rob):
     #if new_data[4]==0:
     robot.input[1] = rob.linear.x
     robot.input[0] = rob.angular.z
+    robot.speed=abs(robot.input[1])
     new_data[4]=1
        
 def actor00_callback(p1):
@@ -87,10 +95,13 @@ def actor00_callback(p1):
     distance_new=distance_new-1
     #if distance_new<0:
     #    distance_new=0
-    human.speed[0,0]= ((distance_new-human.distance[0,0])/(time_new-human.time[0]))+robot.input[1]
+     
+    human.speed[0,0]=0#abs((distance_new-human.distance[0,0])/(time_new-human.time[0]))-abs(robot.speed)
+    
+    
     #print("HUMAN SPEED",(distance_new-human.distance[0,0])/(time_new-human.time[0]))
-    print("ROBOT SPEED",robot.input[1])
-    print("TOTAL SPEED", human.speed[0,0])
+    #print("ROBOT SPEED",robot.input[1])
+    #print("ROBOT SPEED", robot.speed)
     
     k=0
     if human.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
@@ -104,18 +115,10 @@ def actor00_callback(p1):
     ii=0
     if human.counter_motion[ii]>=n_samples:
         speed_mean=np.mean(human.speed_buffer[ii,:])
-        if abs(speed_mean)>=0 and abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
+        if abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
             human.motion[ii]=1
-        elif abs(speed_mean)>=speed_threshold[0] and abs(speed_mean)<speed_threshold[1]: #if human is moving slowly
-            if speed_mean<0:
-                human.motion[ii]=2
-            else:
-                human.motion[ii]=4
-        else: #if human is moving fast
-            if speed_mean<0:
-                human.motion[ii]=3
-            else:
-                human.motion[ii]=5
+        else: #if human is moving 
+            human.motion[ii]=2
     else:
         human.motion[ii]=0
     #Human Area (using only y-position in global frame)
@@ -145,7 +148,8 @@ def actor01_callback(p2):
     distance_new=distance_new-1
     #if distance_new<0:
     #   distance_new=0
-    human.speed[1,0]= ((distance_new-human.distance[1,0])/(time_new-human.time[1]))+robot.input[1]
+    #human.speed[1,0]= abs((distance_new-human.distance[1,0])/(time_new-human.time[1]))-abs(robot.input[1])
+    human.speed[1,0]= abs((distance_new-human.distance[1,0])/(time_new-human.time[1]))-abs(robot.speed)
     k=1
     if human.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
         human.speed_buffer[k,int(human.counter_motion[k])]=human.speed[k,:]
@@ -158,18 +162,10 @@ def actor01_callback(p2):
     ii=1
     if human.counter_motion[ii]>=n_samples:
         speed_mean=np.mean(human.speed_buffer[ii,:])
-        if abs(speed_mean)>=0 and abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
+        if abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
             human.motion[ii]=1
-        elif abs(speed_mean)>=speed_threshold[0] and abs(speed_mean)<speed_threshold[1]: #if human is moving slowly
-            if speed_mean<0:
-                human.motion[ii]=2
-            else:
-                human.motion[ii]=4
-        else: #if human is moving fast
-            if speed_mean<0:
-                human.motion[ii]=3
-            else:
-                human.motion[ii]=5
+        else: #if human is moving
+            human.motion[ii]=2
     else:
         human.motion[ii]=0
     #Human Area (using only y-position in global frame)

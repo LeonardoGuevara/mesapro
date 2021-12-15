@@ -108,7 +108,7 @@ def actor00_callback_d2(p1):
         distance_new=distance_new-1
         #if distance_new<0:
         #    distance_new=0
-        human.speed[0,0]= (distance_new-human.distance[0,0])/(time_new-human.time[0])+robot.input[1]
+        human.speed[0,0]= abs((distance_new-human.distance[0,0])/(time_new-human.time[0]))-abs(robot.input[1])
         k=0
         if human.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
             human.speed_buffer[k,int(human.counter_motion[k])]=human.speed[k,:]
@@ -121,18 +121,10 @@ def actor00_callback_d2(p1):
         ii=0
         if human.counter_motion[ii]>=n_samples:
             speed_mean=np.mean(human.speed_buffer[ii,:])
-            if abs(speed_mean)>=0 and abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
+            if abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
                 human.motion[ii]=1
-            elif abs(speed_mean)>=speed_threshold[0] and abs(speed_mean)<speed_threshold[1]: #if human is moving slowly
-                if speed_mean<0:
-                    human.motion[ii]=2
-                else:
-                    human.motion[ii]=4
-            else: #if human is moving fast
-                if speed_mean<0:
-                    human.motion[ii]=3
-                else:
-                    human.motion[ii]=5
+            else: #if human is moving
+                human.motion[ii]=2
         else:
             human.motion[ii]=0
         #Human Area (using only y-position in global frame)
@@ -166,7 +158,7 @@ def actor01_callback_d2(p2):
         distance_new=distance_new-1
         #if distance_new<0:
         #   distance_new=0
-        human.speed[1,0]= (distance_new-human.distance[1,0])/(time_new-human.time[1])+robot.input[1]
+        human.speed[1,0]= abs((distance_new-human.distance[1,0])/(time_new-human.time[1]))-abs(robot.input[1])
         k=1
         if human.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
             human.speed_buffer[k,int(human.counter_motion[k])]=human.speed[k,:]
@@ -181,16 +173,8 @@ def actor01_callback_d2(p2):
             speed_mean=np.mean(human.speed_buffer[ii,:])
             if abs(speed_mean)>=0 and abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
                 human.motion[ii]=1
-            elif abs(speed_mean)>=speed_threshold[0] and abs(speed_mean)<speed_threshold[1]: #if human is moving slowly
-                if speed_mean<0:
-                    human.motion[ii]=2
-                else:
-                    human.motion[ii]=4
-            else: #if human is moving fast
-                if speed_mean<0:
-                    human.motion[ii]=3
-                else:
-                    human.motion[ii]=5
+            else: #if human is moving
+                human.motion[ii]=2
         else:
             human.motion[ii]=0
         #Human Area (using only y-position in global frame)

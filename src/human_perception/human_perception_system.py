@@ -806,18 +806,10 @@ def human_motion_inference():
     #if new_data[0]==1 or new_data[1]==1:
     for ii in range(0,n_human):
         speed_mean=np.mean(speed[ii,:])
-        if abs(speed_mean)>=0 and abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
+        if abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
             motion[ii]=1
-        elif abs(speed_mean)>=speed_threshold[0] and abs(speed_mean)<speed_threshold[1]: #if human is moving slowly
-            if speed_mean<0:
-                motion[ii]=2
-            else:
-                motion[ii]=4
-        else: #if human is moving fast
-            if speed_mean<0:
-                motion[ii]=3
-            else:
-                motion[ii]=5
+        else: #if human is moving
+            motion[ii]=1
         #else:
         #    motion[ii]=0 #not defined label
 

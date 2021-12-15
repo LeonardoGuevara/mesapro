@@ -288,7 +288,7 @@ if __name__ == '__main__':
                              #In case the picker wants the robot to approch to him/her 
                             if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==1: #picker is ordering the robot to approach (using both arms)
                             #    if human.motion[hri.critical_index]==1: # if the human is mostly static
-                                print("HUMANO PIDIENDO APROX")
+                                #print("HUMANO PIDIENDO APROX")
                                 hri.human_command=1 #make the robot approach to the picker from this point i.e robot.operation=1
                                 hri.safety_action=1 #make the robot reduce speed
                                 hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
@@ -315,7 +315,7 @@ if __name__ == '__main__':
                             #        hri.audio_message=6 #alert of presence
                             #In case the human is not static, or is not facing the robot
                             if (robot.operation!=5) and (human.motion[hri.critical_index]!=1 or human.orientation[hri.critical_index]==1): 
-                                print("HUMANO MOVIENDOsE XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                                #print("HUMANO MOVIENDOsE XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
                                 hri.human_command=3 #make the robot stop 
                                 hri.safety_action=3 #waiting new command          
                                 hri.audio_message=1 #message to ask the picker for a new order to approach/move away                       

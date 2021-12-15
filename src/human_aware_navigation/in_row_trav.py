@@ -111,7 +111,7 @@ class inRowTravServer(object):
         self.hri_safety_action=0                # safety action from the safety system
         #self.hri_human_command=0                # human command activated by gesture recognition
         self.han_start_dist=3.6                 # Distance to human at which the robot starts to slow down
-        self.han_final_dist=0                   # Distance to human at which the robot must stop
+        self.han_final_dist=1                   # Distance to human at which the robot must stop
         ###########################################################################################################3
         # This dictionary defines which function should be called when a variable changes via dynamic reconfigure
         self._reconf_functions={'variables':['emergency_clearance_x', 'emergency_clearance_y', 'tf_buffer_size'],
@@ -708,12 +708,15 @@ class inRowTravServer(object):
                     current_percent = (dist - self.han_final_dist) / slowdown_delta
                     if current_percent >0:
                         print("Limiting speed")
-                        speed = min((current_percent*self.forward_speed), (self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))))
+                        #speed = min((current_percent*self.forward_speed), (self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))))
+                        speed = (current_percent*self.forward_speed)
                     else:
                         print("stop")
                         speed = 0.0
+                    #speed=0.138*dist
                 else:
                     speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
+                    #speed = self.row_entry_min_speed 
             elif self.hri_safety_action>=2: #if a safety stop is required or the robot needs a human command
                 print("stop")
                 speed = 0.0
@@ -812,10 +815,12 @@ class inRowTravServer(object):
                     current_percent = (dist - self.han_final_dist) / slowdown_delta
                     if current_percent >0:
                         print("Limiting speed")
-                        speed = min((current_percent*self.forward_speed), (self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))))
+                        #speed = min((current_percent*self.forward_speed), (self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))))
+                        speed = (current_percent*self.forward_speed)
                     else:
                         print("stop")
                         speed = 0.0
+                    #speed=0.138*dist
                     if self.backwards_mode:
                             speed = -speed
                 else:

@@ -38,7 +38,7 @@ operation_label=r_param[0][1]
 new_data=[0,0,0] #data from [human_info, safety_info,robot_info]
 main_counter=0
 pub_hz=0.01
-demo=1 #demo 1: perception, demo 2: human in gazebo, demo 3: topological navigation
+demo=3 #demo 1: perception, demo 2: human in gazebo, demo 3: topological navigation
 no_detection=True  
 if demo==1:
     new_data[1]=1
@@ -73,6 +73,7 @@ class robot_class:
         self.position=np.zeros([3,1]) #[x,y,theta]
         self.operation=2 #["UV-C_treatment","moving_to_picker_location", "wait_for_command_to_approach", "approaching_to_picker","wait_for_command_to_move_away", "moving_away_from_picker"] 
         self.speed=0
+        self.goal_node="none"
         
 def camera_callback(ros_image):
     #print("DATA FROM CAMERA")
@@ -117,7 +118,7 @@ def safety_callback(safety_info):
         hri.audio_message=safety_info.audio_message
         hri.safety_action=safety_info.safety_action
         hri.human_command=safety_info.human_command
-        hri.critical_index=safety_info.critical_index    
+        hri.critical_index=safety_info.critical_index   
         new_data[1]=1
     
 def robot_callback(robot_info):
@@ -125,6 +126,8 @@ def robot_callback(robot_info):
     if new_data[1]==0:
         robot.position=np.array([robot_info.position_x,robot_info.position_y,robot_info.orientation])
         robot.operation=robot_info.operation
+        #robot.current_node=robot_info.current_node
+        robot.goal_node=robot_info.goal_node
         new_data[2]=1
 
 def gazebo_callback(gazebo_info):
@@ -185,6 +188,8 @@ def demo_outputs(color_image):
                     color_image = cv2.putText(color_image,"***ROBOT OPERATION***",(50, 420) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
                     color_image = cv2.putText(color_image,"operation:   "+operation_label[int(robot.operation)],(50, 450) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
                     color_image = cv2.putText(color_image,"speed:      "+str(round(robot.speed,2))+"m/s",(50, 480) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                    if demo==3:
+                        color_image = cv2.putText(color_image,"goal node:   "+robot.goal_node,(50, 510) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
                 else:
                     center_coordinates = (int(human.centroid_x), int(human.centroid_y)) 
                     color_image = cv2.circle(human.image, center_coordinates, 5, (255, 0, 0), 20) 
@@ -217,13 +222,15 @@ if __name__ == '__main__':
     rospy.Subscriber('robot_info',robot_msg,robot_callback)
     if demo==2:
         rospy.Subscriber('turtle1/cmd_vel',geometry_msgs.msg.Twist,gazebo_callback)
+    if demo==3:
+        rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,gazebo_callback)    
     #Rate setup
     rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	
         main_counter=main_counter+1
         #if new_data!=[0,0]:
-        if demo==2:  
-            color_image = np.zeros((500,650,3), np.uint8) 
+        if demo>=2:  
+            color_image = np.zeros((530,650,3), np.uint8) 
             demo_outputs(color_image)
         print(main_counter)    
         print("Distance",round(human.distance,2))
