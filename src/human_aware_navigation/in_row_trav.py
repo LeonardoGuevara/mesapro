@@ -717,7 +717,7 @@ class inRowTravServer(object):
                 else:
                     speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
                     #speed = self.row_entry_min_speed 
-            elif self.hri_safety_action>=2: #if a safety stop is required or the robot needs a human command
+            elif self.hri_safety_action==2: #if a safety stop is required or the robot needs a human command
                 print("stop")
                 speed = 0.0
         ##############################################################################
@@ -828,7 +828,7 @@ class inRowTravServer(object):
                         speed = -self.forward_speed
                     else:
                         speed = self.forward_speed
-            elif self.hri_safety_action>=2: #if a safety stop is required or the robot needs a human command
+            elif self.hri_safety_action==2: #if a safety stop is required or the robot needs a human command
                 print("stop")
                 speed = 0.0
         ##############################################################################

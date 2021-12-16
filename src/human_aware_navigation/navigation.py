@@ -74,7 +74,8 @@ class TopologicalNavServer(object):
         rospy.on_shutdown(self._on_node_shutdown)
         
         ############################################################################################
-        self.robot_operation=6                  # robot operation used for the safety system
+        self.op_mode="logistics"                # logistics or UVC mode
+        self.robot_operation=5                  # robot operation used for the safety system
         self.past_operation=100                 # past robot operation
         self.prev_status = None                 # status of the route following
         self.goal= "None"                       # Current goal to reach
@@ -305,7 +306,10 @@ class TopologicalNavServer(object):
             self._feedback.route = "Starting..."
             self._as.publish_feedback(self._feedback)
             ###################################################################
-            self.robot_operation=1 # operation when the robot is moving to the goal
+            if self.op_mode=="logistics":
+                self.robot_operation=3 # operation when the robot is moving to the goal
+            else:
+                self.robot_operation=0 # operation when the robot is performing UVC treatment
             self.past_operation=self.robot_operation #to give priority to a new human command goal
             self.goal=goal.target
             #hola=self.find_new_goal()
@@ -314,7 +318,11 @@ class TopologicalNavServer(object):
             ###################################################################
             self.navigate(goal.target)
             ###################################################################
-            self.robot_operation=6 # robot operation is "wait for new goal"
+            if self.op_mode=="logistics":
+                if self.robot_operation!=4: #only update if the robot was not paused
+                    self.robot_operation=5 # robot operation is "wait for new goal"
+            else:
+                self.robot_operation=2 # robot operatin is wait to perform UVC treatment again
             self.past_operation=self.robot_operation # to reset everything
             #self.past_operation=self.robot_operation
             ###################################################################
@@ -946,69 +954,82 @@ class TopologicalNavServer(object):
         #status=self.prev_status
         
         #To ensure that human commands are valid only when robot is along rows
-        #if self.current_node != "none":
-        #    parent=self.rsearch.get_node_from_tmap2(self.current_node)
-        #else: #to find the closest node when robot is moving between nodes
-        #    parent, the_edge = self.orig_node_from_closest_edge(self.rsearch.get_node_from_tmap2(self.goal))
-        #out_poly = True #initial assuption that the robot is outside the polytunnel nodes, then the human commands are not allowed
-        #for edge in parent["node"]["edges"]:
-        #    if edge["action"]=="row_traversal":
-        #        out_poly = False # If at least an edge is connected with the polytunnels nodes, then the human commands are allowed
-        #        break
+        if self.current_node != "none":
+            parent=self.rsearch.get_node_from_tmap2(self.current_node)
+        else: #to find the closest node when robot is moving between nodes
+            parent=self.rsearch.get_node_from_tmap2(self.current_target)
+        out_poly = True #initial assuption that the robot is outside the polytunnel nodes, then the human commands are not allowed
+        for edge in parent["node"]["edges"]:
+            if edge["action"]=="row_traversal":
+                out_poly = False # If at least an edge is connected with the polytunnels nodes, then the human commands are allowed
+                break
         
         #TO UPDATE THE ROBOT OPERATION
-        if self.hri_status!=0 : #if a human is detected            
-            if self.robot_operation==1: #if robot is moving to picker location 
+        if self.hri_status!=0 : #if a human is detected    
+            #LOGISTICS
+            if self.robot_operation==3: #if robot is moving to goal location
                 if self.hri_status==2: #if distance <=3.6m
-                    self.robot_operation=2 #wait for command to approach
-                if self.hri_human_command==1: #if human command is "approach"
-                    self.robot_operation=3 
-                if self.hri_human_command==2: #if human command is "move_away"
-                    self.robot_operation=5
-                if self.hri_human_command==3: #if human command is "stop"
-                    self.robot_operation=2 #wait for command to approach              
-            elif self.robot_operation==2: #if robot is waiting for a human command to approach
-                if self.hri_human_command==1: #if human command is "approach"
-                    self.robot_operation=3 
-                if self.hri_human_command==2: #if human command is "move_away"
-                    self.robot_operation=5
-            elif self.robot_operation==3: #if robot is approaching to picker (already identified)
+                    self.robot_operation=4 # pause goal
+                if self.hri_human_command==1 and out_poly==False: #if human command is "approach"
+                    self.robot_operation=6 
+                if self.hri_human_command==2 and out_poly==False: #if human command is "move_away"
+                    self.robot_operation=7
+                if self.hri_human_command==3 : #if human command is "stop"
+                    self.robot_operation=5 # wait for new command       
+                if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
+                    self.robot_operation=5 #make the robot wait for a command to move away
+            elif self.robot_operation==6: #if robot is approaching to picker (already identified)
                 if self.hri_status==3: #if distance <=1.2m
-                    self.robot_operation=4 #wait for command to move away
+                    self.robot_operation=5 #wait for command to move away
                 if self.hri_human_command==2: #if human command is "move_away"
-                    self.robot_operation=5
+                    self.robot_operation=7
                 if self.hri_human_command==3: #if human command is "stop"
-                    self.robot_operation=4 #wait for command to move away
+                    self.robot_operation=5 #wait for command to move away
                 if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
-                    self.robot_operation=4 #make the robot wait for a command to move away
-            elif self.robot_operation==4: #if robot is waiting for a human command to move away
+                    self.robot_operation=5 #make the robot wait for a command to move away
+            elif self.robot_operation==7: #if robot is moving away from the picker (it can be after collecting tray or because of human command)
                 if self.hri_human_command==1: #if human command is "approach"
-                    self.robot_operation=3 
-                if self.hri_human_command==2: #if human command is "move_away"
-                    self.robot_operation=5
-            elif self.robot_operation==5: #if robot is moving away from the picker (it can be after collecting tray or because of human command)
-                if self.hri_human_command==1: #if human command is "approach"
-                    self.robot_operation=3 
+                    self.robot_operation=6 # robot is approaching to picker 
                 if self.hri_human_command==3: #if human command is "stop"
-                    self.robot_operation=2 #wait for command to approach
+                    self.robot_operation=5 #wait for command to approach
                 if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
-                    self.robot_operation=6 #make the robot wait for a new goal 
-            elif self.robot_operation==6: #if robot is waiting for new goal
-                if self.navigation_activated==True: #if robot is moving
-                    if self.hri_status==1: #if distance is 3.6m to 7m
-                        self.robot_operation=1 #robot operation is "moving to goal"
-                if self.hri_human_command==1: #if human command is "approach"
-                    self.robot_operation=3 
-                if self.hri_human_command==2: #if human command is "move_away"
-                    self.robot_operation=5
-            else: #uv-c treatment
-                self.robot_operation=0  
-                
+                    self.robot_operation=5 #make the robot wait for a new command
+            elif self.robot_operation==5: #if robot is waiting for new human command
+                if self.hri_human_command==1 and self.hri_status!=3 and out_poly==False: #if human command is "approach" and distance is >1.2m and robot is inside polytunnel
+                    self.robot_operation=6 # robot is approaching to picker 
+                if self.hri_human_command==2 and out_poly==False: #if human command is "move_away" and robot is inside polytunnel
+                    self.robot_operation=7
+            elif self.robot_operation==4: #if robot is in pause
+                if self.hri_status==1: #if distance is 3.6m to 7m
+                    self.robot_operation=3 #robot operation is "moving to goal"
+                if self.hri_human_command==1 and out_poly==False: #if human command is "approach"
+                    self.robot_operation=6 
+                if self.hri_human_command==2 and out_poly==False: #if human command is "move_away"
+                    self.robot_operation=7
+           #UV-C Treatment
+            elif self.robot_operation==0: #if robot is performing UV-C treatment
+                if self.hri_status>=2: #if human is within 9m
+                    self.robot_operation=2 # stop UV-C treatment, and wait till new human command to restart
+                elif self.navigation_activated==False and self.current_node==self.goal: #if robot reached finished the UV-C treatment
+                    self.robot_operation=2 #make the robot wait for a command to restart UV-C treatment
+                    
         else: #if none human is detected
-            if self.navigation_activated==True: #if robot is moving
-                self.robot_operation=1 #robot operation is "moving to goal"
-            if self.current_node==self.goal: #if robot reached the goal
-                self.robot_operation=6 #robot operation is "wait for new goal"
+            if self.robot_operation==0: # UV-C treatment operations
+                if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal
+                    self.robot_operation=2 #robot operation is "wait for new command to restart"
+            elif self.robot_operation==1: # UV-C treatment is paused 
+                if self.navigation_activated==True: #if robot is moving
+                    self.robot_operation=0 #robot operation is performing UV-C treatment
+                
+            elif self.robot_operation==3: #moving to goal
+                if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal
+                    self.robot_operation=5 #robot operation is "wait for new goal"
+            elif self.robot_operation==4: # goal is paused
+                if self.navigation_activated==True: #if robot is moving
+                    self.robot_operation=3 #robot operation is "moving to goal"
+            elif self.robot_operation==6: # robot is approaching
+                self.robot_operation=5 #robot stops for safety purpuses, till the human is detected again
+                
         #print("ROBOT OPERATION CALLBACK", self.robot_operation)
         if self.past_operation!=self.robot_operation:# and self.robot_operation!=1:
             #print("PAST_OPERATION",self.past_operation)
@@ -1033,8 +1054,8 @@ class TopologicalNavServer(object):
         #print("PAST OPERATION",self.past_operation)
         #print("NEW OPERATION",self.robot_operation)
                 
-        if (self.robot_operation==2 or self.robot_operation==4 or self.robot_operation==6):# and status==GoalStatus.ACTIVE: #to make the robot stop
-            if self.past_operation!=2 and self.past_operation!=4 and self.past_operation!=6: #a new goal is activated only if it was not activated before
+        if (self.robot_operation==4 or self.robot_operation==5  or self.robot_operation==2):# and status==GoalStatus.ACTIVE: #to make the robot stop
+            if self.past_operation!=4 and self.past_operation!=5 and self.past_operation!=2: #a new goal is activated only if it was not activated before
                 #print("OPERATION CHANGED 11111111111111111111111111111111111111111111111111111111111111111111")
                 self.past_operation=self.robot_operation
                 with self.navigation_lock:
@@ -1042,15 +1063,12 @@ class TopologicalNavServer(object):
                         # we successfully stopped the previous action, claim the title to activate navigation
                         self.navigation_activated = False
                 
-        elif self.robot_operation==3 or self.robot_operation==5: #to approch/move away after being waiting
+        elif self.robot_operation==6 or self.robot_operation==7 or (self.past_operation==4 and self.robot_operation==3) or (self.past_operation==2 and self.robot_operation==0): #to approch/move away or resume paused goal after being waiting
             if self.past_operation!=self.robot_operation: #a new goal is activated only if it was not activated before
                 #print("OPERATION CHANGED 22222222222222222222222222222222222222222222222222222222222")
                 can_start = False
-                self.goal=self.find_new_goal()
-                #if self.robot_operation==3: #approach
-                #    self.goal="WayPoint84"
-                #else: #robot_operation=5, move away
-                #    self.goal="WayPoint138"
+                if self.robot_operation!=3 and self.robot_operation!=0:
+                    self.goal=self.find_new_goal()
                 
                 self.past_operation=self.robot_operation
                 #self.new_goal= True
@@ -1077,7 +1095,9 @@ class TopologicalNavServer(object):
         if self.current_node != "none":
             parent=self.rsearch.get_node_from_tmap2(self.current_node)
         else: #to find the closest node when robot is moving between nodes
-            parent, the_edge = self.orig_node_from_closest_edge(self.rsearch.get_node_from_tmap2(self.goal))
+            #parent, the_edge = self.orig_node_from_closest_edge(self.rsearch.get_node_from_tmap2(self.goal))
+            parent=self.rsearch.get_node_from_tmap2(self.current_target)
+            
         not_goal = False
         for edge in parent["node"]["edges"]:
             if edge["action"]=="row_traversal":
@@ -1091,10 +1111,10 @@ class TopologicalNavServer(object):
                 child = self.rsearch.get_node_from_tmap2(child_name)
                 child_y=child["node"]["pose"]["position"]["y"]
                 parent_y=parent["node"]["pose"]["position"]["y"]
-                if self.robot_operation==3: #approach
+                if self.robot_operation==6: #approach
                     if child_y<=parent_y:
                         parent=child    
-                else: #robot_operation=5, move away
+                else: #robot_operation=7, move away
                     if child_y>=parent_y:
                         parent=child
             #print("PARENT",parent["node"]["edges"])

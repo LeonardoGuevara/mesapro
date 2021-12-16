@@ -14,9 +14,9 @@ action_recog_config:
 ################################################
 human_safety_config:
   hri_status: ["no_human","safety_hri","risky_hri","dangerous_hri"]
-  audio_message: ["no_message","ask_for_next_action","ask_for_free_space","alert_row_transition","alert_approaching","alert_presence","alert_UVC"]
-  safety_action: ["normal_operation","reduce_speed","safety_stop","waiting_command"]
+  audio_message: ["no_message","alert_UVC_danger","ask_for_next_action","ask_for_free_space","alert_approaching","alert_presence"]
+  safety_action: ["normal_operation","reduce_speed","safety_stop"]
   human_command: ["no_command","approach","move_away","stop","yes","no"]
 ###############################################
 robot_config:
-  operation: ["UV-C_treatment","moving_to_goal", "wait_for_command_to_approach", "approaching_to_picker","wait_for_command_to_move_away", "moving_away_from_picker","wait_for_new_goal"]
+  operation: ["UV-C_treatment","paused_UV-C_treatment","wait_new_UV-C_treatment","moving_to_goal","paused_goal","wait_new_command","approaching_to_picker", "moving_away_from_picker"]
