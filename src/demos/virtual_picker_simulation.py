@@ -16,7 +16,7 @@ import time
 ##########################################################################################
 picker_step=0.05 # maximum picker step each time an action is triggered 
 n_samples=10 #number of samples used for the motion inference
-new_data=[0,0,0,0,0] #joy, actor0, actor1, robot_pos, robot_vel
+#new_data=[0,0,0,0,0] #joy, actor0, actor1, robot_pos, robot_vel
 speed_threshold=[0.2,0.4]  # [static, slow motion] m/s
 areas_angle=[150,100,80,30,0] #in degrees
 main_counter=0
@@ -67,7 +67,7 @@ def robot_callback_pos(odom):
     #print("ROBOT POSITION",robot.position) 
     #robot.speed=sqrt((robot.position_past[0]-pos.position.x)**2+(robot.position_past[1]-pos.position.y)**2)/(time_new-robot.time)
     #robot.time=time_new
-    new_data[3]=1
+    #new_data[3]=1
 
 def robot_callback_vel(rob):
     #print("ROBOTS NEW DATA")
@@ -75,7 +75,7 @@ def robot_callback_vel(rob):
     robot.input[1] = rob.linear.x
     robot.input[0] = rob.angular.z
     robot.speed=abs(robot.input[1])
-    new_data[4]=1
+    #new_data[4]=1
        
 def actor00_callback(p1):
     #print("ACTOR00 NEW DATA")
@@ -130,7 +130,7 @@ def actor00_callback(p1):
     human.area[0,0]=2
     #Transform human_position from global frame to local frame
     human.position[0,:]=pose-robot.position
-    new_data[1]=1
+    #new_data[1]=1
 
 def actor01_callback(p2):
     #print("ACTOR01 NEW DATA")
@@ -176,7 +176,7 @@ def actor01_callback(p2):
     human.area[1,0]=2
     #Transform human_position from global frame to local frame
     human.position[1,:]=pose-robot.position
-    new_data[2]=1
+    #new_data[2]=1
 
 def joy_callback(data):
     #print("JOY NEW DATA")
@@ -184,7 +184,7 @@ def joy_callback(data):
     axes=data.axes  
     #if new_data[0]==0:
     if np.shape(buttons)[0]>0:
-        new_data[0]=1 
+        #new_data[0]=1 
         if buttons[4]>0: #L1 to control picker01 gesture
             if buttons[0]>0: #square is two arms (approach) 
                 human.posture[1,0]=1

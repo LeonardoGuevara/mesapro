@@ -44,7 +44,7 @@ from visualization_msgs.msg import Marker
 #from visualization_msgs.msg import MarkerArray
 
 ######################################################################
-from mesapro.msg import human_msg, hri_msg, robot_msg
+from mesapro.msg import human_msg, hri_msg 
 #######################################################################
 class inRowTravServer(object):
 

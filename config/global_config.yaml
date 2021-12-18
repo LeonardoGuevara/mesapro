@@ -19,4 +19,4 @@ human_safety_config:
   human_command: ["no_command","approach","move_away","stop","yes","no"]
 ###############################################
 robot_config:
-  operation: ["UV-C_treatment","paused_UV-C_treatment","wait_new_UV-C_treatment","moving_to_goal","paused_goal","wait_new_command","approaching_to_picker", "moving_away_from_picker"]
+  operation: ["UV-C_treatment","paused_UV-C_treatment","wait_new_UV-C_treatment","moving_to_goal","paused_goal","wait_human_command","approaching_to_picker", "moving_away_from_picker"]

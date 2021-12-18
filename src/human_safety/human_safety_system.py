@@ -42,7 +42,13 @@ class robot_class:
     def __init__(self): #It is done only the first iteration
         #declaration and initial values of important variables
         self.position=np.zeros([3,1]) #[x,y,theta]
-        self.operation=2 #["UV-C_treatment","moving_to_picker_location", "wait_for_command_to_approach", "approaching_to_picker","wait_for_command_to_move_away", "moving_away_from_picker"]
+        self.op_mode="logistics"          # logistics or UVC mode
+        if self.op_mode=="logistics":
+            self.operation=5              # robot is waiting for a new goal
+        else: #in case of UVC
+            self.operation=2              # robot is waiting for a new human command
+        self.goal_xy=[0,0] #current robot goal [x,y]
+        
         
 class human_class:
     def __init__(self): #It is done only the first iteration
@@ -75,7 +81,7 @@ class hri_class:
 
 def human_callback(human_info):
     #print("NEW HUMAN DATA")
-    if len(human_info.sensor)!=0 and new_data[0]==0: #only if there is a new human_info data
+    if len(human_info.sensor)!=0: #only if there is a new human_info data
         human.posture=human_info.posture
         human.posture_prob=human_info.posture_prob
         human.motion=human_info.motion   
@@ -89,14 +95,19 @@ def human_callback(human_info):
         human.sensor_t1=human_info.sensor_t1
         human.sensor_c0=human_info.sensor_c0
         human.sensor_c1=human_info.sensor_c1       
-        new_data[0]=1
+
         
 def robot_callback(robot_info):
-    if new_data[1]==0: #only if there is a new human_info data
-        robot.position=np.array([robot_info.position_x,robot_info.position_y,robot_info.orientation])
-        robot.operation=robot_info.operation
-        new_data[1]=1
-        
+   
+    robot.position=np.array([robot_info.position_x,robot_info.position_y,robot_info.orientation])
+    robot.operation=robot_info.operation
+    robot.goal_xy=[robot_info.current_node_x,robot_info.current_node_y]
+    
+
+
+#def robot_odom_callback(odom):
+    
+
 def critical_human_selection():
     sensor=human.sensor
     sensor_c0=human.sensor_c0
@@ -113,32 +124,22 @@ def critical_human_selection():
     n_human=len(sensor)
     #CLOSEST HUMAN TRACKED
     for k in range(0,n_human):
-        #if sensor_c1[k]<0 and sensor[k]==2:# and posture_prob[k]>posture_threshold:# if data was taken from camera
         if distance[k]<=closest_distance:
             closest_index=k
             closest_distance=distance[k]
-        #if sensor[k]!=2:# if data was taken from lidar or lidar+camera
-        #    if sensor_c0[k]<=sensor_c1[k]: #lidar data was tracked for longer
-        #        distance_lidar=sqrt((position_x[k])**2+(position_y[k])**2)
-        #        if distance_lidar<=closest_distance:
-        #            closest_index=k
-        #            closest_distance=distance_lidar  
-        #    else:
-        #        if distance[k]<=closest_distance:
-        #            closest_index=k
-        #            closest_distance=distance[k]
-    print("closest_distance", closest_distance)
+       
+    #print("closest_distance", closest_distance)
     critical_index=closest_index
     #RISK INFERENCE
     if operation>=1: #if robot operation is logistics
-        if area[closest_index]>=1 and area[closest_index]<=3: #if the closest human is in front of the robot (i.e. same row)
+        if area[closest_index]>=1 and area[closest_index]<=3: #if the closest human is ocluding the robot path to the current topo goal (i.e. being in the same row in case of polytunnels, in front of the robot in case of footpaths)
             risk=1 #there is a risk
-            #if (posture_prob[closest_index]<=posture_threshold and posture[closest_index]!=0 and area[closest_index]!=2): #additional condition only if the data was taken from camera 
-            #    risk=0 #to avoid false positives
+            #human_goal_dist = sqrt()
+            #robot_goal_dist =
         else:
             risk=0 #there is not risk
     else: #for uv-c treatment
-        risk=1 #there is always a risk
+        risk=1 #there is always a risk just for being detected
     
     return critical_index,risk
 
@@ -164,190 +165,159 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():	      
         main_counter=main_counter+1   
         ############################################################################################
-        if new_data[0]==1 or new_data[1]==1:
+            
+        if len(human.sensor)==1 and (human.posture[0]+human.position_x[0]+human.position_y[0]+human.distance[0])==0: #If None human detected condition according to my code logic
+            hri.status=0 #no human
+            hri.audio_message=0 #no message
+            hri.safety_action=0 #normal operation
+            hri.human_command=0  #no command
+        else: #if at least one human was detected
             #Critical human selection
             [hri.critical_index,hri.risk]=critical_human_selection()
-            if hri.risk==1: #if there is risk of producing human injuries, human in the same row (logistics), human presence (uv-c treatment)
-                ##hri_status############
-                if len(human.sensor)==1 and (human.posture[0]+human.position_x[0]+human.position_y[0]+human.distance[0])==0: #None human detected
-                    hri.status=0 #no human
-                    hri.audio_message=0 #no message
-                    hri.safety_action=0 #normal operation
-                    hri.human_command=0  #no command
-                else: #if at least one human was detected
-                    distance=human.distance[hri.critical_index]    
-                    print("DISTANCE",distance)
-                    ###UV-C treatment#######################################
-                    if robot.operation==0: #if robot is performing UV-C treatment
-                        hri.human_command=0 #no human command expected during uv-c treatment
-                        if distance>9: #if human is above 7m from the robot
-                            hri.status=2 #safety HRI
-                            hri.audio_message=1 #UVC danger message
-                            hri.safety_action=2 # stop UV-C
-                        else: #if human is within 9m
-                            hri.status=3 #risky HRI
-                            hri.audio_message=1 #UVC danger message
-                            hri.safety_action=2 # stop UV-C
-                   
-                    ##LOGISTICS###############################################
-                    if robot.operation>=3: 
-                        if distance>7: #if human is above 7m
-                            if robot.operation!=6: #if robot is not performing approaching maneuvers
-                                hri.human_command=0 #no command
-                                hri.status=1 # safety HRI
-                                hri.audio_message=0 # no message
-                                hri.safety_action=0 #normal operation
-                            else: # if robot is performing approaching maneuvers, make it move slow and activate alert
-                                hri.human_command=0 #no command
-                                hri.status=1 # safety HRI
-                                hri.safety_action=1 #make the robot reduce speed 
-                                hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
-                            #CASES WHEN HUMAN PERFORM A BODY GESTURE
-                            #In case the picker wants the robot to approch to him/her before the robot ask for permission
-                            if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==1: #picker is ordering the robot to approach (using both arms)
-                                hri.human_command=1 #make the robot approach to the picker from this point i.e robot.operation=1
-                                hri.safety_action=1 #make the robot reduce speed
-                                hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
-                            #In case the picker wants the robot to stop before the robot approach more to him/her
-                            if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==8:  #picker is ordering the robot to stop (using right hand)
-                                hri.human_command=3 #make the robot stop 
-                                hri.safety_action=2 #waiting new command          
-                                hri.audio_message=2 #message to ask the picker for a new order to approach/move away
-                            #In case the picker wants the robot to move away before the robot approach more to him/her
-                            if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==2:  #picker is ordering the robot to move away (using both hands)
-                                hri.human_command=2 #make the robot move away 
-                                hri.safety_action=0 #normal operation             
-                                hri.audio_message=5 #alert of presence
-                        elif distance>3.6 and distance<=7: #if human is between 3.6-7m
-                            #NORMAL CASES
-                            hri.status=1
-                            hri.human_command=0 #no command 
-                            #To alert of its presence while moving
-                            if robot.operation==3 or robot.operation==7:
-                                hri.safety_action=0 #normal operation
-                                hri.audio_message=5 #alert of presence
-                            ##To make the robot stop and ask for free space
-                            #if robot.operation==4 :
-                            #    hri.safety_action=2 #waiting new command 
-                            #    hri.audio_message=3 #message to ask the picker for free space to continue moving
-                            
-                            #To make the robot stop and ask for new order
-                            if robot.operation==5:
-                                hri.safety_action=2 #waiting new command 
-                                hri.audio_message=2 #message to ask the picker for a new order to approach/move away
-                            
-                            #To make the robot approach with slow speed and activate alert
-                            if robot.operation==6:
-                                hri.safety_action=1 #make the robot reduce speed 
-                                hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
-                            
-                            #CASES WHEN HUMAN PERFORM A BODY GESTURE
-                            #In case the picker wants the robot to approch to him/her before the robot ask for permission
-                            if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==1: #picker is ordering the robot to approach (using both arms)
-                                hri.human_command=1 #make the robot approach to the picker from this point i.e robot.operation=1
-                                hri.safety_action=1 #make the robot reduce speed
-                                hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
-                            #In case the picker wants the robot to stop before the robot approach more to him/her
-                            if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==8:  #picker is ordering the robot to stop (using right hand)
-                                hri.human_command=3 #make the robot stop 
-                                hri.safety_action=2 #waiting new command          
-                                hri.audio_message=2 #message to ask the picker for a new order to approach/move away
-                            #In case the picker wants the robot to move away before the robot approach more to him/her
-                            if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==2:  #picker is ordering the robot to move away (using both hands)
-                                hri.human_command=2 #make the robot move away 
-                                hri.safety_action=0 #normal operation             
-                                hri.audio_message=5 #alert of presence
-                                                      
-                        elif distance>1.2 and distance<=3.6: #if human is between 1.2-3.6m
-                            #NORMAL CASES
-                            hri.status=2
-                            hri.human_command=0 #no command 
-                            #To make the robot stop and ask for new order
-                            if robot.operation==3 or robot.operation==5:
-                                hri.safety_action=2 #waiting new command 
-                                hri.audio_message=2 #message to ask the picker for a new order to approach/move away
-                            
-                            #To make the robot stop and ask for free space
-                            if robot.operation==4 :
-                                hri.safety_action=2 #waiting new command 
-                                hri.audio_message=3 #message to ask the picker for free space to continue moving
-                            
-                            #To make the robot approach with slow speed and activate alert
-                            if robot.operation==6:
-                                #if human.motion[hri.critical_index]==1: # if the human is mostly static
-                                    #print("HUMANO QUIETO")
-                                hri.safety_action=1 #make the robot reduce speed 
-                                hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
-                            #To make the robot move away while alerting of its presence
-                            if robot.operation==7:
-                                hri.safety_action=0 #normal operation             
-                                hri.audio_message=5 #alert of presence
-                            #CASES WHEN HUMAN PERFORM A BODY GESTURE
-                             #In case the picker wants the robot to approch to him/her 
-                            if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==1: #picker is ordering the robot to approach (using both arms)
-                            #    if human.motion[hri.critical_index]==1: # if the human is mostly static
-                                #print("HUMANO PIDIENDO APROX")
-                                hri.human_command=1 #make the robot approach to the picker from this point i.e robot.operation=1
-                                hri.safety_action=1 #make the robot reduce speed
-                                hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
-                            #    else: #if human is not static
-                            #        print("HUMANO MOVIENDOAE")
-                            #        hri.human_command=3 #make the robot stop 
-                            #        hri.safety_action=3 #waiting new command          
-                            #        hri.audio_message=1 #message to ask the picker for a new order to approach/move away
-                            #In case the picker wants the robot to stop 
-                            if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==8:  #picker is ordering the robot to stop (using right hand)
-                                hri.human_command=3 #make the robot stop 
-                                hri.safety_action=2 #waiting new command               
-                                hri.audio_message=2 #message to ask the picker for a new order to approach/move away
-                            #In case the picker wants the robot to move away 
-                            if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==2:  #picker is ordering the robot to move away (using both hands)
-                                hri.human_command=2 #make the robot move away 
-                                hri.safety_action=0 #normal operation             
-                                hri.audio_message=5 #alert of presence
-                            #SPECIAL CASE WHEN THE ROBOT WAS WAITING TOO LONG AN ORDER TO MOVE AWAY 
-                            #if robot.operation==4 and  (human.sensor[hri.critical_index]==1 or (human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]!=2)):  #picker is not ordering the robot to move away (using both hands)
-                            #    if human.motion[hri.critical_index]>=4: # if the human is moving away 
-                            #        hri.human_command=2 #make the robot move away 
-                            #        hri.safety_action=0 #normal operation             
-                            #        hri.audio_message=6 #alert of presence
-                            #In case the human is not static, or is not facing the robot
-                            if (robot.operation!=7) and (human.motion[hri.critical_index]!=1 or human.orientation[hri.critical_index]==1): 
-                                #print("HUMANO MOVIENDOsE XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-                                hri.human_command=3 #make the robot stop 
-                                hri.safety_action=2 #waiting new command          
-                                hri.audio_message=2 #message to ask the picker for a new order to approach/move away                       
-                            
-                        else: #if human is within 1.2m
-                            #print("CRITICAL CASE")
-                            hri.status=3 #dangerous hri
-                            if robot.operation!=7:# only if robot is not moving away already                                
-                                hri.human_command=0 #no command
-                                hri.audio_message=0 #no message 
-                                hri.safety_action=2 #safety stop
-                            #In case the picker wants the robot to move away 
-                            if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==2:  #picker is ordering the robot to move away (using both hands)
-                                #print("MOVE AWAY")
-                                hri.human_command=2 #make the robot move away 
-                                hri.safety_action=0 #normal operation   
-                                hri.audio_message=5 #alert of presence
-                            #print("Safety_action",hri.safety_action)
-                            #print("Human_command",hri.human_command)
-            else: #The critical human detected is not in the same row (Logistics)
-                hri.status=0 #no human
+            if hri.risk==1: #if there is risk of producing human injuries, i.e human in the same row in the way of the robot goal (logistics), human presence (uv-c treatment)                  
+                distance=human.distance[hri.critical_index]    
+                print("DISTANCE",distance)
+                ###UV-C treatment#######################################
+                if robot.operation==0: #if robot is performing UV-C treatment
+                    hri.human_command=0 #no human command expected during uv-c treatment
+                    if distance>9: #if human is above 7m from the robot
+                        hri.status=2 #safety HRI
+                        hri.audio_message=1 #UVC danger message
+                        hri.safety_action=2 # stop UV-C
+                    else: #if human is within 9m
+                        hri.status=3 #risky HRI
+                        hri.audio_message=1 #UVC danger message
+                        hri.safety_action=2 # stop UV-C
+               
+                ##LOGISTICS###############################################
+                if robot.operation>=3: 
+                    if distance>7: #if human is above 7m
+                        if robot.operation!=6: #if robot is not performing approaching maneuvers
+                            hri.human_command=0 #no command
+                            hri.status=1 # safety HRI
+                            hri.audio_message=0 # no message
+                            hri.safety_action=0 #normal operation
+                        else: # if robot is performing approaching maneuvers, make it move slow and activate alert
+                            hri.human_command=0 #no command
+                            hri.status=1 # safety HRI
+                            hri.safety_action=1 #make the robot reduce speed 
+                            hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
+                        #CASES WHEN HUMAN PERFORM A BODY GESTURE
+                        #In case the picker wants the robot to approch to him/her before the robot ask for permission
+                        if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==1: #picker is ordering the robot to approach (using both arms)
+                            hri.human_command=1 #make the robot approach to the picker from this point i.e robot.operation=1
+                            hri.safety_action=1 #make the robot reduce speed
+                            hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
+                        #In case the picker wants the robot to stop before the robot approach more to him/her
+                        if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==8:  #picker is ordering the robot to stop (using right hand)
+                            hri.human_command=3 #make the robot stop 
+                            hri.safety_action=2 #waiting new command          
+                            hri.audio_message=2 #message to ask the picker for a new order to approach/move away
+                        #In case the picker wants the robot to move away before the robot approach more to him/her
+                        if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==2:  #picker is ordering the robot to move away (using both hands)
+                            hri.human_command=2 #make the robot move away 
+                            hri.safety_action=0 #normal operation             
+                            hri.audio_message=5 #alert of presence
+                    elif distance>3.6 and distance<=7: #if human is between 3.6-7m
+                        #NORMAL CASES
+                        hri.status=1
+                        hri.human_command=0 #no command 
+                        #To alert of its presence while moving
+                        if robot.operation==3 or robot.operation==7:
+                            hri.safety_action=0 #normal operation
+                            hri.audio_message=5 #alert of presence
+                        
+                        #To make the robot stop and ask for new order
+                        if robot.operation==5:
+                            hri.safety_action=2 #waiting new command 
+                            hri.audio_message=2 #message to ask the picker for a new order to approach/move away
+                        
+                        #To make the robot approach with slow speed and activate alert
+                        if robot.operation==6:
+                            hri.safety_action=1 #make the robot reduce speed 
+                            hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
+                        
+                        #CASES WHEN HUMAN PERFORM A BODY GESTURE
+                        #In case the picker wants the robot to approch to him/her before the robot ask for permission
+                        if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==1: #picker is ordering the robot to approach (using both arms)
+                            hri.human_command=1 #make the robot approach to the picker from this point i.e robot.operation=1
+                            hri.safety_action=1 #make the robot reduce speed
+                            hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
+                        #In case the picker wants the robot to stop before the robot approach more to him/her
+                        if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==8:  #picker is ordering the robot to stop (using right hand)
+                            hri.human_command=3 #make the robot stop 
+                            hri.safety_action=2 #waiting new command          
+                            hri.audio_message=2 #message to ask the picker for a new order to approach/move away
+                        #In case the picker wants the robot to move away before the robot approach more to him/her
+                        if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==2:  #picker is ordering the robot to move away (using both hands)
+                            hri.human_command=2 #make the robot move away 
+                            hri.safety_action=0 #normal operation             
+                            hri.audio_message=5 #alert of presence
+                                                  
+                    elif distance>1.2 and distance<=3.6: #if human is between 1.2-3.6m
+                        #NORMAL CASES
+                        hri.status=2
+                        hri.human_command=0 #no command 
+                        #To make the robot stop and ask for new order
+                        if robot.operation==3 or robot.operation==5:
+                            hri.safety_action=2 #waiting new command 
+                            hri.audio_message=2 #message to ask the picker for a new order to approach/move away
+                        
+                        #To make the robot stop and ask for free space
+                        if robot.operation==4 :
+                            hri.safety_action=2 #waiting new command 
+                            hri.audio_message=3 #message to ask the picker for free space to continue moving
+                        
+                        #To make the robot approach with slow speed and activate alert
+                        if robot.operation==6:
+                            hri.safety_action=1 #make the robot reduce speed 
+                            hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
+                        #To make the robot move away while alerting of its presence
+                        if robot.operation==7:
+                            hri.safety_action=0 #normal operation             
+                            hri.audio_message=5 #alert of presence
+                        #CASES WHEN HUMAN PERFORM A BODY GESTURE
+                         #In case the picker wants the robot to approch to him/her 
+                        if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==1: #picker is ordering the robot to approach (using both arms)
+                            hri.human_command=1 #make the robot approach to the picker from this point i.e robot.operation=1
+                            hri.safety_action=1 #make the robot reduce speed
+                            hri.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
+                        #In case the picker wants the robot to stop 
+                        if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==8:  #picker is ordering the robot to stop (using right hand)
+                            hri.human_command=3 #make the robot stop 
+                            hri.safety_action=2 #waiting new command               
+                            hri.audio_message=2 #message to ask the picker for a new order to approach/move away
+                        #In case the picker wants the robot to move away 
+                        if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==2:  #picker is ordering the robot to move away (using both hands)
+                            hri.human_command=2 #make the robot move away 
+                            hri.safety_action=0 #normal operation             
+                            hri.audio_message=5 #alert of presence
+                        #In case the human is not static, or is not facing the robot
+                        if (robot.operation!=7) and (human.motion[hri.critical_index]!=1 or human.orientation[hri.critical_index]==1): 
+                            hri.human_command=3 #make the robot stop 
+                            hri.safety_action=2 #waiting new command          
+                            hri.audio_message=2 #message to ask the picker for a new order to approach/move away                       
+                        
+                    else: #if human is within 1.2m
+                        #print("CRITICAL CASE")
+                        hri.status=3 #dangerous hri
+                        if robot.operation!=7:# only if robot is not moving away already                                
+                            hri.human_command=0 #no command
+                            hri.audio_message=0 #no message 
+                            hri.safety_action=2 #safety stop
+                        #In case the picker wants the robot to move away 
+                        if human.sensor[hri.critical_index]!=1 and human.posture[hri.critical_index]==2:  #picker is ordering the robot to move away (using both hands)
+                            #print("MOVE AWAY")
+                            hri.human_command=2 #make the robot move away 
+                            hri.safety_action=0 #normal operation   
+                            hri.audio_message=5 #alert of presence
+                        
+            else: #The critical human detected is not in the same row or is not in front of the robot (Logistics)
+                hri.status=0 #no human/human with not risk
                 hri.audio_message=0 #no message
                 hri.safety_action=0 #normal operation
                 hri.human_command=0  #no command
             ########################################################################3
-            #print("CURRENT OPERATION",robot.operation)
-            #if robot.operation!=robot.operation_new:
-            #    print("NEW OPERATION",robot.operation_new) 
-            #    robot.operation=robot.operation_new
-            ############################################################################            
-            if new_data[0]==1:
-                new_data[0]=0
-            if new_data[1]==1:
-                new_data[1]=0
             
         print("status",hri.status)
         print("safety_action",hri.safety_action)

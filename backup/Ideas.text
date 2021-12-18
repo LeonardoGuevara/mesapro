@@ -1,0 +1,145 @@
+Paquetes que hize downgrade:
+openjdk-11-jre
+openjdk-11-jre-headless
+openjdk-8-jre
+openjdk-8-jre-headless
+libsystemd0  ******* DIDNT ALOW ME TO DOWNGRADE
+.
+.
+.
+udev
+libudev1
+systemd-sysv
+google-chrome-stable  ********** I DIDNT DOWNGRADE
+ubuntu-drivers-common ********** I DIND DOWNGRADE
+libgnutls30 ********** I DIND DOWNGRADE
+libssl-dev ********** I DIND DOWNGRADE
+libssl1.1 ********** I DIND DOWNGRADE
+linux-base ********** I DIND DOWNGRADE
+libnetplan0 ********** I DIND DOWNGRADE
+netplan.io ********** I DIND DOWNGRADE
+nplan ************ I DIDN DOWNGRADE
+openssl
+ubuntu-advantage-tools  ******** I DIDN DOWNGRADE
+rsync
+ufw
+deja-dup:amd64
+dnsmasq-base
+nvidia-driver-470 ******** PROBLEM
+libnvidia-extra-470
+libnvidia-common-470
+libnvidia-gl-470
+nvidia-dkms-470           ********* with warnings Possible missing firmware
+nvidia-kernel-source-470
+nvidia-kernel-common-470 ********* with warnings
+libnvidia-decode-470
+libnvidia-compute-470
+nvidia-compute-utils-470
+libnvidia-encode-470
+nvidia-utils-470
+xserver-xorg-video-nvidia-470
+libnvidia-ifr1-470
+libnvidia-fbc1-470
+libnvidia-cfg1-470
+libxnvctrl0
+nvidia-settings
+python-catkin-pkg-modules
+python-catkin-pkg
+python3-catkin-pkg-modules
+software-properties-common
+software-properties-gtk
+python3-software-properties
+
+
+POR HACER AHORA:
+-grabar nuevos datos, grabando tambien el topico que graba la deteccion de piernas sin hacer el tracking.
+
+
+INTEGRATION TOPO-NAV:
+
+-creo que despues de actualizar sofware el 17 de diciembre se daño algo y ya no se puede navegar dentro de los rows y tampoco sirve cv_bridge package. Los ultimos cambios que hice a mesapro, solo fueron para pulir y optimizar codigo para hacer proximos cambios. pero en si deberian estar haciendo exactamente lo mismo que ya hacia el codigo en github.
+
+****Intentar reemplazar cv_bridge por las soluciones en https://github.com/ros-perception/vision_opencv/issues/207
+
+**** aqui da una idea de como revisar paquetes recientemente instalados en /var/log/dpkg.log y como arregarlos haciendo downgrade
+https://askubuntu.com/questions/34888/is-there-any-way-to-roll-back-the-most-recent-upgrade
+
+-el robot deberia saber si el humano esta en el medio de su ruta o no, ya que solo es peligroso cuando el humano esta al frente, pero no cuando el robot se va alejando. el robot no deberia detenerse cuando el humano esta por detras de el aunque este dentro de los 3.6m., 
+-esto se logra con lo de las areas del perception + donde esta el proximo goal del robot. 
+-Ademas los nuevos goals dados por los comandos de alejarse y acercarse deben depender de si el humano es detectado frente al robot o detras del robot.
+
+***esto se deberia determinar en la rutina critical_human_selection haciendo que la variable risk sea 1 solo si el human esta en medio de la ruta del robot (mas cerca al current_goal que el robot) ya sea dentro de los rows o en los footpaths
+
+** cambiar la logica de como funcionan safety_system.py y navigation.py, ya que safety_system deberia ser el que se encargue de todo lo referente a decision making y solo enviarle actualizaciones a navigation.py. asi como le hace el in_row_trav.py que solo recibe info de safety_actions.
+
+-Hay problema en la estimacion de movimiento del humano, y hace que el robot piense que el humano se esta moviendo cuando no es asi.
+***seguir intentando calculando la velocidad del robot en base a la pose del robot y no en base al dato de velocidad del control, porque este dato no esta siempre enviandose pero el de pose si.
+
+
+
+
+PERCEPTION:
+-incluso antes de tener dos cameras, incluir variable que indique que camara es la que esta detectando al humano, para saber en que lado del robot es la detection. Esto puede ser usando las areas que uso para hacer sensor fusion de camera y lidar, haciendo que existan no 5 sino 10 areas, 5 frontales y 5 traseras, entonces la informacion de que camera esta detectando al robot estaria incluida en el dato de area y no tengo que crear nueva human_info_msg. Pero si tengo que aumentar los posibles valores de las areas.
+
+-agregar dato de velocidad del robot y checar si el calculo de la velocidad del humano funciona bien cuando el robot tambien se mueve. En el script de perception aun no usaba la velocidad del robot. 
+
+-checar todos los nuevos bag files y ver si en alguno de ellos, y ver como se comparta el sensor fusion
+
+-hacer que la posture sea tomada como valida solo si se ha detectado durante al menos 2 segundos. para evitar falsos positivos.
+
+-necesito eliminar falsos positivos de la camara detectados en los crops de alguna manera
+rosbag play people_detection_zotac_3_2021-11-05-12-19-52.bag --loop
+
+
+
+COSAS POR RESOLVER DESPUES:
+-el calculo del area, debe depender de la distancia al robot. La distribucion de areas debe variar si el humano esta mas cerca o mas alejado. Esto para hacer mejor match con lidar y para eliminar falsos positivos del openpose.
+
+-Resolver este error:
+File "human_perception_system.py", line 877, in <module>
+    [human.sensor,human.n_human,human.position_track,human.posture_track,human.centroid_track,human.features_track,human.orientation_track,human.distance_track,human.motion_track,human.time_track,human.speed_track,human.speed_buffer,human.counter_motion,human.area,human.counter_old]=human_tracking()
+  File "human_perception_system.py", line 648, in human_tracking
+    speed_buffer[n_human-1,0]=speed[k,0] # first data in the speed_buffer
+IndexError: index 2 is out of bounds for axis 0 with size 2
+
+
+------------------------------------------------------------------------------------------
+<node pkg="rosbag" type="play" name="rosbag_play_legs"
+    args="--loop $(arg bag_legs) --topics /people_tracker/pose_array"/>
+
+
+cuardrado es 0
+triangulo es 1
+circulo es 2
+x es 3
+L1 es 4
+R1 es 6
+izq-derec es 0 o 2
+arrib-abajo es 1 o 3
+izq y arrib es positivo.
+
+
+TOPICOS IMPORTANTES
+topico con el nombre del goal: /topological_navigation/goal
+**topico con el nombre de la accion actual del robot, status de la accion y el nombre del goal: /topological_navigation/move_action_status
+topico con el nombre y la posicion x,y global del goal:/go_to_node/feedback 
+topico con el nombre del current edge: /go_to_node/current_edge
+topico con el nombre del current node: /go_to_node/current_edge
+topico con el nombre del closest edge: /go_to_node/closest_edge
+topico con el nombre del closest node: /go_to_node/closest_edges
+topico con la distancia al closest node: /go_to_node/closest_node_distance
+
+COSAS IMPORTANTES:
+topicos "move_base" se utilizan para mover al robot cuando esta fuera del polytunnel 
+topicos "row_traversal" se utilizan para mover al robot solo cuando el robot se mueve a lo largo de las rows
+
+people_detection_zotac_3_2021-11-05-12-12-12.bag
+people_detection_zotac_3_2021-11-05-12-20-50.bag
+
+people_detection_zotac_3_2021-11-05-12-12-12.bag
+people_detection_zotac_3_2021-11-05-12-13-05.bag
+people_detection_zotac_3_2021-11-05-12-14-49.bag
+people_detection_zotac_3_2021-11-05-12-22-37.bag
+
+
+
