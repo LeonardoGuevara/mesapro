@@ -32,7 +32,6 @@ from topological_navigation_msgs.msg import NavRoute
 from math import * #to avoid prefix math.
 #######################################################################
 
-
 # A list of parameters topo nav is allowed to change and their mapping from dwa speak.
 # If not listed then the param is not sent, e.g. TrajectoryPlannerROS doesn't have tolerances.
 DYNPARAM_MAPPING = {
@@ -72,21 +71,6 @@ class TopologicalNavServer(object):
     def __init__(self, name, mode):
         
         rospy.on_shutdown(self._on_node_shutdown)
-        
-        ############################################################################################
-        self.op_mode="logistics"                # logistics or UVC mode
-        if self.op_mode=="logistics":
-            self.robot_operation=5              # robot is waiting for a new goal
-        else: #in case of UVC
-            self.robot_operation=2              # robot is waiting for a new human command
-        self.past_operation=100                 # past robot operation
-        self.prev_status = None                 # status of the route following
-        self.goal= "None"                       # Current goal to reach
-        self.hri_critical_index=0               # index of the most critical human detected
-        self.hri_status= 0                      # human aware navigation flag
-        #self.hri_safety_action=0                # safety action from the safety system
-        self.hri_human_command=0                # human command activated by gesture recognition
-        ###########################################################################################
         
         self.node_by_node = False
         self.cancelled = False
@@ -140,6 +124,13 @@ class TopologicalNavServer(object):
         self.make_move_base_edge()
         self.edge_action_manager = EdgeActionManager()
 
+        self.edge_reconfigure = rospy.get_param("~reconfigure_edges", True)
+        self.srv_edge_reconfigure = rospy.get_param("~reconfigure_edges_srv", False)
+        if self.edge_reconfigure:
+            self.edgeReconfigureManager = EdgeReconfigureManager()
+        else:
+            rospy.logwarn("Edge Reconfigure Unavailable")
+
         # Creating Action Server for navigation
         rospy.loginfo("Creating GO-TO-NODE action server...")
         self._as = actionlib.SimpleActionServer(name, topological_navigation_msgs.msg.GotoNodeAction,
@@ -162,9 +153,19 @@ class TopologicalNavServer(object):
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
         rospy.loginfo("...done")
         ##########################################################################################
+        self.robot_action=4                  # current robot operation, waiting for human command as initial condition
+        self.past_action=self.robot_action   # past robot operation
+        self.goal= "Unknown"                 # Current final goal node to reach
+        self.hri_goal = self.goal            # New final goal node given by the safety system 
+        self.hri_safety_action=5              # new safety action from the safety system, no safety action as initial condition
+        self.hri_safety_action_past=self.hri_safety_action #past safety action already taken
+        self.op_mode="logistics"              # assuming logistics as initial op_mode, initial condition
+        self.current_target="Unknown"               # initial condition
         rospy.Subscriber('human_safety_info',hri_msg,self.safety_callback)  
         #############################################################################################
+        
         try:
+            rospy.loginfo("Waiting for restrictions...")
             rospy.wait_for_service('restrictions_manager/evaluate_edge', timeout=3.0)
             
             self.evaluate_edge_srv = rospy.ServiceProxy(
@@ -172,25 +173,25 @@ class TopologicalNavServer(object):
             self.evaluate_node_srv = rospy.ServiceProxy(
                 'restrictions_manager/evaluate_node', EvaluateNode)
             
+            rospy.loginfo("Restrictions Available")
             self.using_restrictions = True
         except:
             rospy.logwarn("Restrictions Unavailable")
             self.using_restrictions = False
 
-        self.edge_reconfigure = rospy.get_param("~reconfigure_edges", True)
-        self.srv_edge_reconfigure = rospy.get_param("~reconfigure_edges_srv", False)
-        if self.edge_reconfigure:
-            self.edgeReconfigureManager = EdgeReconfigureManager()
-        else:
-            rospy.logwarn("Edge Reconfigure Unavailable")
+        # this keeps the runtime state of the fail policies that are currently in execution 
+        self.executing_fail_policy = {}
 
         rospy.loginfo("All Done.")
-        ###########################################################################################
-        #rospy.spin()
         ########################################################################################
+        #rospy.spin()
+        #######################################################################################
         
     def _on_node_shutdown(self):
-        self.cancel_current_action(timeout_secs=2)
+        with self.navigation_lock:
+            if self.navigation_activated:
+                self.preempted = True
+                self.cancel_current_action(timeout_secs=2)
         
         
     def make_move_base_edge(self):
@@ -210,6 +211,9 @@ class TopologicalNavServer(object):
     def init_reconfigure(self):
         
         self.move_base_planner = rospy.get_param("~move_base_planner", "move_base/DWAPlannerROS")
+        if not self.move_base_planner.split("/")[-1] in DYNPARAM_MAPPING:
+            DYNPARAM_MAPPING[self.move_base_planner.split("/")[-1]] = {}
+        
         rospy.loginfo("Creating reconfigure client for {}".format(self.move_base_planner))
         self.rcnfclient = dynamic_reconfigure.client.Client(self.move_base_planner)
         self.init_dynparams = self.rcnfclient.get_configuration()
@@ -230,7 +234,7 @@ class TopologicalNavServer(object):
             cytol = 6.283
 
         params = {"yaw_goal_tolerance": cytol, "xy_goal_tolerance": cxygtol}
-        rospy.loginfo("Reconfiguring %s with %s" % (self.move_base_name, params))
+        rospy.loginfo("Reconfiguring %s with %s" % (self.move_base_planner, params))
         print("Intermediate: {}".format(intermediate))
         self.reconfigure_movebase_params(params)
         
@@ -243,7 +247,7 @@ class TopologicalNavServer(object):
         translation = DYNPARAM_MAPPING[key]
         
         translated_params = {}
-        for k, v in params.iteritems():
+        for k, v in params.items():
             if k in translation:
                 if rospy.has_param(self.move_base_planner + "/" + translation[k]):
                     translated_params[translation[k]] = v
@@ -286,7 +290,6 @@ class TopologicalNavServer(object):
 
 
     def executeCallback(self, goal):
-        
         """
         This Functions is called when the topo nav Action Server is called
         """
@@ -299,35 +302,28 @@ class TopologicalNavServer(object):
                 # we successfully stopped the previous action, claim the title to activate navigation
                 self.navigation_activated = True
                 can_start = True
-        
+
         if can_start:
 
             self.cancelled = False
             self.preempted = False
             self.no_orientation = goal.no_orientation
+            self.executing_fail_policy = {}
             
             self._feedback.route = "Starting..."
             self._as.publish_feedback(self._feedback)
             ###################################################################
-            if self.op_mode=="logistics":
-                self.robot_operation=3 # operation when the robot is moving to the goal
-            else:
-                self.robot_operation=0 # operation when the robot is performing UVC treatment
-            self.past_operation=self.robot_operation #to give priority to a new human command goal
+            self.robot_action=0 # operation when the robot is moving to a original goal
+            self.past_action=self.robot_action #to give priority to a new human command goal
             self.goal=goal.target
-            #hola=self.find_new_goal()
-            #print("HOLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",hola)
-        
-            ###################################################################
             self.navigate(goal.target)
-            ###################################################################
             if self.op_mode=="logistics":
-                if self.robot_operation!=4: #only update if the robot was not paused
-                    self.robot_operation=5 # robot operation is "wait for new goal"
-            else:
-                self.robot_operation=2 # robot operatin is wait to perform UVC treatment again
-            self.past_operation=self.robot_operation # to reset everything
-            #self.past_operation=self.robot_operation
+                if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
+                    self.robot_action=4 # robot operation is "wait for new goal"
+                    self.past_action=self.robot_action # to reset everything
+            else: #UV-C
+                self.robot_action=4 # robot operatin is "wait for new goal"
+                self.past_action=self.robot_action # to reset everything
             ###################################################################
         else:
             rospy.logwarn("Could not cancel current navigation action, GO-TO-NODE goal aborted")
@@ -337,7 +333,6 @@ class TopologicalNavServer(object):
 
 
     def executeCallbackexecpolicy(self, goal):
-        
         """
         This Function is called when the execute policy Action Server is called
         """
@@ -350,7 +345,7 @@ class TopologicalNavServer(object):
                 # we successfully stopped the previous action, claim the title to activate navigation
                 self.navigation_activated = True
                 can_start = True
-       
+
         if can_start:
 
             self.cancelled = False
@@ -391,14 +386,12 @@ class TopologicalNavServer(object):
 
 
     def preemptCallback(self):
-        
         rospy.logwarn("Preempting GO-TO-NODE goal")
         self.preempted = True
         self.cancel_current_action(timeout_secs=2)
 
 
     def preemptCallbackexecpolicy(self):
-        
         rospy.logwarn("Preempting EXECUTE POLICY MODE goal")
         self.preempted = True
         self.cancel_current_action(timeout_secs=2)
@@ -439,11 +432,10 @@ class TopologicalNavServer(object):
         to reach it.
         """
         result = False
-
         if not self.cancelled:
 
             g_node = self.rsearch.get_node_from_tmap2(target)
-            #print("GOAL NODE", g_node)
+            
             self.max_dist_to_closest_edge = rospy.get_param("~max_dist_to_closest_edge", 1.0)
             
             if self.closest_edges.distances[0] > self.max_dist_to_closest_edge or self.current_node != "none":
@@ -510,6 +502,7 @@ class TopologicalNavServer(object):
     def execute_policy(self, route, target):
         
         succeeded, inc = self.followRoute(route, target, 1)
+
         if succeeded:
             rospy.loginfo("Navigation Finished Successfully")
             self.publish_feedback_exec_policy(GoalStatus.SUCCEEDED)
@@ -628,6 +621,7 @@ class TopologicalNavServer(object):
         This function follows the chosen route to reach the goal.
         """
         self.navigation_activated = True
+        
         nnodes = len(route.source)
         Orig = route.source[0]
         Targ = target
@@ -640,7 +634,7 @@ class TopologicalNavServer(object):
         inc = 1
         rindex = 0
         nav_ok = True
-        route_len = len(route.edge_id)
+        recovering = False
         self.fluid_navigation = True
 
         o_node = self.rsearch.get_node_from_tmap2(Orig)
@@ -678,7 +672,7 @@ class TopologicalNavServer(object):
                     # if not is dangerous to move
                     if i["action"] in self.move_base_actions:
                         move_base_act = True
-                
+
                 if not move_base_act:
                     rospy.logwarn("Could not find a move base action in the edges of origin {}. Unsafe to move".format(o_node["node"]["name"]))
                     rospy.loginfo("Action not taken, outputing success")
@@ -691,12 +685,12 @@ class TopologicalNavServer(object):
                     rospy.loginfo("Navigation Finished Successfully") if nav_ok else rospy.logwarn("Navigation Failed")
                 
 
-        while rindex < (len(route.edge_id)) and not self.cancelled and nav_ok:
+        while rindex < (len(route.edge_id)) and not self.cancelled and (nav_ok or recovering):
             
             cedg = get_edge_from_id_tmap2(self.lnodes, route.source[rindex], route.edge_id[rindex])
             a = cedg["action"]
             
-            if rindex < (route_len - 1):
+            if rindex < (len(route.edge_id) - 1):
                 nedge = get_edge_from_id_tmap2(self.lnodes, route.source[rindex + 1], route.edge_id[rindex + 1])
                 a1 = nedge["action"]
                 self.fluid_navigation = nedge["fluid_navigation"]
@@ -726,7 +720,7 @@ class TopologicalNavServer(object):
             # do not care for the orientation of the waypoint if is not the last waypoint AND
             # the current and following action are move_base or human_aware_navigation
             # and when the fuild_navigation is true
-            if rindex < route_len - 1 and a1 in self.move_base_actions and a in self.move_base_actions and self.fluid_navigation:
+            if rindex < len(route.edge_id) - 1 and a1 in self.move_base_actions and a in self.move_base_actions and self.fluid_navigation:
                 self.reconf_movebase(cedg, cnode, True)
             else:
                 if self.no_orientation:
@@ -746,8 +740,12 @@ class TopologicalNavServer(object):
                     self.edgeReconfigureManager.reconfigure()
                 else:
                     self.edgeReconfigureManager.srv_reconfigure(cedg["edge_id"])
-            
-            nav_ok, inc = self.execute_action(cedg, cnode, onode)
+
+            if exec_policy:
+                nav_ok, inc = self.execute_action(cedg, cnode, onode)
+            else:
+                nav_ok, inc, recovering, route = self.execute_action_fail_recovery(cedg, cnode, route, rindex, onode, target)
+
             if self.edge_reconfigure and not self.srv_edge_reconfigure and self.edgeReconfigureManager.active:
                 self.edgeReconfigureManager._reset()
                 rospy.sleep(rospy.Duration.from_sec(0.3))
@@ -786,8 +784,6 @@ class TopologicalNavServer(object):
             self.current_action = "none"
             self.next_action = "none"
             rindex = rindex + 1
-            
-           
 
         self.reset_reconf()
 
@@ -820,16 +816,14 @@ class TopologicalNavServer(object):
 
 
     def publish_route(self, route, target):
-        
         stroute = topological_navigation_msgs.msg.TopologicalRoute()
         for i in route.source:
             stroute.nodes.append(i)
         stroute.nodes.append(target)
         self.route_pub.publish(stroute)
         
-
-    def publish_stats(self):
         
+    def publish_stats(self):
         pubst = NavStatistics()
         pubst.edge_id = self.stat.edge_id
         pubst.status = self.stat.status
@@ -847,25 +841,108 @@ class TopologicalNavServer(object):
         self.stat = None
         
 
+    def get_fail_policy_state(self, edge):
+        policy = None
+        state = -1
+        if len(self.executing_fail_policy) == 0:
+            _policy = [action.strip().split("_") for action in edge["fail_policy"].split(",")]
+            policy = []
+            # repeat the actions that can be repeated more than once
+            for action in _policy:
+                if len(action) > 1 and isinstance(eval(action[-1]), int):
+                    for _ in range(eval(action[-1])):
+                        policy.append(action[:-1])
+                else:
+                    policy.append(action)
+            state = 0
+            self.executing_fail_policy = {
+                "policy": policy,   # the policy we want to execute
+                "state": state,     # at which point of the policy we are
+                "edge": edge["edge_id"]
+            }
+            
+        else:
+            policy = self.executing_fail_policy["policy"]
+            # increment the state because if we are here it means that the previous policy action failed
+            self.executing_fail_policy["state"] += 1
+            state = self.executing_fail_policy["state"]
+
+        return policy, state
+
+
+    def execute_action_fail_recovery(self, edge, destination_node, route, idx, origin_node, target):
+        """
+        This function wraps `execute_action` by executing the fail_policy in case of ABORTED action
+        The fail policy sometimes modifies the current route by including the recovery action
+        """
+        nav_ok, inc = self.execute_action(edge, destination_node, origin_node)
+
+        new_route = route
+        recovering = False
+
+        # this means the action is aborted -> execute the fail policy
+        # make sure that if the goal is cancelled by the client we don't enter here
+        if not nav_ok and not self.preempted:
+            rospy.loginfo("\t>> route: {}".format(route))
+            route_updated = False
+            while not route_updated:
+                policy, state = self.get_fail_policy_state(edge)
+                if state < len(policy):
+                    rec_action = policy[state]
+                    rospy.loginfo(">> EXECUTING FAIL POLICY ACTION: {}.".format(rec_action))
+
+                    if rec_action[0] == "retry":
+                        new_route.source.insert(idx+1, route.source[idx]) 
+                        new_route.edge_id.insert(idx+1, route.edge_id[idx])
+                        route_updated = True
+                        recovering = True
+                    elif rec_action[0] == "fail":
+                        route_updated = True
+                        recovering = False
+                    elif rec_action[0] == "wait":
+                        secs = 1
+                        if len(rec_action) > 1:
+                            secs = int(rec_action[-1])
+                        rospy.sleep(secs)
+                        recovering = True
+                    elif rec_action[0] == "replan":
+                        # rospy.loginfo(">>> PLAN ROUTE {}, {}, {}".format(origin_node["node"]["name"], target, destination_node["node"]["name"]))
+                        _route = self.rsearch.search_route(origin_node["node"]["name"], target, avoid_edges=[edge["edge_id"]])
+                        # rospy.loginfo(">>> RESULT {}".format(_route))
+                        _route = self.enforce_navigable_route(_route, target)
+                        # rospy.loginfo(">>> enforced navigable {}".format(_route))
+
+                        # build the new route
+                        new_route.source = route.source[:idx] + _route.source
+                        new_route.edge_id = route.edge_id[:idx] + _route.edge_id
+                        route_updated = True
+                        recovering = True
+                else:
+                    # clean the current fail policy data
+                    self.executing_fail_policy = {}
+                    recovering = False
+
+            rospy.loginfo("\t>> new route: {}".format(new_route))
+        return nav_ok, inc, recovering, new_route
+    
+
     def execute_action(self, edge, destination_node, origin_node=None):
         ####################################################################
         ################################################################
-        if self.past_operation!=self.robot_operation:# and self.robot_operation!=1: #if a new goal (humand command) is required for the safety system
+        if self.past_action!=self.robot_action:# if a new action is required for the safety system
             status=GoalStatus.SUCCEEDED
             self.prev_status=status
             self.cancelled=True
             self.goal_reached=True
             result = True #True
             inc = 0 #0
-            #self.pub_status(status)
-            #return result, inc
         #######################################################################
         else: #normal operation
             inc = 0
             result = True
             self.goal_reached = False
             self.prev_status = None
-            
+    
             if self.using_restrictions and edge["edge_id"] != "move_base_edge":
                 ## check restrictions for the edge
                 rospy.loginfo("Evaluating restrictions on edge {}".format(edge["edge_id"]))
@@ -907,7 +984,7 @@ class TopologicalNavServer(object):
                 status = self.edge_action_manager.client.get_state()
                 self.pub_status(status)
                 rospy.sleep(rospy.Duration.from_sec(0.01))
-            
+    
             res = self.edge_action_manager.client.get_result()
     
             if status != GoalStatus.SUCCEEDED:
@@ -926,10 +1003,10 @@ class TopologicalNavServer(object):
     
             rospy.sleep(rospy.Duration.from_sec(0.5))
             status = self.edge_action_manager.client.get_state()
-            
         ################################################################
-        self.pub_status(status) 
-        
+        self.pub_status(status)
+
+        rospy.loginfo("move action status: {}, goal reached: {}, inc: {}".format(status_mapping[status], result, inc))
         return result, inc
     
     
@@ -943,120 +1020,53 @@ class TopologicalNavServer(object):
             
             self.move_act_pub.publish(String(json.dumps(d)))
         self.prev_status = status
+
     #######################################################################################        
     
     def safety_callback(self,safety_info):
-        self.hri_status=safety_info.hri_status
-        #self.hri_safety_action=safety_info.safety_action
-        self.hri_human_command=safety_info.human_command
-        self.hri_critical_index=safety_info.critical_index   
-        self.robot_safety_operation()
-        
-        
-    def robot_safety_operation(self):
-        #status=self.prev_status
-        
-        #To ensure that human approaching/moving away commands are valid only when robot is along rows
-        if self.current_node != "none":
-            parent=self.rsearch.get_node_from_tmap2(self.current_node)
-        else: #to find the closest node when robot is moving between nodes
-            parent=self.rsearch.get_node_from_tmap2(self.current_target)
-        out_poly = True #initial assuption that the robot is outside the polytunnel nodes, then the human commands are not allowed
-        for edge in parent["node"]["edges"]:
-            if edge["action"]=="row_traversal":
-                out_poly = False # If at least an edge is connected with the polytunnels nodes, then the human commands are allowed
-                break
-        
-        #TO UPDATE THE ROBOT OPERATION
-        if self.hri_status!=0 : #if a human is detected    
-            #LOGISTICS
-            if self.robot_operation==3: #if robot is moving to goal location
-                if self.hri_status==2: #if distance <=3.6m and human is in front of the robot
-                    self.robot_operation=4 # pause goal
-                if self.hri_human_command==1 and out_poly==False: #if human command is "approach"
-                    self.robot_operation=6 
-                if self.hri_human_command==2 and out_poly==False: #if human command is "move_away"
-                    self.robot_operation=7
-                if self.hri_human_command==3 : #if human command is "stop"
-                    self.robot_operation=5 # wait for new command       
-                if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
-                    self.robot_operation=5 #make the robot wait for a command to move away
-            elif self.robot_operation==6: #if robot is approaching to picker (already identified)
-                if self.hri_status==3: #if distance <=1.2m 
-                    self.robot_operation=5 #wait for command to move away
-                if self.hri_human_command==2: #if human command is "move_away"
-                    self.robot_operation=7
-                if self.hri_human_command==3: #if human command is "stop"
-                    self.robot_operation=5 #wait for command to move away
-                if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
-                    self.robot_operation=5 #make the robot wait for a command to move away
-            elif self.robot_operation==7: #if robot is moving away from the picker (it can be after collecting tray or because of human command)
-                if self.hri_status==2: #if distance <=3.6m and human is in front of the robot
-                    self.robot_operation=5 #wait for command to move away or approach
-                if self.hri_human_command==1: #if human command is "approach"
-                    self.robot_operation=6 # robot is approaching to picker 
-                if self.hri_human_command==3: #if human command is "stop"
-                    self.robot_operation=5 #wait for command to approach
-                if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
-                    self.robot_operation=5 #make the robot wait for a new command
-            elif self.robot_operation==5: #if robot is waiting for new human command
-                if self.hri_human_command==1 and self.hri_status!=3 and out_poly==False: #if human command is "approach" and distance is >1.2m and robot is inside polytunnel
-                    self.robot_operation=6 # robot is approaching to picker 
-                if self.hri_human_command==2 and out_poly==False: #if human command is "move_away" and robot is inside polytunnel
-                    self.robot_operation=7
-            elif self.robot_operation==4: #if robot is in pause
-                if self.hri_status==1: #if distance is 3.6m to 7m 
-                    self.robot_operation=3 #robot operation is "moving to goal"
-                if self.hri_human_command==1 and out_poly==False: #if human command is "approach"
-                    self.robot_operation=6 
-                if self.hri_human_command==2 and out_poly==False: #if human command is "move_away"
-                    self.robot_operation=7
-           #UV-C Treatment
-            elif self.robot_operation==0: #if robot is performing UV-C treatment
-                if self.hri_status>=2: #if human is within 9m
-                    self.robot_operation=2 # stop UV-C treatment, and wait till new human command to restart
-                elif self.navigation_activated==False and self.current_node==self.goal: #if robot reached finished the UV-C treatment
-                    self.robot_operation=2 #make the robot wait for a command to restart UV-C treatment                  
-        else: #if none human is detected or no longer detected         
-            if self.robot_operation==4: # goal was paused
-                self.robot_operation=3 #robot operation is resumed to "moving to goal"
-            elif self.robot_operation==6: # robot was approaching
-                self.robot_operation=5 #robot stops for safety purpuses, till the human is detected again
-                
-        #print("ROBOT OPERATION CALLBACK", self.robot_operation)
-        if self.past_operation!=self.robot_operation:# and self.robot_operation!=1:
+        self.hri_safety_action=safety_info.safety_action
+        self.hri_goal=safety_info.new_goal
+        self.op_mode=safety_info.operation_mode
+        #Only update the robot_action if new safety action is required
+        if self.hri_safety_action!=self.hri_safety_action_past and self.hri_safety_action!=5: 
+            self.robot_action=self.hri_safety_action
+            self.hri_safety_action_past=self.hri_safety_action                
+            #Stop execution of current robot action if there is any change
             with self.navigation_lock:
                 if self.cancel_current_action(timeout_secs=10):
                     # we successfully stopped the previous action, claim the title to activate navigation
                     self.navigation_activated = False
-        #Publish current robot operation after successfully stopped the previos action (if required)
+        #Publish current robot operation
         pub_robot = rospy.Publisher('robot_info', robot_msg)
         rob_msg = robot_msg()
-        rob_msg.operation=self.robot_operation
-        rob_msg.current_node=parent["node"]["name"] 
-        rob_msg.current_node_x=parent["node"]["pose"]["position"]["x"]    
-        rob_msg.current_node_y=parent["node"]["pose"]["position"]["y"]           
-        rob_msg.goal_node=self.goal
-        pub_robot.publish(rob_msg)  
-        #self.robot_goal_update()
+        if self.current_node != "none": # if robot is located at a node
+            parent=self.current_node
+        elif self.current_target != "none" or self.current_target != "Unknown": #to find the closest node when robot is moving between nodes
+            parent=self.current_target
+        else:
+            parent="Unknown"
+        rob_msg.current_node=parent #current goal
+        rob_msg.action=self.robot_action
+        rob_msg.goal_node=self.goal #final goal
+        pub_robot.publish(rob_msg)
         
-    def robot_goal_update(self):
-                
-        if (self.robot_operation==4 or self.robot_operation==5  or self.robot_operation==2):# to make the robot stop / without changing the goal
-            if self.past_operation!=4 and self.past_operation!=5 and self.past_operation!=2: #to ensure that it is executed only once
-                self.past_operation=self.robot_operation
+    def robot_update_action(self):               
+        #Robot goal update if required
+        if (self.robot_action==3 or self.robot_action==4):# to make the robot stop / without changing the goal
+            if self.past_action!=3 and self.past_action!=4: #to ensure that it is executed only once
+                self.past_action=self.robot_action     
                 with self.navigation_lock:
                     if self.cancel_current_action(timeout_secs=10):
                         # we successfully stopped the previous action, claim the title to activate navigation
                         self.navigation_activated = False
-                
-        elif self.robot_operation==6 or self.robot_operation==7 or (self.past_operation==4 and self.robot_operation==3): #to approch/move away (changing goal) or resume a paused goal after being waiting
-            if self.past_operation!=self.robot_operation: #to ensure that it is executed only once
+        elif self.robot_action==0 or self.robot_action==1 or self.robot_action==2: #to change the goal for approch/move away or resume a paused goal after being waiting
+            #To update robot_action If robot requires to change the goal
+            if self.past_action!=self.robot_action: #to ensure that it is executed only once
                 can_start = False
-                if self.robot_operation!=3: #not neccesary to find new goal after paused mode (logistics)
-                    self.goal=self.find_new_goal()
+                if self.past_action!=3: #not neccesary to find new goal after paused mode (logistics)
+                    self.goal=self.hri_goal
                 
-                self.past_operation=self.robot_operation
+                self.past_action=self.robot_action
                 #self.new_goal= True
                 with self.navigation_lock:
                     if self.cancel_current_action(timeout_secs=10):
@@ -1076,62 +1086,23 @@ class TopologicalNavServer(object):
                     rospy.logwarn("Could not cancel current navigation action, GO-TO-NODE goal aborted")
                     self._as.set_aborted()
                 self.navigation_activated = False
-    
-    def find_new_goal(self):
-        if self.current_node != "none":
-            parent=self.rsearch.get_node_from_tmap2(self.current_node)
-        else: #to find the closest node when robot is moving between nodes
-            #parent, the_edge = self.orig_node_from_closest_edge(self.rsearch.get_node_from_tmap2(self.goal))
-            parent=self.rsearch.get_node_from_tmap2(self.current_target)
+            #To update robot_action If robot reach the goal
+            if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
+                self.robot_action=4 #make the robot wait for a human command 
             
-        not_goal = False
-        for edge in parent["node"]["edges"]:
-            if edge["action"]=="row_traversal":
-                not_goal = True
-                break
-        #print("PARENT", parent["node"]["name"])
-        while not_goal:
-            children = self.get_connected_nodes_tmap(parent)
-            #print("CHILDREN",children)
-            for child_name in children:
-                child = self.rsearch.get_node_from_tmap2(child_name)
-                child_y=child["node"]["pose"]["position"]["y"]
-                parent_y=parent["node"]["pose"]["position"]["y"]
-                if self.robot_operation==6: #approach
-                    if child_y<=parent_y:
-                        parent=child    
-                else: #robot_operation=7, move away
-                    if child_y>=parent_y:
-                        parent=child
-            #print("PARENT",parent["node"]["edges"])
-            for edge in parent["node"]["edges"]:
-                if edge["action"]=="move_base":
-                    not_goal = False
-                    break
-        goal=parent["node"]["name"]     
-        #print("GOAL ****************** ",goal)
-        return goal
     
-    def get_connected_nodes_tmap(self, node):
-        children=[]
-        for edge in node["node"]["edges"]:
-            #print("EDGE",edge["node"])
-            children.append(edge["node"])
-        return children
-    
-        
-    ##############################################################################################       
+    ##############################################################################################  
 
 if __name__ == "__main__":
     rospy.init_node("topological_navigation")
     mode = "normal"
     server = TopologicalNavServer(rospy.get_name(), mode)
-    ####################################################################################################
+    ###################################################################################################################
     rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	
-        #print("ROBOT OPERATION MAIN",server.robot_operation)
-        server.robot_goal_update()
+        #print("ROBOT OPERATION MAIN",server.robot_action)
+        server.robot_update_action()
         rate.sleep() #to keep fixed the publishing loop rate
-    ###########################################################################################################
+    ###################################################################################################################
     rospy.loginfo("Exiting.")
 ###################################################################################################################

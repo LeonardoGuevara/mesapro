@@ -1,10 +1,4 @@
-float64 position_x
-float64 position_y
-float64 orientation
-float64 speed
-int64 operation
+int64 action
 string current_node
 string goal_node
-float64 current_node_x
-float64 current_node_y
 

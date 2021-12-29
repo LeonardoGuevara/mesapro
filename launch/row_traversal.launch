@@ -1,25 +1,43 @@
 <?xml version="1.0" ?>
 <launch>
+  <arg name="use_gps_only" default="false" />
+  <arg name="use_row_detector" default="true"  unless="$(arg use_gps_only)"/>
+  <arg name="use_row_detector" default="false"  if="$(arg use_gps_only)"/>
+  <!-- If we are working on the restricted tmap rather than the normal tmap -->
+  <arg name="use_restrictions" default="false"/>
+
   <arg name="site_name" default="riseholme" />
+  <arg name="site_path" default="" />
   <arg name="task" default="transportation" />
+  <arg name="robot_type" default="" />
   
   <arg name="detector_config_common" default="$(find rasberry_navigation)/config/row_detector/row_detector_common_cfg_$(arg site_name)_$(arg task).yaml" />
   <arg name="detector_config_ellipse" default="$(find rasberry_navigation)/config/row_detector/row_detector_ellipse_cfg_$(arg site_name)_$(arg task).yaml" />
   <arg name="pole_positions" default="" />
+  <arg name="use_pole_likelihood_field_tiles" default="True" />
+  <arg name="pole_likelihood_field" default="" />
 
   <arg name="traversal_config" default="$(find rasberry_navigation)/config/row_traversal/row_traversal_cfg_$(arg site_name)_$(arg task).yaml"/>
+  <arg name="enable_filtering" default="true"/>
 
   <include file="$(find polytunnel_navigation_actions)/launch/row_detector.launch">
     <arg name="config_common" value="$(arg detector_config_common)" />
-    <arg name="config_ellipse" value="$(arg detector_config_ellipse)" />
+    <arg name="config_ellipse" value="$(arg site_path)/combined/row_detector_ellipse_$(arg robot_type)_cfg.yaml" if="$(eval task == 'combined')"/>
+    <arg name="config_ellipse" value="$(arg detector_config_ellipse)" unless="$(eval task == 'combined')"/>
     <arg name="pole_positions" value="$(arg pole_positions)" />
+    <arg name="use_pole_likelihood_field_tiles" value="$(arg use_pole_likelihood_field_tiles)" />
+    <arg name="pole_likelihood_field" value="$(arg pole_likelihood_field)" />
+    <arg name="enable_filtering" value="$(arg enable_filtering)" />
   </include>
 
   <node pkg="mesapro" type="in_row_trav.py" name="row_traversal" output="screen">
     <rosparam file="$(arg traversal_config)" command="load"/>
+    <param name="use_row_detector" value="$(arg use_row_detector)"/>
     <param name="pole_positions_path" value="$(arg pole_positions)"/>
+    <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>
+    <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>
 
-  <node pkg="polytunnel_navigation_actions" type="row_detector_vis.py" name="row_detector_vis" output="screen" />
+  <node pkg="polytunnel_navigation_actions" type="row_detector_vis.py" name="row_detector_vis" output="screen" if="$(arg use_row_detector)" />
 
 </launch>

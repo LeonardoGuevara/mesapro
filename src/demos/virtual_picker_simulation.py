@@ -17,7 +17,7 @@ import time
 picker_step=0.05 # maximum picker step each time an action is triggered 
 n_samples=10 #number of samples used for the motion inference
 #new_data=[0,0,0,0,0] #joy, actor0, actor1, robot_pos, robot_vel
-speed_threshold=[0.2,0.4]  # [static, slow motion] m/s
+speed_threshold=[0.4,0.8]  # [static, slow motion] m/s
 areas_angle=[150,100,80,30,0] #in degrees
 main_counter=0
 #Main class definition
@@ -41,7 +41,7 @@ class human_class:
         self.sensor_t[1,1]=1 # to make the camera info the latest one
         self.motion=np.zeros([2,1]) 
         self.centroid=np.zeros([2,2])
-        self.area=np.zeros([2,1])
+        self.area=np.zeros([2,1]) #initially considered on the side of the robot
         self.speed=np.zeros([2,1]) 
         self.speed_buffer=np.zeros([2,n_samples]) #buffer with the human speed recorded during n_points
         self.counter_motion=np.zeros([2,1]) # vector with the number of samples that have been recorded for motion inference
@@ -93,8 +93,8 @@ def actor00_callback(p1):
     distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
     #to include the thorlvard dimensions
     distance_new=distance_new-1
-    #if distance_new<0:
-    #    distance_new=0
+    if distance_new<0:
+        distance_new=0
      
     human.speed[0,0]=0#abs((distance_new-human.distance[0,0])/(time_new-human.time[0]))-abs(robot.speed)
     
@@ -123,11 +123,11 @@ def actor00_callback(p1):
         human.motion[ii]=0
     #Human Area (using only y-position in global frame)
     #print("AREA ERROR",abs(pose[0]-robot.position[0]))
-    if abs(pose[1]-robot.position[1])<=2:
-        human.area[0,0]=2
-    else:
-        human.area[0,0]=0
-    human.area[0,0]=2
+    #if abs(pose[1]-robot.position[1])<=2:
+    #    human.area[0,0]=2
+    #else:
+    #    human.area[0,0]=0
+    #human.area[0,0]=2
     #Transform human_position from global frame to local frame
     human.position[0,:]=pose-robot.position
     #new_data[1]=1
@@ -146,8 +146,8 @@ def actor01_callback(p2):
     distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
     #to include the thorlvard dimensions
     distance_new=distance_new-1
-    #if distance_new<0:
-    #   distance_new=0
+    if distance_new<0:
+       distance_new=0
     #human.speed[1,0]= abs((distance_new-human.distance[1,0])/(time_new-human.time[1]))-abs(robot.input[1])
     human.speed[1,0]= abs((distance_new-human.distance[1,0])/(time_new-human.time[1]))-abs(robot.speed)
     k=1
@@ -169,12 +169,12 @@ def actor01_callback(p2):
     else:
         human.motion[ii]=0
     #Human Area (using only y-position in global frame)
-    if abs(pose[1]-robot.position[1])<=1:
-        human.area[1,0]=2
-    else:
-        human.area[1,0]=0
-    human.area[1,0]=2
-    #Transform human_position from global frame to local frame
+    #if abs(pose[1]-robot.position[1])<=1:
+    #    human.area[1,0]=2
+    #else:
+    #    human.area[1,0]=0
+    #human.area[1,0]=2
+    #Transform human_position from global frame to local frame (the one which is actually measured by the real robot)
     human.position[1,:]=pose-robot.position
     #new_data[2]=1
 
@@ -185,7 +185,7 @@ def joy_callback(data):
     #if new_data[0]==0:
     if np.shape(buttons)[0]>0:
         #new_data[0]=1 
-        if buttons[4]>0: #L1 to control picker01 gesture
+        if buttons[4]>0: #L1 to control picker01 
             if buttons[0]>0: #square is two arms (approach) 
                 human.posture[1,0]=1
             if buttons[1]>0: #triangle is right hand (stop)
@@ -196,6 +196,10 @@ def joy_callback(data):
                 human.orientation[1]=1
             if buttons[8]>0: #start to change the human orientation to front
                 human.orientation[1]=0
+            if buttons[15]>0: #option to change the human area to any (in front)
+                human.area[1]=2
+            if buttons[17]>0: #start to change the human area to any (back)
+                human.area[1]=7
             if np.shape(axes)[0]!=0:
                 #Picker01
                 if axes[0]<0: #left
@@ -210,7 +214,7 @@ def joy_callback(data):
                 if human.posture[1,0]!=0:
                     human.posture[1,0]=0 #to reset human gesture
          
-        elif buttons[6]>0: #R1 to control picker00 gesture
+        elif buttons[6]>0: #R1 to control picker00 
             if buttons[0]>0: #square is two arms (approach) 
                 human.posture[0,0]=1
             if buttons[1]>0: #triangle is right hand (stop)
@@ -221,6 +225,11 @@ def joy_callback(data):
                 human.orientation[0]=1
             if buttons[8]>0: #start to change the human orientation to front
                 human.orientation[0]=0
+            if buttons[15]>0: #option to change the human area to any (in front)
+                human.area[0]=2
+            if buttons[17]>0: #start to change the human area to any (back)
+                human.area[0]=7
+                
             if np.shape(axes)[0]!=0:
                 #Picker00
                 if axes[0]<0: #left
@@ -230,7 +239,7 @@ def joy_callback(data):
                 if axes[1]>0: #up
                     human.position_global[0,1]=human.position_global[0][1]-abs(axes[1])*picker_step
                 if axes[1]<0: #down
-                    human.position_global[0,1]=human.position_global[0][1]+abs(axes[1])*picker_step    
+                    human.position_global[0,1]=human.position_global[0][1]+abs(axes[1])*picker_step
             if buttons[3]>0: #X to reset gesture
                 if human.posture[0,0]!=0:
                     human.posture[0,0]=0 #to reset human gesture
