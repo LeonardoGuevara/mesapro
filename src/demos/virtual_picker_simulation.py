@@ -17,7 +17,7 @@ import time
 picker_step=0.05 # maximum picker step each time an action is triggered 
 n_samples=10 #number of samples used for the motion inference
 #new_data=[0,0,0,0,0] #joy, actor0, actor1, robot_pos, robot_vel
-speed_threshold=[0.4,0.8]  # [static, slow motion] m/s
+speed_threshold=[0.6,1]  # [static, slow motion] m/s
 areas_angle=[150,100,80,30,0] #in degrees
 main_counter=0
 #Main class definition
@@ -96,9 +96,7 @@ def actor00_callback(p1):
     if distance_new<0:
         distance_new=0
      
-    human.speed[0,0]=0#abs((distance_new-human.distance[0,0])/(time_new-human.time[0]))-abs(robot.speed)
-    
-    
+    human.speed[0,0]=abs((distance_new-human.distance[0,0])/(time_new-human.time[0]))-abs(robot.speed)
     #print("HUMAN SPEED",(distance_new-human.distance[0,0])/(time_new-human.time[0]))
     #print("ROBOT SPEED",robot.input[1])
     #print("ROBOT SPEED", robot.speed)
@@ -196,10 +194,13 @@ def joy_callback(data):
                 human.orientation[1]=1
             if buttons[8]>0: #start to change the human orientation to front
                 human.orientation[1]=0
-            if buttons[15]>0: #option to change the human area to any (in front)
+            if buttons[15]>0: #up to change the human area to any (in front)
                 human.area[1]=2
-            if buttons[17]>0: #start to change the human area to any (back)
+            if buttons[17]>0: #down to change the human area to any (back)
                 human.area[1]=7
+            if buttons[14]>0: #left to change the human area to 0 (on the side)
+                human.area[1]=0    
+                
             if np.shape(axes)[0]!=0:
                 #Picker01
                 if axes[0]<0: #left
@@ -225,10 +226,13 @@ def joy_callback(data):
                 human.orientation[0]=1
             if buttons[8]>0: #start to change the human orientation to front
                 human.orientation[0]=0
-            if buttons[15]>0: #option to change the human area to any (in front)
+            if buttons[15]>0: #up to change the human area to any (in front)
                 human.area[0]=2
-            if buttons[17]>0: #start to change the human area to any (back)
+            if buttons[17]>0: #down to change the human area to any (back)
                 human.area[0]=7
+            if buttons[14]>0: #left to change the human area to 0 (on the side)
+                human.area[0]=0
+                
                 
             if np.shape(axes)[0]!=0:
                 #Picker00

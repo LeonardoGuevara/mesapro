@@ -1098,11 +1098,11 @@ if __name__ == "__main__":
     mode = "normal"
     server = TopologicalNavServer(rospy.get_name(), mode)
     ###################################################################################################################
-    rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
+    rate = rospy.Rate(1/0.01) # rate in Hz
     while not rospy.is_shutdown():	
         #print("ROBOT OPERATION MAIN",server.robot_action)
         server.robot_update_action()
-        rate.sleep() #to keep fixed the publishing loop rate
+        rate.sleep() #to keep fixed loop rate
     ###################################################################################################################
     rospy.loginfo("Exiting.")
 ###################################################################################################################
