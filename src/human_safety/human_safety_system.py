@@ -106,12 +106,15 @@ class human_class:
         ###########################################################################################
         area=self.area[hri.critical_index]
         r_theta=robot.pos_theta
+        ###########################################################################################
+        #assuming the local x-axis is aligned to the robot orientation
         if area<=4: #if human was detected in front of the robot
             new_theta=r_theta 
         elif area>=5:
             new_theta=r_theta+pi
         pos_y=(sin(new_theta)*dist)+robot.pos_y
         pos_x=(cos(new_theta)*dist)+robot.pos_x
+        ##############################################################################################
         return pos_x,pos_y
 
 class map_class:

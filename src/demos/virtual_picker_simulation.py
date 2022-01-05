@@ -4,11 +4,13 @@
 import rospy #tf
 from sensor_msgs.msg import Joy
 import geometry_msgs.msg, nav_msgs.msg
+from geometry_msgs.msg import Pose
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 import marvelmind_nav.msg
 import std_msgs.msg
 #import tf
+from tf.transformations import euler_from_quaternion
 from mesapro.msg import human_msg, hri_msg, robot_msg
 from geometry_msgs.msg import PoseStamped
 import time
@@ -46,135 +48,161 @@ class human_class:
         self.speed_buffer=np.zeros([2,n_samples]) #buffer with the human speed recorded during n_points
         self.counter_motion=np.zeros([2,1]) # vector with the number of samples that have been recorded for motion inference
         self.time=np.zeros([2,1])# time of data recorded for each human
+        
+        
+    def actor00_callback(self,p1):
+        #print("ACTOR00 NEW DATA")
+        #if new_data[1]==0:
+        #Sensor type, time, counter, centroid are not required for the demo, thus they are always 0
+        
+        #Positions from virtual picker
+        pos = p1.pose.position
+        pose= np.array([pos.x,pos.y,0])
+        self.position_global[0,:]=pose
+        #Human Motion and distance
+        time_new=time.time()-time_init
+        #print("ROBBOT",robot.position)
+        #print("PICKER",pose)
+        distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
+        #to include the thorlvard dimensions
+        distance_new=distance_new-1
+        if distance_new<0:
+            distance_new=0
+         
+        self.speed[0,0]=abs((distance_new-self.distance[0,0])/(time_new-self.time[0]))-abs(robot.speed)
+        #print("HUMAN SPEED",(distance_new-self.distance[0,0])/(time_new-self.time[0]))
+        #print("ROBOT SPEED",robot.input[1])
+        #print("ROBOT SPEED", robot.speed)
+        
+        k=0
+        if self.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
+            self.speed_buffer[k,int(self.counter_motion[k])]=self.speed[k,:]
+            self.counter_motion[k]=self.counter_motion[k]+1
+        else: #to removed old data and replace for newer data
+            self.speed_buffer[k,0:n_samples-1]=self.speed_buffer[k,1:n_samples]
+            self.speed_buffer[k,n_samples-1]=self.speed[k,:]
+        self.distance[0,0]=distance_new
+        self.time[0]=time_new
+        ii=0
+        if self.counter_motion[ii]>=n_samples:
+            speed_mean=np.mean(self.speed_buffer[ii,:])
+            if abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
+                self.motion[ii]=1
+            else: #if human is moving 
+                self.motion[ii]=2
+        else:
+            self.motion[ii]=0
+        #Human Area (using only y-position in global frame)
+        #print("AREA ERROR",abs(pose[0]-robot.position[0]))
+        #if abs(pose[1]-robot.position[1])<=2:
+        #    self.area[0,0]=2
+        #else:
+        #    self.area[0,0]=0
+        #self.area[0,0]=2
+        #Transform human_position from global frame to local frame
+        
+        #self.position[0,:]=pose-robot.position
+        aux=pose-robot.position
+        aux_a=atan2(aux[1],aux[0])
+        dist=sqrt(aux[1]**2+aux[0]**2)
+        pos_x=(cos(-robot.position[2]+aux_a)*dist)
+        pos_y=(sin(-robot.position[2]+aux_a)*dist)
+        self.position[0,0]=pos_x
+        self.position[0,1]=pos_y
+        #new_data[1]=1
+
+    def actor01_callback(self,p2):
+        #print("ACTOR01 NEW DATA")
+        #if new_data[2]==0:
+        #Sensor type, time, counter, centroid are not required for the demo, thus they are always 0
+        
+        #Positions from virtual picker
+        pos = p2.pose.position
+        pose= np.array([pos.x,pos.y,0])
+        self.position_global[1,:]=pose
+        #Human Motion and distance
+        time_new=time.time()-time_init
+        distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
+        #to include the thorlvard dimensions
+        distance_new=distance_new-1
+        if distance_new<0:
+           distance_new=0
+        #self.speed[1,0]= abs((distance_new-self.distance[1,0])/(time_new-self.time[1]))-abs(robot.input[1])
+        self.speed[1,0]= abs((distance_new-self.distance[1,0])/(time_new-self.time[1]))-abs(robot.speed)
+        k=1
+        if self.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
+            self.speed_buffer[k,int(self.counter_motion[k])]=self.speed[k,:]
+            self.counter_motion[k]=self.counter_motion[k]+1
+        else: #to removed old data and replace for newer data
+            self.speed_buffer[k,0:n_samples-1]=self.speed_buffer[k,1:n_samples]
+            self.speed_buffer[k,n_samples-1]=self.speed[k,:]
+        self.distance[1,0]=distance_new
+        self.time[1]=time_new
+        ii=1
+        if self.counter_motion[ii]>=n_samples:
+            speed_mean=np.mean(self.speed_buffer[ii,:])
+            if abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
+                self.motion[ii]=1
+            else: #if human is moving
+                self.motion[ii]=2
+        else:
+            self.motion[ii]=0
+        #Human Area (using only y-position in global frame)
+        #if abs(pose[1]-robot.position[1])<=1:
+        #    self.area[1,0]=2
+        #else:
+        #    self.area[1,0]=0
+        #self.area[1,0]=2
+        #Transform human_position from global frame to local frame (the one which is actually measured by the real robot)
+        aux=pose-robot.position
+        aux_a=atan2(aux[1],aux[0])
+        dist=sqrt(aux[1]**2+aux[0]**2)
+        pos_x=(cos(-robot.position[2]+aux_a)*dist)
+        pos_y=(sin(-robot.position[2]+aux_a)*dist)
+        self.position[1,0]=pos_x
+        self.position[1,1]=pos_y
+        
+        #new_data[2]=1
 
 class robot_class:
     def __init__(self): #It is done only the first iteration
         #declaration and initial values of important variables
         #INFORMATION SIMULATED IN GAZEBO 
         self.position=np.zeros([1,3]) #[x,y,theta]
-        self.position_past=np.zeros([1,3]) #[x,y,theta]
+        #self.position_past=np.zeros([1,3]) #[x,y,theta]
         self.input=np.zeros([2,1]) #w,v control signals
         self.speed=0 #absolute value of speed
         self.time=0 #time of data received from odometry
 
-def robot_callback_pos(odom):
-    #print("ROBOTS NEW DATA")
-    #if new_data[3]==0:
-    pos = odom.pose.pose
-    #robot.position_past=robot.position
-    robot.position=np.array([pos.position.x, pos.position.y, 0])
-    #time_new=time.time()-time_init
-    #print("ROBOT POSITION",robot.position) 
-    #robot.speed=sqrt((robot.position_past[0]-pos.position.x)**2+(robot.position_past[1]-pos.position.y)**2)/(time_new-robot.time)
-    #robot.time=time_new
-    #new_data[3]=1
-
-def robot_callback_vel(rob):
-    #print("ROBOTS NEW DATA")
-    #if new_data[4]==0:
-    robot.input[1] = rob.linear.x
-    robot.input[0] = rob.angular.z
-    robot.speed=abs(robot.input[1])
-    #new_data[4]=1
+    def robot_callback_pos(self,pose):
+        #print("ROBOTS NEW DATA")
+        #if new_data[3]==0:
+        #pos = odom.pose.pose
+        pos_x=pose.position.x
+        pos_y=pose.position.y
+        quat = pose.orientation    
+        # From quaternion to Euler
+        angles = euler_from_quaternion((quat.x,quat.y,quat.z,quat.w))
+        theta = angles[2]
+        pos_theta=np.unwrap([theta])[0]
+        
+        #robot.position_past=robot.position
+        self.position=np.array([pos_x, pos_y, pos_theta])
+        #time_new=time.time()-time_init
+        #print("ROBOT POSITION",robot.position) 
+        #robot.speed=sqrt((robot.position_past[0]-pos.position.x)**2+(robot.position_past[1]-pos.position.y)**2)/(time_new-robot.time)
+        #robot.time=time_new
+        #new_data[3]=1
+    
+    def robot_callback_vel(self,rob):
+        #print("ROBOTS NEW DATA")
+        #if new_data[4]==0:
+        self.input[1] = rob.linear.x
+        self.input[0] = rob.angular.z
+        self.speed=abs(robot.input[1])
+        #new_data[4]=1
        
-def actor00_callback(p1):
-    #print("ACTOR00 NEW DATA")
-    #if new_data[1]==0:
-    #Sensor type, time, counter, centroid are not required for the demo, thus they are always 0
-    
-    #Positions from virtual picker
-    pos = p1.pose.position
-    pose= np.array([pos.x,pos.y,0])
-    human.position_global[0,:]=pose
-    #Human Motion and distance
-    time_new=time.time()-time_init
-    #print("ROBBOT",robot.position)
-    #print("PICKER",pose)
-    distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
-    #to include the thorlvard dimensions
-    distance_new=distance_new-1
-    if distance_new<0:
-        distance_new=0
-     
-    human.speed[0,0]=abs((distance_new-human.distance[0,0])/(time_new-human.time[0]))-abs(robot.speed)
-    #print("HUMAN SPEED",(distance_new-human.distance[0,0])/(time_new-human.time[0]))
-    #print("ROBOT SPEED",robot.input[1])
-    #print("ROBOT SPEED", robot.speed)
-    
-    k=0
-    if human.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
-        human.speed_buffer[k,int(human.counter_motion[k])]=human.speed[k,:]
-        human.counter_motion[k]=human.counter_motion[k]+1
-    else: #to removed old data and replace for newer data
-        human.speed_buffer[k,0:n_samples-1]=human.speed_buffer[k,1:n_samples]
-        human.speed_buffer[k,n_samples-1]=human.speed[k,:]
-    human.distance[0,0]=distance_new
-    human.time[0]=time_new
-    ii=0
-    if human.counter_motion[ii]>=n_samples:
-        speed_mean=np.mean(human.speed_buffer[ii,:])
-        if abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
-            human.motion[ii]=1
-        else: #if human is moving 
-            human.motion[ii]=2
-    else:
-        human.motion[ii]=0
-    #Human Area (using only y-position in global frame)
-    #print("AREA ERROR",abs(pose[0]-robot.position[0]))
-    #if abs(pose[1]-robot.position[1])<=2:
-    #    human.area[0,0]=2
-    #else:
-    #    human.area[0,0]=0
-    #human.area[0,0]=2
-    #Transform human_position from global frame to local frame
-    human.position[0,:]=pose-robot.position
-    #new_data[1]=1
 
-def actor01_callback(p2):
-    #print("ACTOR01 NEW DATA")
-    #if new_data[2]==0:
-    #Sensor type, time, counter, centroid are not required for the demo, thus they are always 0
-    
-    #Positions from virtual picker
-    pos = p2.pose.position
-    pose= np.array([pos.x,pos.y,0])
-    human.position_global[1,:]=pose
-    #Human Motion and distance
-    time_new=time.time()-time_init
-    distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
-    #to include the thorlvard dimensions
-    distance_new=distance_new-1
-    if distance_new<0:
-       distance_new=0
-    #human.speed[1,0]= abs((distance_new-human.distance[1,0])/(time_new-human.time[1]))-abs(robot.input[1])
-    human.speed[1,0]= abs((distance_new-human.distance[1,0])/(time_new-human.time[1]))-abs(robot.speed)
-    k=1
-    if human.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
-        human.speed_buffer[k,int(human.counter_motion[k])]=human.speed[k,:]
-        human.counter_motion[k]=human.counter_motion[k]+1
-    else: #to removed old data and replace for newer data
-        human.speed_buffer[k,0:n_samples-1]=human.speed_buffer[k,1:n_samples]
-        human.speed_buffer[k,n_samples-1]=human.speed[k,:]
-    human.distance[1,0]=distance_new
-    human.time[1]=time_new
-    ii=1
-    if human.counter_motion[ii]>=n_samples:
-        speed_mean=np.mean(human.speed_buffer[ii,:])
-        if abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
-            human.motion[ii]=1
-        else: #if human is moving
-            human.motion[ii]=2
-    else:
-        human.motion[ii]=0
-    #Human Area (using only y-position in global frame)
-    #if abs(pose[1]-robot.position[1])<=1:
-    #    human.area[1,0]=2
-    #else:
-    #    human.area[1,0]=0
-    #human.area[1,0]=2
-    #Transform human_position from global frame to local frame (the one which is actually measured by the real robot)
-    human.position[1,:]=pose-robot.position
-    #new_data[2]=1
 
 def joy_callback(data):
     #print("JOY NEW DATA")
@@ -260,10 +288,10 @@ if __name__ == '__main__':
     #Setup ROS publiser
     pub_human = rospy.Publisher('human_info', human_msg)
     rospy.Subscriber('joy',Joy,joy_callback)  
-    rospy.Subscriber('/picker01/posestamped',PoseStamped, actor00_callback)
-    rospy.Subscriber('/picker02/posestamped',PoseStamped, actor01_callback)
-    rospy.Subscriber('odometry/gazebo',nav_msgs.msg.Odometry,robot_callback_pos)  
-    rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,robot_callback_vel)    
+    rospy.Subscriber('/picker01/posestamped',PoseStamped, human.actor00_callback)
+    rospy.Subscriber('/picker02/posestamped',PoseStamped, human.actor01_callback)
+    rospy.Subscriber('/robot_pose', Pose, robot.robot_callback_pos) 
+    rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,robot.robot_callback_vel)    
     #Rate setup
     pub_hz=0.01 #publising rate in seconds
     rate = rospy.Rate(1/pub_hz) # ROS Rate in Hz
