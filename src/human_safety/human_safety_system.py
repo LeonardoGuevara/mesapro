@@ -70,6 +70,8 @@ class human_class:
         self.motion=[0] 
         self.position_x=[0] 
         self.position_y=[0] 
+        self.centroid_x=[0]
+        self.centroid_y=[0]
         self.distance=[0]
         self.orientation=[0]
         self.area=[0]
@@ -87,6 +89,8 @@ class human_class:
         self.motion=human_info.motion   
         self.position_x=human_info.position_x
         self.position_y=human_info.position_y
+        self.centroid_x=human_info.centroid_x
+        self.centroid_y=human_info.centroid_y
         self.distance=human_info.distance
         self.orientation=human_info.orientation
         self.area=human_info.area
@@ -268,7 +272,7 @@ class hri_class:
             self.audio_message=2 # message to ask the human for new order
             self.new_goal=robot.final_goal # the current goal is not changed
         ## HOW TO UPDATE ROBOT ACTION IN CASE OF HRI
-        if len(human.sensor)>1 or (len(human.sensor)==1 and (human.posture[0]+human.position_x[0]+human.position_y[0]+human.distance[0])!=0): #if at least one human was detected       
+        if len(human.sensor)>1 or (len(human.sensor)==1 and (human.motion[0]+human.centroid_x[0]+human.centroid_y[0]+human.posture[0]+human.position_x[0]+human.position_y[0]+human.distance[0])!=0): #execute only if at least a human is detected     
             #Critical human selection
             self.critical_human_selection()
             #Distance between the closest human detected and the robot

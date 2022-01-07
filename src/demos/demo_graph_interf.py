@@ -71,11 +71,16 @@ class human_class:
         self.sensor=human_info.sensor[hri.critical_index]
         self.orientation=human_info.orientation[hri.critical_index]
         self.area=human_info.area[hri.critical_index]
-        if len(human_info.sensor)==1 and (human_info.posture+human_info.position_x+human_info.position_y+human_info.distance)==0: #None human detected
-            no_detection=True    
+        print(len(human_info.sensor))
+        print(human_info.posture[0])
+        print(human_info.position_x[0])
+        print(human_info.position_y[0])
+        print(human_info.distance[0])
+        if (human.centroid_x+human.centroid_y+human_info.motion[0]+human_info.posture[0]+human_info.position_x[0]+human_info.position_y[0]+human_info.distance[0])==0: #None human detected
+            no_detection=True  
         else:
             no_detection=False
-        
+        print(no_detection)
     def camera_callback(self,ros_image):
         try:
             self.image = bridge.imgmsg_to_cv2(ros_image, "bgr8")
@@ -156,8 +161,8 @@ def demo_outputs(color_image):
     #Print HUMAN PERCEPTION INFO
     if no_detection:# or hri.status==0: #None human detected
         color_image = cv2.putText(color_image,"***NO HUMAN DETECTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-    elif area=="side_detection":
-        color_image = cv2.putText(color_image,"***HUMAN DETECTED - NO RISK ***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+    #elif area=="side_detection":
+    #    color_image = cv2.putText(color_image,"***HUMAN DETECTED - NO RISK ***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
     else:
         if sensor=="lidar":
             color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)

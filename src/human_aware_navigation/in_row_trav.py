@@ -120,7 +120,7 @@ class inRowTravServer(object):
                                 'functions':[self.define_safety_zone, self.define_safety_zone, self.reconf_tf_listener,
                                              self.setup_controllers, self.setup_controllers, self.setup_controllers, self.setup_controllers, self.setup_controllers, self.setup_controllers]}
         
-        ############################################################################################
+        #######################################################################################################
         self.human_distance=[0]                 # distance from the robot to each human detected
         self.hri_critical_index=0               # index of the most critical human detected
         self.hri_safety_action=5                # new safety action from the safety system

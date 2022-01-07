@@ -293,10 +293,11 @@ class TopologicalNavServer(object):
         """
         This Functions is called when the topo nav Action Server is called
         """
+                
         print("\n####################################################################################################")
         rospy.loginfo("Processing GO-TO-NODE goal (No Orientation = {})".format(goal.no_orientation))
         can_start = False
-
+        
         with self.navigation_lock:
             if self.cancel_current_action(timeout_secs=10):
                 # we successfully stopped the previous action, claim the title to activate navigation
@@ -312,25 +313,23 @@ class TopologicalNavServer(object):
             
             self._feedback.route = "Starting..."
             self._as.publish_feedback(self._feedback)
-            ###################################################################
-            self.robot_action=0 # operation when the robot is moving to a original goal
-            self.past_action=self.robot_action #to give priority to a new human command goal
-            self.goal=goal.target
-            self.navigate(goal.target)
-            if self.op_mode=="logistics":
-                if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
-                    self.robot_action=4 # robot operation is "wait for new goal"
-                    self.past_action=self.robot_action # to reset everything
-            else: #UV-C
-                self.robot_action=4 # robot operatin is "wait for new goal"
-                self.past_action=self.robot_action # to reset everything
-            ###################################################################
+            #####################################################################################################
+            if self.current_node==self.goal or self.goal=="Unknown": #execute only if robot already accomplished previos task or if it is the first command    
+                self.robot_action=0 # operation when the robot is moving to a original goal
+                self.past_action=self.robot_action #to give priority to a new human command goal
+                self.goal=goal.target
+                self.navigate(goal.target)
+                self.robot_action=4
+            elif self.hri_safety_action==5:# only if no safety action is required
+                self.robot_action=0 # operation when the robot is moving to a original goal
+                self.goal=goal.target #save new goal
+                self.past_action=3 #to not update new goal with the hri_goal
+            ###########################################################################################################
         else:
             rospy.logwarn("Could not cancel current navigation action, GO-TO-NODE goal aborted")
             self._as.set_aborted()
-
         self.navigation_activated = False
-
+        
 
     def executeCallbackexecpolicy(self, goal):
         """
@@ -686,7 +685,6 @@ class TopologicalNavServer(object):
                 
 
         while rindex < (len(route.edge_id)) and not self.cancelled and (nav_ok or recovering):
-            
             cedg = get_edge_from_id_tmap2(self.lnodes, route.source[rindex], route.edge_id[rindex])
             a = cedg["action"]
             
@@ -927,83 +925,71 @@ class TopologicalNavServer(object):
     
 
     def execute_action(self, edge, destination_node, origin_node=None):
-        ####################################################################
-        ################################################################
-        if self.past_action!=self.robot_action:# if a new action is required for the safety system
-            status=GoalStatus.SUCCEEDED
-            self.prev_status=status
-            self.cancelled=True
-            self.goal_reached=True
-            result = True #True
-            inc = 0 #0
-        #######################################################################
-        else: #normal operation
-            inc = 0
-            result = True
-            self.goal_reached = False
-            self.prev_status = None
+        inc = 0
+        result = True
+        self.goal_reached = False
+        self.prev_status = None
+
+        if self.using_restrictions and edge["edge_id"] != "move_base_edge":
+            ## check restrictions for the edge
+            rospy.loginfo("Evaluating restrictions on edge {}".format(edge["edge_id"]))
+            ev_edge_msg = EvaluateEdgeRequest()
+            ev_edge_msg.edge = edge["edge_id"]
+            ev_edge_msg.runtime = True
+            resp = self.evaluate_edge_srv.call(ev_edge_msg)
+            if resp.success and resp.evaluation:
+                #the edge is restricted
+                rospy.logwarn("The edge is restricted, stopping navigation")
+                result = False
+                inc = 1
+                return result, inc
     
-            if self.using_restrictions and edge["edge_id"] != "move_base_edge":
-                ## check restrictions for the edge
-                rospy.loginfo("Evaluating restrictions on edge {}".format(edge["edge_id"]))
-                ev_edge_msg = EvaluateEdgeRequest()
-                ev_edge_msg.edge = edge["edge_id"]
-                ev_edge_msg.runtime = True
-                resp = self.evaluate_edge_srv.call(ev_edge_msg)
-                if resp.success and resp.evaluation:
-                    #the edge is restricted
-                    rospy.logwarn("The edge is restricted, stopping navigation")
-                    result = False
-                    inc = 1
-                    return result, inc
+            ## check restrictions for the node
+            rospy.loginfo("Evaluating restrictions on node {}".format(destination_node["node"]["name"]))
+            ev_node_msg = EvaluateNodeRequest()
+            ev_node_msg.node = destination_node["node"]["name"]
+            ev_node_msg.runtime = True
+            resp = self.evaluate_node_srv.call(ev_node_msg)
+            if resp.success and resp.evaluation:
+                #the node is restricted
+                rospy.logwarn("The node is restricted, stopping navigation")
+                result = False
+                inc = 1
+                return result, inc
+
         
-                ## check restrictions for the node
-                rospy.loginfo("Evaluating restrictions on node {}".format(destination_node["node"]["name"]))
-                ev_node_msg = EvaluateNodeRequest()
-                ev_node_msg.node = destination_node["node"]["name"]
-                ev_node_msg.runtime = True
-                resp = self.evaluate_node_srv.call(ev_node_msg)
-                if resp.success and resp.evaluation:
-                    #the node is restricted
-                    rospy.logwarn("The node is restricted, stopping navigation")
-                    result = False
-                    inc = 1
-                    return result, inc
-    
-            
-            self.edge_action_manager.initialise(edge, destination_node, origin_node)
-            self.edge_action_manager.execute()
-            
+        self.edge_action_manager.initialise(edge, destination_node, origin_node)
+        self.edge_action_manager.execute()
+        
+        status = self.edge_action_manager.client.get_state()
+        self.pub_status(status)
+        while (
+            (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING)
+            and not self.cancelled
+            and not self.goal_reached
+        ):
             status = self.edge_action_manager.client.get_state()
             self.pub_status(status)
-            while (
-                (status == GoalStatus.ACTIVE or status == GoalStatus.PENDING)
-                and not self.cancelled
-                and not self.goal_reached
-            ):
-                status = self.edge_action_manager.client.get_state()
-                self.pub_status(status)
-                rospy.sleep(rospy.Duration.from_sec(0.01))
-    
-            res = self.edge_action_manager.client.get_result()
-    
-            if status != GoalStatus.SUCCEEDED:
-                if not self.goal_reached:
-                    result = False
-                    if status is GoalStatus.PREEMPTED:
-                        self.preempted = True
-                else:
-                    result = True
-    
-            if not res:
-                if not result:
-                    inc = 1
-                else:
-                    inc = 0
-    
-            rospy.sleep(rospy.Duration.from_sec(0.5))
-            status = self.edge_action_manager.client.get_state()
-        ################################################################
+            rospy.sleep(rospy.Duration.from_sec(0.01))
+
+        res = self.edge_action_manager.client.get_result()
+
+        if status != GoalStatus.SUCCEEDED:
+            if not self.goal_reached:
+                result = False
+                if status is GoalStatus.PREEMPTED:
+                    self.preempted = True
+            else:
+                result = True
+
+        if not res:
+            if not result:
+                inc = 1
+            else:
+                inc = 0
+
+        rospy.sleep(rospy.Duration.from_sec(0.5))
+        status = self.edge_action_manager.client.get_state()
         self.pub_status(status)
 
         rospy.loginfo("move action status: {}, goal reached: {}, inc: {}".format(status_mapping[status], result, inc))
@@ -1021,21 +1007,17 @@ class TopologicalNavServer(object):
             self.move_act_pub.publish(String(json.dumps(d)))
         self.prev_status = status
 
-    #######################################################################################        
+    #######################################################################################################     
     
     def safety_callback(self,safety_info):
         self.hri_safety_action=safety_info.safety_action
         self.hri_goal=safety_info.new_goal
         self.op_mode=safety_info.operation_mode
-        #Only update the robot_action if new safety action is required
-        if self.hri_safety_action!=self.hri_safety_action_past and self.hri_safety_action!=5: 
+        #Only update the robot_action if new safety action is required or new hri_goal is required.
+        if (self.hri_safety_action!=self.robot_action and self.hri_safety_action!=5) or (self.robot_action==self.hri_safety_action and self.goal!=self.hri_goal): 
             self.robot_action=self.hri_safety_action
-            self.hri_safety_action_past=self.hri_safety_action                
-            #Stop execution of current robot action if there is any change
-            with self.navigation_lock:
-                if self.cancel_current_action(timeout_secs=10):
-                    # we successfully stopped the previous action, claim the title to activate navigation
-                    self.navigation_activated = False
+            self.preemptCallback() #to stop current action
+            
         #Publish current robot operation
         pub_robot = rospy.Publisher('robot_info', robot_msg)
         rob_msg = robot_msg()
@@ -1054,44 +1036,41 @@ class TopologicalNavServer(object):
         #Robot goal update if required
         if (self.robot_action==3 or self.robot_action==4):# to make the robot stop / without changing the goal
             if self.past_action!=3 and self.past_action!=4: #to ensure that it is executed only once
-                self.past_action=self.robot_action     
+                self.past_action=self.robot_action   
                 with self.navigation_lock:
                     if self.cancel_current_action(timeout_secs=10):
                         # we successfully stopped the previous action, claim the title to activate navigation
                         self.navigation_activated = False
         elif self.robot_action==0 or self.robot_action==1 or self.robot_action==2: #to change the goal for approch/move away or resume a paused goal after being waiting
             #To update robot_action If robot requires to change the goal
-            if self.past_action!=self.robot_action: #to ensure that it is executed only once
+            if (self.past_action!=self.robot_action) or (self.past_action==self.robot_action and self.goal!=self.hri_goal and self.robot_action!=0): #to ensure that it is executed only once, and allow changes of goal but keeping the same robot_action 
                 can_start = False
-                if self.past_action!=3: #not neccesary to find new goal after paused mode (logistics)
+                if self.past_action!=3:#not neccesary to change goal after paused mode or when original_goal has been blocked
                     self.goal=self.hri_goal
                 
                 self.past_action=self.robot_action
-                #self.new_goal= True
                 with self.navigation_lock:
                     if self.cancel_current_action(timeout_secs=10):
                         # we successfully stopped the previous action, claim the title to activate navigation
                         self.navigation_activated = True
                         can_start = True
-               
+                
                 if can_start:
                     self.cancelled = False
                     self.preempted = False
                     self.no_orientation = False
                     self._feedback.route = "Starting..."
                     self._as.publish_feedback(self._feedback)
+                    
                     self.navigate(self.goal)
-
+                    self.robot_action=4
                 else:
                     rospy.logwarn("Could not cancel current navigation action, GO-TO-NODE goal aborted")
                     self._as.set_aborted()
                 self.navigation_activated = False
-            #To update robot_action If robot reach the goal
-            if self.navigation_activated==False and self.current_node==self.goal: #if robot reached the goal and it is static
-                self.robot_action=4 #make the robot wait for a human command 
             
     
-    ##############################################################################################  
+    ###########################################################################################################  
 
 if __name__ == "__main__":
     rospy.init_node("topological_navigation")
@@ -1100,7 +1079,7 @@ if __name__ == "__main__":
     ###################################################################################################################
     rate = rospy.Rate(1/0.01) # rate in Hz
     while not rospy.is_shutdown():	
-        #print("ROBOT OPERATION MAIN",server.robot_action)
+        print("ROBOT OPERATION MAIN",server.robot_action)
         server.robot_update_action()
         rate.sleep() #to keep fixed loop rate
     ###################################################################################################################
