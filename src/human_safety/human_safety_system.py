@@ -112,7 +112,7 @@ class human_class:
         r_theta=robot.pos_theta
         ###########################################################################################
         #assuming the local x-axis is aligned to the robot orientation
-        if area<=4: #if human was detected in front of the robot
+        if area<=4: #if human was detected in front of the robot (areas 0 to 4)
             new_theta=r_theta 
         elif area>=5:
             new_theta=r_theta+pi
@@ -146,7 +146,10 @@ class hri_class:
         self.aligned=False #True if is the human is aligned to the robot front or back, False if the human is on the sides of the robot   
         self.safe_cond=False #True if the human is static and facing the robot, False if not satisfying this safety condition
 
-    def critical_human_selection(self):        
+    def critical_human_selection(self):  
+        polytunnel=robot.polytunnel
+        posture=human.posture
+        #posture_prob=human.posture_prob
         dist=human.distance
         area=human.area
         sensor=human.sensor
@@ -155,24 +158,50 @@ class hri_class:
         closest_dist=1000 #initial value
         closest_index=0
         n_human=len(dist)
-        #CLOSEST HUMAN TRACKED
+        gesture_priority=False #initial value
+        distance_priority=False #initial value
+        aligned=False #initial value
         for k in range(0,n_human):
             if dist[k]<=closest_dist:
                 closest_index=k
                 closest_dist=dist[k]
-           
-        critical_index=closest_index
+            if closest_dist<=1.2 and aligned==True: 
+                distance_priority=True
+            #aligned condition inside the polytunnel includes areas 2 and 7, and outside polytunnel includes 1,2,3 and 6,7,8
+            if ((area[k]==2 or area[k]==7) and polytunnel==True) or (((area[k]>=1 and area[k]<=3) or (area[k]>=6 and area[k]<=8)) and polytunnel==False): 
+                if aligned==True:
+                    if dist[aligned_index]>dist[k]:
+                        aligned_index=k
+                else:
+                    aligned_index=k
+                aligned=True
+            if (posture[k]==1 or posture[k]==8 or posture[k]==2) and aligned==True: 
+                if gesture_priority==True:
+                    if dist[gesture_index]>dist[k]:
+                        gesture_index=k
+                else:
+                    gesture_index=k
+                gesture_priority=True
+            
+        #Critical index selection
+        if distance_priority==True: # 1rst priority is human within 1.2m in critical areas
+            critical_index=closest_index
+        elif gesture_priority==True: # 2nd priority is human at any distance performing gestures in critical areas
+            critical_index=gesture_index
+        elif aligned==True: # if none of the previos conditions ara satistifed, then the closest human but aligned is considered
+            critical_index=aligned_index
+        else: # if none of the previos conditions are satisfied, then only the closest human is considered
+            critical_index=closest_index
+        
         #RISK INFERENCE
         if self.operation=="logistics": #if robot operation is logistics
             if robot.current_goal=="Unknown" or robot.final_goal=="Unknown": #if the robot doesn't start moving yet
                 risk=False
-                aligned=False
                 safe_cond=False
             else: 
-                [risk,aligned,safe_cond]=self.risk_analysis(area[critical_index],sensor[critical_index],orientation[critical_index],motion[critical_index]) #risk:=occlusion
+                [risk,safe_cond]=self.risk_analysis(area[critical_index],sensor[critical_index],orientation[critical_index],motion[critical_index],aligned) #risk:=occlusion
         else: #for uv-c treatment
             risk=True #there is always a risk just for being detected
-            aligned=False
             safe_cond=False
         
         self.critical_index=critical_index
@@ -180,30 +209,26 @@ class hri_class:
         self.aligned=aligned
         self.safe_cond=safe_cond
     
-    def risk_analysis(self,area,sensor,orientation,motion):
-        #assuming that a human is occluding the robot path when he/she is closer to the current robot goal
+    def risk_analysis(self,area,sensor,orientation,motion,aligned):
+        #assuming that a human is in risk when he/she is closer to the current robot goal then the robot
         h_y=human.pos_global_y
         r_y=robot.pos_y
         goal = topo_map.rsearch.get_node_from_tmap2(robot.final_goal)
         g_y=goal["node"]["pose"]["position"]["y"]
         h_dist=abs(h_y-g_y)
         r_dist=abs(r_y-g_y)
-        if (area>=1 and area<=3) or (area>=6 and area<=8):
-            aligned=True
-        else:
-            aligned=False
-        if aligned==True: #if human is in front or back to the robot
+        if aligned==True: 
             if h_dist<=r_dist:
                 risk=True
             else:
                 risk=False
         else: #if human is on the side of the robot 
             risk=False
-        if motion==2 or (sensor!=1 and orientation==1): #In case the human is not static, or is not facing the robot
+        if motion==2 or (sensor!=1 and orientation==1): #In case the human is not static, or he/she is not facing the robot
             safe_cond=False
         else:
             safe_cond=True    
-        return risk, aligned,safe_cond
+        return risk, safe_cond
 
     def find_new_goal(self):
         #Asumming that this function is only called when robot is along the rows, not valid outside the polytunnel
@@ -255,6 +280,7 @@ class hri_class:
         ##NO RISK OF HUMAN INJURIES AS INITIAL ASUMPTION
         self.status=0 #no human/human but without risk
         self.human_command=0 #no human command
+        self.critical_index=0 #by default
         if robot.action==0 or robot.action==2: # robot is moving to an initial goal or moving away from the picker
             self.safety_action=5 # no safety action / keep the previous robot action
             self.audio_message=0 # no message 
@@ -422,8 +448,8 @@ if __name__ == '__main__':
     rospy.init_node('human_safety_system',anonymous=True)
     rospy.Subscriber("/topological_map_2", String, topo_map.MapCallback)
     #Waiting for the Topological Map...
-    while not topo_map.map_received:
-        rospy.sleep(rospy.Duration.from_sec(0.05))
+    #while not topo_map.map_received:
+    #    rospy.sleep(rospy.Duration.from_sec(0.05))
     rospy.Subscriber('human_info',human_msg,human.human_callback)  
     rospy.Subscriber('robot_info',robot_msg,robot.robot_info_callback)  
     rospy.Subscriber('/robot_pose', Pose, robot.robot_pose_callback)  

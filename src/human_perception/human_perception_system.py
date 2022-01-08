@@ -48,7 +48,7 @@ pub_hz=0.01 #publising rate in seconds
 n_joints=19
 n_features=36
 #Parameters for camera area inference
-max_dist=7 #in meters
+max_dist=7 #in meters, from this distance the probabilities are fixed at prob_init
 delta_prob_1_4=0.2 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
 delta_prob_2_3=0.2
 prob_0_init=0 #initial area pixel percentage
@@ -61,7 +61,7 @@ prob_4_init=prob_3_init+delta_prob_2_3
 row_width=1.3 #in meters
 angle_area=45 # in degrees mesuared from the local x-axis robot frame
 #Parameters for matching
-meter_threshold=1.2 #meters
+meter_threshold=1 #meters
 pixel_threshold=100 #pixels
 tracking_threshold=3 #times a data is received
 w_distance=[0.2,0.8] #weights used for calculating a distance weighted average during matching old with new data
@@ -369,7 +369,7 @@ class human_class:
                         area_new[kk,0]=self.area_inference_lidar(angle,position_new[kk,1],position_new[kk,0])                     
                         ###############################################################################################################################
                         #Determine if a new data match with the k-th human tracked
-                        if diff[k,kk]<error_threshold and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
+                        if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]:# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk
                             time_diff=time_track[k,0]-time_data[0]    
                             #Updating speed,motion and time_track
@@ -508,7 +508,7 @@ class human_class:
                         #Determining the area where the new human is detected by each camera
                         area_new[kk,0]=self.area_inference_camera(centroid_new[kk,0],distance_new[kk,0])
                             
-                        if diff[k,kk]<error_threshold and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
+                        if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]: #and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk
                             time_diff=time_track[k,1]-time_data[1]                        
                             #Updating speed, motion and time_track
@@ -656,8 +656,8 @@ class human_class:
                     if k!=i and repeated_index[k]==0 and repeated_index[i]==0:
                         dist_2=distance[i,:]   
                         dist_diff=abs(dist_1-dist_2)  
-                        area_diff=abs(area[k,0]-area[i,0])
-                        if dist_diff<=error_threshold and area_diff<=1:
+                        #area_diff=abs(area[k,0]-area[i,0])
+                        if dist_diff<=error_threshold and area[k,0]-area[i,0]: #and area_diff<=1:
                             print('Repeated human in track_list, merged')
                             if min(counter_old[k,:])<=min(counter_old[i,:]):
                                 repeated_index[i]=1
@@ -925,8 +925,8 @@ if __name__ == '__main__':
     image_front_sub = message_filters.Subscriber('camera/camera1/color/image_raw', Image)
     depth_front_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
     ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01)
-    #ts.registerCallback(human.camera_callback)
-    rospy.Subscriber('/people_tracker/pose_array',PoseArray,human.lidar_callback) 
+    ts.registerCallback(human.camera_callback)
+    #rospy.Subscriber('/people_tracker/pose_array',PoseArray,human.lidar_callback) 
     #Rate setup
     rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	
