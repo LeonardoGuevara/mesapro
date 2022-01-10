@@ -24,7 +24,6 @@ main_counter=0
 
 class robot_class:
     def __init__(self): #It is done only the first iteration
-        #declaration and initial values of important variables
         self.pos_x=0 #X
         self.pos_y=0 #Y
         self.pos_theta=0 #orientation
@@ -68,10 +67,10 @@ class human_class:
         self.posture=[0]
         self.posture_prob=[0]
         self.motion=[0] 
-        self.position_x=[0] 
-        self.position_y=[0] 
-        self.centroid_x=[0]
-        self.centroid_y=[0]
+        self.position_x=[0] #lidar local frame
+        self.position_y=[0] #lidar local frame
+        self.centroid_x=[0] #image frame
+        self.centroid_y=[0] #image frame
         self.distance=[0]
         self.orientation=[0]
         self.area=[0]
@@ -80,8 +79,6 @@ class human_class:
         self.sensor_t1=[0]
         self.sensor_c0=[0]
         self.sensor_c1=[0]
-        self.pos_global_x=0 # human pose transformed to global frame, based on robot pose
-        self.pos_global_y=0 # human pose transformed to global frame, based on robot pose
         
     def human_callback(self,human_info):
         self.posture=human_info.posture
@@ -99,26 +96,22 @@ class human_class:
         self.sensor_t1=human_info.sensor_t1
         self.sensor_c0=human_info.sensor_c0
         self.sensor_c1=human_info.sensor_c1  
-        [self.pos_global_x,self.pos_global_y]=self.human_pose_global()
         
-    def human_pose_global(self):
-        #assuming human global pose is always aligned to the robot orientation but with an offset of distance
-        dist=self.distance[hri.critical_index]
-        ########################################################################################
-        #To consider the thorvald dimensions and the lidars/cameras locations respect to gps
+        
+    def human_pose_global(self,dist,area,r_pos_x,r_pos_y,r_pos_theta):
+        #################################################################################################################
+        #assuming human global pose is always aligned to the robot orientation but with an offset equal to the distance
+        #################################################################################################################
+        #To compensate the thorvald dimensions and the lidars/cameras locations (local frame)
         dist=dist+1 #because of extra 1m used to compute distance in virtual_picker_simulation.py
-        ###########################################################################################
-        area=self.area[hri.critical_index]
-        r_theta=robot.pos_theta
-        ###########################################################################################
+        #######################################################################################################
         #assuming the local x-axis is aligned to the robot orientation
         if area<=4: #if human was detected in front of the robot (areas 0 to 4)
-            new_theta=r_theta 
+            new_theta=r_pos_theta 
         elif area>=5:
-            new_theta=r_theta+pi
-        pos_y=(sin(new_theta)*dist)+robot.pos_y
-        pos_x=(cos(new_theta)*dist)+robot.pos_x
-        ##############################################################################################
+            new_theta=r_pos_theta+pi
+        pos_y=(sin(new_theta)*dist)+r_pos_y
+        pos_x=(cos(new_theta)*dist)+r_pos_x
         return pos_x,pos_y
 
 class map_class:
@@ -146,15 +139,7 @@ class hri_class:
         self.aligned=False #True if is the human is aligned to the robot front or back, False if the human is on the sides of the robot   
         self.safe_cond=False #True if the human is static and facing the robot, False if not satisfying this safety condition
 
-    def critical_human_selection(self):  
-        polytunnel=robot.polytunnel
-        posture=human.posture
-        #posture_prob=human.posture_prob
-        dist=human.distance
-        area=human.area
-        sensor=human.sensor
-        orientation=human.orientation
-        motion=human.motion
+    def critical_human_selection(self,polytunnel,posture,dist,area,sensor,orientation,motion,current_goal,final_goal,r_pos_x,r_pos_y,r_pos_theta):  
         closest_dist=1000 #initial value
         closest_index=0
         n_human=len(dist)
@@ -193,13 +178,16 @@ class hri_class:
         else: # if none of the previos conditions are satisfied, then only the closest human is considered
             critical_index=closest_index
         
+        #HUMAN GLOBAL POSITION
+        [h_global_x,h_global_y]=human.human_pose_global(dist[critical_index],area[critical_index],r_pos_x,r_pos_y,r_pos_theta)
+        
         #RISK INFERENCE
         if self.operation=="logistics": #if robot operation is logistics
-            if robot.current_goal=="Unknown" or robot.final_goal=="Unknown": #if the robot doesn't start moving yet
+            if current_goal=="Unknown" or final_goal=="Unknown": #if the robot doesn't start moving yet
                 risk=False
                 safe_cond=False
             else: 
-                [risk,safe_cond]=self.risk_analysis(area[critical_index],sensor[critical_index],orientation[critical_index],motion[critical_index],aligned) #risk:=occlusion
+                [risk,safe_cond]=self.risk_analysis(area[critical_index],sensor[critical_index],orientation[critical_index],motion[critical_index],h_global_y,aligned,final_goal,r_pos_y) #risk:=occlusion
         else: #for uv-c treatment
             risk=True #there is always a risk just for being detected
             safe_cond=False
@@ -208,15 +196,16 @@ class hri_class:
         self.risk=risk
         self.aligned=aligned
         self.safe_cond=safe_cond
+        return h_global_y
     
-    def risk_analysis(self,area,sensor,orientation,motion,aligned):
-        #assuming that a human is in risk when he/she is closer to the current robot goal then the robot
-        h_y=human.pos_global_y
-        r_y=robot.pos_y
-        goal = topo_map.rsearch.get_node_from_tmap2(robot.final_goal)
+    def risk_analysis(self,area,sensor,orientation,motion,h_global_y,aligned,final_goal,r_pos_y):
+        #################################################################################################################
+        #assuming that a human is in risk when he/she is aligned to the robot and closer to the current robot goal than the robot
+        #################################################################################################################
+        goal = topo_map.rsearch.get_node_from_tmap2(final_goal)
         g_y=goal["node"]["pose"]["position"]["y"]
-        h_dist=abs(h_y-g_y)
-        r_dist=abs(r_y-g_y)
+        h_dist=abs(h_global_y-g_y)
+        r_dist=abs(r_pos_y-g_y)
         if aligned==True: 
             if h_dist<=r_dist:
                 risk=True
@@ -230,21 +219,20 @@ class hri_class:
             safe_cond=True    
         return risk, safe_cond
 
-    def find_new_goal(self):
+    def find_new_goal(self,h_global_y,r_pos_y,current_goal_info):
+        #################################################################################################################
         #Asumming that this function is only called when robot is along the rows, not valid outside the polytunnel
         #Asumming the "y" component of row nodes is always greater in upper nodes than lower nodes
-        parent=robot.current_goal_info
-        r_y=robot.pos_y
-        #Human position in global frame
-        h_y=human.pos_global_y
+        #################################################################################################################
+        parent=current_goal_info
         #new motion direction along the row
         if self.safety_action==1: #approach
-            if r_y<=h_y:
+            if r_pos_y<=h_global_y:
                 goal_dir="up" # search for the upper node in the row
             else:
                 goal_dir="down" #search for the lowernode in the row
         else: #move away
-            if r_y<=h_y:
+            if r_pos_y<=h_global_y:
                 goal_dir="down" #search for the lowernode in the row
             else:
                 goal_dir="up" # search for the upper node in the row
@@ -277,163 +265,183 @@ class hri_class:
         return children
     
     def decision_making(self):
+        #HUMAN INFO
+        sensor=human.sensor
+        motion=human.motion
+        centroid_x=human.centroid_x
+        centroid_y=human.centroid_y
+        posture=human.posture
+        h_pos_x=human.position_x
+        h_pos_y=human.position_y
+        dist=human.distance
+        area=human.area
+        orientation=human.orientation
+        #ROBOT INFO
+        r_pos_x=robot.pos_x
+        r_pos_y=robot.pos_y
+        r_pos_theta=robot.pos_theta
+        action=robot.action
+        current_goal=robot.current_goal
+        final_goal=robot.final_goal
+        polytunnel=robot.polytunnel
+        current_goal_info=robot.current_goal_info
+        
         ##NO RISK OF HUMAN INJURIES AS INITIAL ASUMPTION
         self.status=0 #no human/human but without risk
         self.human_command=0 #no human command
         self.critical_index=0 #by default
-        if robot.action==0 or robot.action==2: # robot is moving to an initial goal or moving away from the picker
+        if action==0 or action==2: # robot is moving to an initial goal or moving away from the picker
             self.safety_action=5 # no safety action / keep the previous robot action
             self.audio_message=0 # no message 
-            self.new_goal=robot.final_goal # the current goal is not changed             
-        elif robot.action==1: # robot was approaching
+            self.new_goal=final_goal # the current goal is not changed             
+        elif action==1: # robot was approaching
             self.safety_action=4 # make it stop for safety purposes, waiting for a human order 
             self.audio_message=2 # message to ask the human for new order
-            self.new_goal=robot.final_goal # the current goal is not changed
-        elif robot.action==3: # if goal was paused while moving to a goal or moving away from the picker
+            self.new_goal=final_goal # the current goal is not changed
+        elif action==3: # if goal was paused while moving to a goal or moving away from the picker
             self.audio_message=0 # no message
             self.safety_action=0 # restart operation making the robot moving to the current goal
-            self.new_goal=robot.final_goal # the current goal is not changed
-        elif robot.action==4: #if robot is waiting for human order
+            self.new_goal=final_goal # the current goal is not changed
+        elif action==4: #if robot is waiting for human order
             self.safety_action=5 # no safety action / keep the previous robot action
             self.audio_message=2 # message to ask the human for new order
-            self.new_goal=robot.final_goal # the current goal is not changed
+            self.new_goal=final_goal # the current goal is not changed
         ## HOW TO UPDATE ROBOT ACTION IN CASE OF HRI
-        if len(human.sensor)>1 or (len(human.sensor)==1 and (human.motion[0]+human.centroid_x[0]+human.centroid_y[0]+human.posture[0]+human.position_x[0]+human.position_y[0]+human.distance[0])!=0): #execute only if at least a human is detected     
+        if len(sensor)>1 or (len(sensor)==1 and (motion[0]+centroid_x[0]+centroid_y[0]+posture[0]+h_pos_x[0]+h_pos_y[0]+dist[0])!=0): #execute only if at least a human is detected     
             #Critical human selection
-            self.critical_human_selection()
-            #Distance between the closest human detected and the robot
-            distance=human.distance[self.critical_index]    
-            print("DISTANCE",distance)
+            h_global_y=self.critical_human_selection(polytunnel,posture,dist,area,sensor,orientation,motion,current_goal,final_goal,r_pos_x,r_pos_y,r_pos_theta)
+            print("DISTANCE TO CRITICAL HUMAN",dist[self.critical_index] )
             ###UV-C treatment#######################################
             if self.operation!="logistics": #during UV-C treatment
                 self.human_command=0 #no human command expected during uv-c treatment
                 if self.risk==True: #only execute if there is risk of producing human injuries 
-                    if robot.action==0: #if robot is moving to goal   
-                        if distance>10: #if human is above 10m from the robot
+                    if action==0: #if robot is moving to goal   
+                        if dist[self.critical_index]>10: #if human is above 10m from the robot
                             self.status=2 #risky HRI
                             self.safety_action=5  # keep the previous robot action
                         else: #if human is within 10m
                             self.status=3 #dangerous HRI
                             self.safety_action=4 # stop UV-C treatment and wait for a new human command to restart
                         self.audio_message=1 #UVC danger message
-                        self.new_goal=robot.final_goal # the current goal is not changed
+                        self.new_goal=final_goal # the current goal is not changed
                     else: #if robot is static        
-                        if distance>10: #if human is above 10m from the robot
+                        if dist[self.critical_index]>10: #if human is above 10m from the robot
                             self.status=2 #risky HRI
                             self.safety_action=5 # keep the previous robot action
                         else: #if human is within 10m
                             self.status=3 #dangerous HRI
                             self.safety_action=5 # still waiting for a new human command to restart
                         self.audio_message=1 #UVC danger message
-                        self.new_goal=robot.final_goal # the current goal is not changed
+                        self.new_goal=final_goal # the current goal is not changed
             ###LOGISTICS###############################################
             else:
                 ##IN CASE THE HUMAN PERFORMS BODY GESTURES
                 #In case the picker wants the robot to approch to him/her , only valid inside polytunnels and above 1.2m 
-                if human.sensor[self.critical_index]!=1 and human.posture[self.critical_index]==1 and robot.polytunnel==True and distance>1.2 and self.aligned==True: #picker is ordering the robot to approach (using both arms)
-                    self.human_command=1 #make the robot approach to the picker from this point i.e robot.operation=1
+                if sensor[self.critical_index]!=1 and posture[self.critical_index]==1 and polytunnel==True and dist[self.critical_index]>1.2 and self.aligned==True: #picker is ordering the robot to approach (using both arms)
+                    self.human_command=1 #make the robot approach to the picker from this point i.e operation=1
                     self.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
                     self.safety_action=1 # to make the robot approach to the picker
-                    self.new_goal=hri.find_new_goal()
+                    self.new_goal=self.find_new_goal(h_global_y,r_pos_y,current_goal_info)
+                                     
                 #In case the picker wants the robot to stop 
-                elif human.sensor[self.critical_index]!=1 and human.posture[self.critical_index]==8 and self.aligned==True:  #picker is ordering the robot to stop (using right hand)
+                elif sensor[self.critical_index]!=1 and posture[self.critical_index]==8 and self.aligned==True:  #picker is ordering the robot to stop (using right hand)
                     self.human_command=3 #make the robot stop 
                     self.audio_message=2 # start a message to ask the picker for a new order to approach/move away or move to a new goal
                     self.safety_action=4 # make the robot stop and wait for a new command to restart operation
-                    self.new_goal=robot.final_goal # the current goal is not changed
+                    self.new_goal=final_goal # the current goal is not changed
                 #In case the picker wants the robot to move away, only valid inside polytunnels
-                elif human.sensor[self.critical_index]!=1 and human.posture[self.critical_index]==2 and robot.polytunnel==True and self.aligned==True:  #picker is ordering the robot to move away (using both hands)
+                elif sensor[self.critical_index]!=1 and posture[self.critical_index]==2 and polytunnel==True and self.aligned==True:  #picker is ordering the robot to move away (using both hands)
                     self.human_command=2 #make the robot move away
                     self.audio_message=0 #no message
                     self.safety_action=2 # to make the robot move away from the picker
-                    self.new_goal=hri.find_new_goal()
+                    self.new_goal=self.find_new_goal(h_global_y,r_pos_y,current_goal_info)
                 else:
                     self.human_command=0 # no human gesture                  
                 
                 ##RISK LEVEL
-                if distance>3.6: #if human is above 3.6m and robot is on normal operation
+                if dist[self.critical_index]>3.6: #if human is above 3.6m and robot is on normal operation
                     self.status=1 # safety HRI
-                elif distance>1.2 and distance<=3.6: #if human is between 1.2-3.6m
+                elif dist[self.critical_index]>1.2 and dist[self.critical_index]<=3.6: #if human is between 1.2-3.6m
                     self.status=2 # risky HRI
                     #self.status=3 #dangerous HRI
                 else: #if human is within 1.2m
                     self.status=3 # dangerous HRI
                     
-                if robot.action==0 or robot.action==2: #if robot is moving to an original goal or moving away from the picker
+                if action==0 or action==2: #if robot is moving to an original goal or moving away from the picker
                     if self.status==1: #if human is above 3.6m and robot is on normal operation
                         if self.human_command==0: #if human is not performing any gesture
                             self.audio_message=0 #no message
                             self.safety_action=5 # keep the previous robot action
-                            self.new_goal=robot.final_goal # the current goal is not changed
+                            self.new_goal=final_goal # the current goal is not changed
                     elif self.status==2: #if human is between 1.2-3.6m
                         if self.human_command==0: #if human is not performing any gesture
                             if self.risk==True: # if there is chance to produce injuries
                                 self.safety_action=3 # pause operation and continue when human has move away 
                                 self.audio_message=3 # message to ask the human for free space to continue moving
-                                self.new_goal=robot.final_goal # the current goal is not changed
+                                self.new_goal=final_goal # the current goal is not changed
                             else:
                                 self.audio_message=0 #no message
                                 self.safety_action=5 # keep the previous robot action 
-                                self.new_goal=robot.final_goal # the current goal is not changed
+                                self.new_goal=final_goal # the current goal is not changed
                     
                     else: #if human is within 1.2m or moving or is not facig the robot
                         if self.human_command!=2:  # if picker is not ordering the robot to move away (using both hands)
                             if self.risk==True: # if there is chance to produce injuries
                                 self.safety_action=3 # pause operation and continue when human has move away 
                                 self.audio_message=3 # message to ask the human for free space to continue moving
-                                self.new_goal=robot.final_goal # the current goal is not changed
+                                self.new_goal=final_goal # the current goal is not changed
                             else:
                                 self.audio_message=0 #no message
                                 self.safety_action=5 # keep the previous robot action
-                                self.new_goal=robot.final_goal # the current goal is not changed
-                elif robot.action==1: #if robot is approaching to the picker
+                                self.new_goal=final_goal # the current goal is not changed
+                elif action==1: #if robot is approaching to the picker
                     if self.status==1: #if human is above 3.6m 
                         if self.human_command==0: #if human is not performing any gesture
                             self.audio_message=4 # alert to make the picker aware of the robot approaching to him/her
                             self.safety_action=5 # keep it approaching to the picker
-                            self.new_goal=robot.final_goal # the current goal is not changed
+                            self.new_goal=final_goal # the current goal is not changed
                     elif self.status==2: #if human is within 1.2m to 3.6m
                         if self.human_command==0 : #if human is not performing any gesture 
                             if self.safe_cond==False and self.risk==True: # if safety condition is not safisfied and if there is risk of producing injuries
                                 self.safety_action=4 # stop operation and wait till human gives the robot a new order 
                                 self.audio_message=2 # message to ask the human for new order
-                                self.new_goal=robot.final_goal # the current goal is not changed
+                                self.new_goal=final_goal # the current goal is not changed
                             else: #if safety condition is satisfied or there is not risk of producing injuries
                                 self.audio_message=4 # alert to make the picker aware of the robot approaching to him/her
                                 self.safety_action=5 # keep it approaching to the picker
-                                self.new_goal=robot.final_goal # the current goal is not changed
+                                self.new_goal=final_goal # the current goal is not changed
                     else: #if human is within 1.2m  or moving or is not facig the robot
                         if self.human_command!=2:  # if picker is not ordering the robot to move away (using both hands) 
                             if self.risk==True: # if there is chance to produce injuries
                                 self.safety_action=4 # stop operation and wait till human gives the robot a new order 
                                 self.audio_message=2 # message to ask the human for new order
-                                self.new_goal=robot.final_goal # the current goal is not changed
+                                self.new_goal=final_goal # the current goal is not changed
                             else:
                                 self.audio_message=4 # alert to make the picker aware of the robot approaching to him/her
                                 self.safety_action=5 # keep it approaching to the picker
-                                self.new_goal=robot.final_goal # the current goal is not changed
-                elif robot.action==3: #if robot is in pause mode, waiting till the human is occluding to continue moving
+                                self.new_goal=final_goal # the current goal is not changed
+                elif action==3: #if robot is in pause mode, waiting till the human is occluding to continue moving
                     if self.status==1: #if human is above 3.6m and robot is on normal operation
                         if self.human_command==0 : #if human is not performing any gesture
                             self.audio_message=0 # no message
                             self.safety_action=0 # restart operation making the robot moving to the current goal
-                            self.new_goal=robot.final_goal # the current goal is not changed
+                            self.new_goal=final_goal # the current goal is not changed
                     else: #if human is within 3.6m
                         if self.human_command!=2:  # if picker is not ordering the robot to move away (using both hands)
                             self.safety_action=5 # still in pause operation 
                             self.audio_message=3 # message to ask the human for free space to continue moving
-                            self.new_goal=robot.final_goal # the current goal is not changed
-                elif robot.action==4: #if robot is waiting for a new human command
+                            self.new_goal=final_goal # the current goal is not changed
+                elif action==4: #if robot is waiting for a new human command
                     if self.status==1 or self.status==2: #if human is above 1.2m 
                         if self.human_command==0: #if human is not performing any gesture
                             self.safety_action=5 # still waiting for human order 
                             self.audio_message=2 # message to ask the human for new order
-                            self.new_goal=robot.final_goal # the current goal is not changed
+                            self.new_goal=final_goal # the current goal is not changed
                     else: #if human is within 1.2m or moving or is not facig the robot
                         if self.human_command!=2:  # if picker is not ordering the robot to move away (using both hands)
                             self.safety_action=5 # still waiting for another human order 
                             self.audio_message=2 # message to ask the human for new order
-                            self.new_goal=robot.final_goal # the current goal is not changed
+                            self.new_goal=final_goal # the current goal is not changed
                     
  
 ###############################################################################################

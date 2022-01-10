@@ -130,9 +130,9 @@ class human_class:
                 for pose in legs.poses:
                     if k<len(pos):
                         ##########################################################################################################
-                        #THIS DISTANCE NEEDS TO BE CALIBRATED ACCORDING TO THE LIDAR LOCATION RESPECT TO THE FRONT CAMERA POSITION (The camera location is the reference origin)
-                        pos[k,0] = pose.position.x -0.55 #+6
-                        pos[k,1] = pose.position.y +0.45 #+10
+                        #THIS DISTANCE NEEDS TO BE CALIBRATED ACCORDING TO THE LIDAR READINGS RESPECT TO THE CAMERAS POSITION (The camera location is the reference origin)
+                        pos[k,0] = pose.position.x -0.35 # -0.55
+                        pos[k,1] = pose.position.y  #+0.45
                         ############################################################################################################
                     else: #if there are more human detected than before
                         position_new=np.array([pose.position.x,pose.position.y])
@@ -926,7 +926,7 @@ if __name__ == '__main__':
     depth_front_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
     ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01)
     ts.registerCallback(human.camera_callback)
-    #rospy.Subscriber('/people_tracker/pose_array',PoseArray,human.lidar_callback) 
+    rospy.Subscriber('/people_tracker/pose_array',PoseArray,human.lidar_callback) 
     #Rate setup
     rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	
