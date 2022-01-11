@@ -41,7 +41,7 @@ main_counter=0
 pub_hz=0.01
 demo=1 #demo 1: perception, demo 2: topological navigation
 no_detection=True  
-
+image_width=840
 #########################################################################################################################
 
 class human_class:
@@ -49,8 +49,10 @@ class human_class:
         self.position_x=0
         self.position_y=0
         self.posture=0 #from camera [posture_label,posture_probability]
-        self.centroid_x=0 #x,y (pixels) of the human centroid, from camera
-        self.centroid_y=0 #x,y (pixels) of the human centroid, from camera
+        #self.centroid_x=0 #x,y (pixels) of the human centroid, from camera
+        #self.centroid_y=0 #x,y (pixels) of the human centroid, from camera
+        self.centroids_x=[0]
+        self.centroid_y=[0]
         self.orientation=0 # it can be "front" or "back" if the human is facing the robot or not , from camera
         self.distance=0  # distance between the robot and the average of the skeleton joints distances taken from the depth image, from camera
         self.sensor=0 # it can be 0 if the data is from camera and Lidar, 1 if the data is  only from the LiDAR or 2 if the data is only from de camera
@@ -65,26 +67,28 @@ class human_class:
         self.motion=human_info.motion[hri.critical_index]   
         self.position_x=human_info.position_x[hri.critical_index]
         self.position_y=human_info.position_y[hri.critical_index]
-        self.centroid_x=human_info.centroid_x[hri.critical_index]
-        self.centroid_y=human_info.centroid_y[hri.critical_index]
+        #self.centroid_x=human_info.centroid_x[hri.critical_index]
+        #self.centroid_y=human_info.centroid_y[hri.critical_index]
+        self.centroids_x=human_info.centroid_x
+        self.centroids_y=human_info.centroid_y
         self.distance=human_info.distance[hri.critical_index]
         self.sensor=human_info.sensor[hri.critical_index]
         self.orientation=human_info.orientation[hri.critical_index]
         self.area=human_info.area[hri.critical_index]
-        print(len(human_info.sensor))
-        print(human_info.posture[0])
-        print(human_info.position_x[0])
-        print(human_info.position_y[0])
-        print(human_info.distance[0])
-        if (human.centroid_x+human.centroid_y+human_info.motion[0]+human_info.posture[0]+human_info.position_x[0]+human_info.position_y[0]+human_info.distance[0])==0: #None human detected
+       
+        if (human.centroids_x[0]+human.centroids_y[0]+human_info.motion[0]+human_info.posture[0]+human_info.position_x[0]+human_info.position_y[0]+human_info.distance[0])==0: #None human detected
             no_detection=True  
         else:
             no_detection=False
-        print(no_detection)
+        #print(no_detection)
     def camera_callback(self,ros_image):
+        global image_width
         try:
             self.image = bridge.imgmsg_to_cv2(ros_image, "bgr8")
-
+            #image_width = self.image.shape[1]
+            #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+            size = np.array(self.image)
+            image_width = size.shape[1]
         except CvBridgeError as e:
             rospy.logerr("CvBridge Error: {0}".format(e))
         color_image=self.image
@@ -104,7 +108,31 @@ class hri_class:
         self.safety_action=safety_info.safety_action
         self.human_command=safety_info.human_command
         self.critical_index=safety_info.critical_index   
-        
+    
+    def area_inference_camera(self):
+        max_dist=7 #in meters, the probabilities are fixed at prob_init from this distance 
+        delta_prob_1_4=0.15 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
+        delta_prob_2_3=0.13
+        offset=0.02 #in case camera is not perfectly aligned, positive or negative
+        prob_2_init=0.45 #in pixels percent of area 2
+        prob_3_init=(0.5-prob_2_init)+0.5+offset
+        prob_1_init=prob_2_init-delta_prob_2_3
+        prob_4_init=prob_3_init+delta_prob_2_3
+        prob_0_init=0 #initial area pixel percentage
+        prob_5_init=1 #last area pixel percentage
+        #Update area according to the distance
+        dist=human.distance
+        if dist>=max_dist:
+            areas_percent=[prob_0_init,prob_1_init,prob_2_init,prob_3_init,prob_4_init,prob_5_init]
+        else:
+            prob_2=(delta_prob_2_3/max_dist)*dist+prob_2_init-delta_prob_2_3
+            prob_3=(0.5-prob_2)+0.5+offset
+            #prob_3=(delta_prob_2_3/max_dist)*dist+prob_3_init+delta_prob_2_3
+            prob_1=(delta_prob_1_4/max_dist)*dist+prob_1_init-delta_prob_1_4
+            prob_4=(0.5-prob_1)+0.5+offset
+            #prob_4=(delta_prob_1_4/max_dist)*dist+prob_4_init+delta_prob_1_4
+            areas_percent=[prob_0_init,prob_1,prob_2,prob_3,prob_4,prob_5_init]
+        return areas_percent
 
 class robot_class:
     def __init__(self): #It is done only the first iteration
@@ -128,17 +156,6 @@ class robot_class:
     def robot_callback_vel(self,msg):
         self.speed=msg.linear.x
 
-def closest_human(data):
-    dist=data.distance
-    closest_dist=1000 #initial value
-    closest_index=0
-    n_human=len(dist)
-    #CLOSEST HUMAN TRACKED
-    for k in range(0,n_human):
-        if dist[k]<=closest_dist:
-            closest_index=k
-            closest_dist=dist[k]
-    return closest_index
 
 def demo_outputs(color_image):
     
@@ -205,10 +222,19 @@ def demo_outputs(color_image):
                 color_image = cv2.putText(color_image,"speed:       "+str(round(robot.speed,2))+"m/s",(50, 570) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
                 color_image = cv2.putText(color_image,"current node:   "+robot.current_node,(50, 600) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
                 color_image = cv2.putText(color_image,"goal node:      "+robot.goal_node,(50, 630) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            else:
-                center_coordinates = (int(human.centroid_x), int(human.centroid_y)) 
-                color_image = cv2.circle(human.image, center_coordinates, 5, (255, 0, 0), 20) 
-    
+            else: #demo==1
+                for k in range(0,len(human.centroids_x)):                     
+                    center_coordinates = (int(human.centroids_x[k]), int(human.centroids_y[k])) 
+                    if k==hri.critical_index:
+                        color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 255), 20) #RED
+                    else:
+                        color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
+                x_lines=hri.area_inference_camera()
+                #x_lines=[0,0.3,0.4,0.6,0.7,1]
+                color_image=cv2.line(human.image, (int(x_lines[1]*image_width), 0), (int(x_lines[1]*image_width), 600), (0, 255, 0), thickness=2)
+                color_image=cv2.line(human.image, (int(x_lines[2]*image_width), 0), (int(x_lines[2]*image_width), 600), (0, 255, 0), thickness=2)
+                color_image=cv2.line(human.image, (int(x_lines[3]*image_width), 0), (int(x_lines[3]*image_width), 600), (0, 255, 0), thickness=2)
+                color_image=cv2.line(human.image, (int(x_lines[4]*image_width), 0), (int(x_lines[4]*image_width), 600), (0, 255, 0), thickness=2)
     cv2.imshow("System outputs",color_image)
     cv2.waitKey(5)
     
@@ -223,10 +249,10 @@ if __name__ == '__main__':
     rospy.init_node('demo_visualization',anonymous=True)
     # Setup and call subscription
     rospy.Subscriber('human_info',human_msg,human.human_callback)
+    rospy.Subscriber('human_safety_info',hri_msg,hri.safety_callback)
     if demo==1:
         rospy.Subscriber('camera/camera1/color/image_raw', Image,human.camera_callback)  
     if demo==2:
-        rospy.Subscriber('human_safety_info',hri_msg,hri.safety_callback)
         rospy.Subscriber('robot_info',robot_msg,robot.robot_callback_info)
         rospy.Subscriber('/robot_pose', Pose, robot.robot_callback_pos) 
         rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,robot.robot_callback_vel)    
@@ -239,6 +265,8 @@ if __name__ == '__main__':
             demo_outputs(color_image)
         print(main_counter)    
         print("Distance",round(human.distance,2))
+        #print("CRITICAL_INDEX",hri.critical_index)
+        print("IMAGE WIDTH",image_width)
         rate.sleep() #to keep fixed the publishing loop rate
         
         

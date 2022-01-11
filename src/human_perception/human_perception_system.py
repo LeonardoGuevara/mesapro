@@ -48,15 +48,16 @@ pub_hz=0.01 #publising rate in seconds
 n_joints=19
 n_features=36
 #Parameters for camera area inference
-max_dist=7 #in meters, from this distance the probabilities are fixed at prob_init
-delta_prob_1_4=0.2 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
-delta_prob_2_3=0.2
-prob_0_init=0 #initial area pixel percentage
-prob_5_init=1 #last area pixel percentage
+max_dist=7 #in meters, the probabilities are fixed at prob_init from this distance 
+delta_prob_1_4=0.15 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
+delta_prob_2_3=0.13
+offset=0.02 #in case camera is not perfectly aligned, can be positive or negative
 prob_2_init=0.45 #in pixels percent of area 2
-prob_3_init=(0.5-prob_2_init)+0.5
+prob_3_init=(0.5-prob_2_init)+0.5+offset
 prob_1_init=prob_2_init-delta_prob_2_3
 prob_4_init=prob_3_init+delta_prob_2_3
+prob_0_init=0 #initial area pixel percentage
+prob_5_init=1 #last area pixel percentage
 #Parameters for lidar area inference
 row_width=1.3 #in meters
 angle_area=45 # in degrees mesuared from the local x-axis robot frame
@@ -124,7 +125,6 @@ class human_class:
         if new_data[0]==0: #to read a new data only if the previous data was already used
             if legs.poses is None: #if there is no human legs detected
                 print('No human detected from lidar')
-                #self.counter_old=self.counter_old+1
             else:
                 k=0
                 for pose in legs.poses:
@@ -295,13 +295,14 @@ class human_class:
             x_average=0
             y_average=0
             for k in range(0,n_joints):
-                if joints_z_init[k]!=0:
-                    dist_average=joints_z_init[k]+dist_average
-                    n_joints_dist=n_joints_dist+1
-                if joints_x_init[k]!=0 and joints_y_init[k]!=0:       
-                    x_average=x_average+joints_x_init[k]
-                    y_average=y_average+joints_y_init[k]
-                    n_joints_cent=n_joints_cent+1
+                if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==12: #Only consider keypoints in the center of the body
+                    if joints_z_init[k]!=0:
+                        dist_average=joints_z_init[k]+dist_average
+                        n_joints_dist=n_joints_dist+1
+                    if joints_x_init[k]!=0 and joints_y_init[k]!=0:       
+                        x_average=x_average+joints_x_init[k]
+                        y_average=y_average+joints_y_init[k]
+                        n_joints_cent=n_joints_cent+1
             distance[kk,:]=dist_average/n_joints_dist
             centroid[kk,0]=x_average/n_joints_cent
             centroid[kk,1]=y_average/n_joints_cent
@@ -359,7 +360,7 @@ class human_class:
                         #Determining the area where the new human is detected
                         ##############################################################################################################################
                         #It depends how to interpret the X-Y frame used by the human leg detector
-                        angle=atan2(position_new[kk,1],position_new[kk,0])#+(pi/2) # pi/2 is because the lidar XY-frame is 90 degrees rotated
+                        angle=atan2(position_new[kk,1],position_new[kk,0])# local x-axis is aligned to the robot orientation
                         #############################################################################################################################
                         if angle>pi: #  to keep the angle between [-180,+180]
                             angle=angle-2*pi
@@ -843,49 +844,19 @@ class human_class:
             area=8
         elif (pos_y>row_width/2 and pos_y<=(3/2)*row_width and angle<pi-angle_area*(pi/180) and angle>pi/2) or pos_y>(3/2)*row_width: #if belongs to 9
             area=9
-        #else: #the human is not considered a risk
-        #    if pos_x>=0:
-        #        area=0 #by default
-        #    else:
-        #        area=5 #by default
-        
-        #Front areas
-        #if angle<=areas_angle_front[5]*(pi/180) and angle>=areas_angle_front[6]*(pi/180):
-        #    area=4
-        #elif angle<=areas_angle_front[4]*(pi/180) and angle>areas_angle_front[5]*(pi/180):
-        #    area=3
-        #elif angle<=areas_angle_front[3]*(pi/180) and angle>areas_angle_front[4]*(pi/180):
-        #    area=2
-        #elif angle<=areas_angle_front[2]*(pi/180) and angle>areas_angle_front[3]*(pi/180):
-        #    area=2
-        #elif angle<=areas_angle_front[1]*(pi/180) and angle>areas_angle_front[2]*(pi/180):
-        #    area=1
-        #elif angle<=areas_angle_front[0]*(pi/180) and angle>areas_angle_front[1]*(pi/180):
-        #    area=0 
-        #Back areas
-        #if angle<=areas_angle_back[6]*(pi/180) and angle>areas_angle_back[7]*(pi/180):
-        #    area=9
-        #elif angle<=areas_angle_back[5]*(pi/180) and angle>areas_angle_back[6]*(pi/180):
-        #    area=8
-        #elif angle<=areas_angle_back[4]*(pi/180) and angle>areas_angle_back[5]*(pi/180):
-        #    area=7
-        #elif angle<=areas_angle_back[2]*(pi/180) and angle>=areas_angle_back[3]*(pi/180):
-        #    area=7
-        #elif angle<=areas_angle_back[1]*(pi/180) and angle>areas_angle_back[2]*(pi/180):
-        #    area=6
-        #elif angle<areas_angle_back[0]*(pi/180) and angle>areas_angle_back[1]*(pi/180):
-        #    area=5
+
         return area
     
     def area_inference_camera(self,centroid,dist):
+        #Assuming camera is perfectly aligned with the local x-frame
         #Update area according to the distance
         if dist>=max_dist:
             areas_percent=[prob_0_init,prob_1_init,prob_2_init,prob_3_init,prob_4_init,prob_5_init]
         else:
             prob_2=(delta_prob_2_3/max_dist)*dist+prob_2_init-delta_prob_2_3
-            prob_3=(delta_prob_2_3/max_dist)*dist+prob_3_init+delta_prob_2_3
+            prob_3=(0.5-prob_2)+0.5+offset
             prob_1=(delta_prob_1_4/max_dist)*dist+prob_1_init-delta_prob_1_4
-            prob_4=(delta_prob_1_4/max_dist)*dist+prob_4_init+delta_prob_1_4
+            prob_4=(0.5-prob_1)+0.5+offset
             areas_percent=[prob_0_init,prob_1,prob_2,prob_3,prob_4,prob_5_init]
 
         #Front camera
@@ -926,7 +897,7 @@ if __name__ == '__main__':
     depth_front_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
     ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01)
     ts.registerCallback(human.camera_callback)
-    rospy.Subscriber('/people_tracker/pose_array',PoseArray,human.lidar_callback) 
+    #rospy.Subscriber('/people_tracker/pose_array',PoseArray,human.lidar_callback) 
     #Rate setup
     rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	

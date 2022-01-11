@@ -45,7 +45,7 @@ from polytunnel_navigation_actions.msg import RowTraversalHealth
 from topological_navigation_msgs.msg import ClosestEdges
 
 ######################################################################
-from mesapro.msg import human_msg, hri_msg , robot_msg
+from mesapro.msg import hri_msg , robot_msg
 #######################################################################
 
 class inRowTravServer(object):
@@ -121,8 +121,7 @@ class inRowTravServer(object):
                                              self.setup_controllers, self.setup_controllers, self.setup_controllers, self.setup_controllers, self.setup_controllers, self.setup_controllers]}
         
         #######################################################################################################
-        self.human_distance=[0]                 # distance from the robot to each human detected
-        self.hri_critical_index=0               # index of the most critical human detected
+        self.hri_dist=100                         # distance to the critical human
         self.hri_safety_action=5                # new safety action from the safety system
         self.robot_action=4                     # current robot action, initially waiting for human command
         self.han_start_dist=3.6                 # Distance to human at which the robot starts to slow down
@@ -193,7 +192,6 @@ class inRowTravServer(object):
         rospy.Subscriber('/teleop_joy/joy_priority', Bool, self.joy_lock_cb)
         rospy.Subscriber('/closest_edges', ClosestEdges, self.closest_edges_cb)
         ##########################################################################################
-        rospy.Subscriber('human_info',human_msg,self.human_callback)  
         rospy.Subscriber('robot_info',robot_msg,self.robot_callback)  
         rospy.Subscriber('human_safety_info',hri_msg,self.safety_callback)  
         #############################################################################################
@@ -978,8 +976,7 @@ class inRowTravServer(object):
         
         else: #if a safety action is required
             if self.hri_safety_action==1: #if the speed is reduced while approaching
-                index=self.hri_critical_index
-                dist=self.human_distance[index]  
+                dist=self.hri_dist  
                 if dist <= self.han_start_dist:
                     slowdown_delta = self.han_start_dist - self.han_final_dist
                     current_percent = (dist - self.han_final_dist) / slowdown_delta
@@ -1079,8 +1076,7 @@ class inRowTravServer(object):
                     speed = self.forward_speed
         else: #if a safety action is required
             if self.hri_safety_action==1: #if the speed is reduced while approaching
-                index=self.hri_critical_index
-                dist=self.human_distance[index]  
+                dist=self.hri_dist  
                 if dist <= self.han_start_dist:
                     slowdown_delta = self.han_start_dist - self.han_final_dist
                     current_percent = (dist - self.han_final_dist) / slowdown_delta
@@ -1586,10 +1582,7 @@ class inRowTravServer(object):
         # self.backwards_mode=False
         self.active = False
 
-   #######################################################################################
-    def human_callback(self,human_info):
-        self.human_distance=human_info.distance
-        
+   #######################################################################################    
     def robot_callback(self,robot_info):
         self.robot_action=robot_info.action
         
@@ -1599,7 +1592,7 @@ class inRowTravServer(object):
         elif safety_info.safety_action==5: #if no safety action is required
             self.hri_safety_action=self.robot_action
             
-        self.hri_critical_index=safety_info.critical_index   
+        self.hri_dist=safety_info.critical_dist   
     ##############################################################################################
 
 def load_data_from_yaml(filename):
