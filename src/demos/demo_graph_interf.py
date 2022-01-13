@@ -63,18 +63,19 @@ class human_class:
     def human_callback(self,human_info):
         global no_detection
         #print("NEW HUMAN DATA")
-        self.posture=human_info.posture[hri.critical_index]
-        self.motion=human_info.motion[hri.critical_index]   
-        self.position_x=human_info.position_x[hri.critical_index]
-        self.position_y=human_info.position_y[hri.critical_index]
-        #self.centroid_x=human_info.centroid_x[hri.critical_index]
-        #self.centroid_y=human_info.centroid_y[hri.critical_index]
-        self.centroids_x=human_info.centroid_x
-        self.centroids_y=human_info.centroid_y
-        self.distance=human_info.distance[hri.critical_index]
-        self.sensor=human_info.sensor[hri.critical_index]
-        self.orientation=human_info.orientation[hri.critical_index]
-        self.area=human_info.area[hri.critical_index]
+        if hri.critical_index<=len(human_info.posture)-1:
+            self.posture=human_info.posture[hri.critical_index]
+            self.motion=human_info.motion[hri.critical_index]   
+            self.position_x=human_info.position_x[hri.critical_index]
+            self.position_y=human_info.position_y[hri.critical_index]
+            #self.centroid_x=human_info.centroid_x[hri.critical_index]
+            #self.centroid_y=human_info.centroid_y[hri.critical_index]
+            self.centroids_x=human_info.centroid_x
+            self.centroids_y=human_info.centroid_y
+            self.distance=human_info.distance[hri.critical_index]
+            self.sensor=human_info.sensor[hri.critical_index]
+            self.orientation=human_info.orientation[hri.critical_index]
+            self.area=human_info.area[hri.critical_index]
        
         if (human.centroids_x[0]+human.centroids_y[0]+human_info.motion[0]+human_info.posture[0]+human_info.position_x[0]+human_info.position_y[0]+human_info.distance[0])==0: #None human detected
             no_detection=True  
@@ -110,10 +111,10 @@ class hri_class:
         self.critical_index=safety_info.critical_index   
     
     def area_inference_camera(self):
-        max_dist=7 #in meters, the probabilities are fixed at prob_init from this distance 
-        delta_prob_1_4=0.15 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
-        delta_prob_2_3=0.13
-        offset=0.02 #in case camera is not perfectly aligned, positive or negative
+        max_dist=8 #in meters, the probabilities are fixed at prob_init from this distance 
+        delta_prob_1_4=0.17 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
+        delta_prob_2_3=0.12
+        offset=0.02 #in case camera is not perfectly aligned, can be positive or negative
         prob_2_init=0.45 #in pixels percent of area 2
         prob_3_init=(0.5-prob_2_init)+0.5+offset
         prob_1_init=prob_2_init-delta_prob_2_3
@@ -181,7 +182,7 @@ def demo_outputs(color_image):
     #elif area=="side_detection":
     #    color_image = cv2.putText(color_image,"***HUMAN DETECTED - NO RISK ***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
     else:
-        if sensor=="lidar":
+        if sensor=="lidar":# and human.centroids_x[hri.critical_index]+human.centroids_y[hri.critical_index]!=0:
             color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 90) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
@@ -223,18 +224,19 @@ def demo_outputs(color_image):
                 color_image = cv2.putText(color_image,"current node:   "+robot.current_node,(50, 600) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
                 color_image = cv2.putText(color_image,"goal node:      "+robot.goal_node,(50, 630) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             else: #demo==1
-                for k in range(0,len(human.centroids_x)):                     
-                    center_coordinates = (int(human.centroids_x[k]), int(human.centroids_y[k])) 
-                    if k==hri.critical_index:
-                        color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 255), 20) #RED
-                    else:
-                        color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
+                for k in range(0,len(human.centroids_x)):    
+                    if human.centroids_x[k]+human.centroids_y[k]!=0:
+                        center_coordinates = (int(human.centroids_x[k]), int(human.centroids_y[k])) 
+                        if k==hri.critical_index:
+                            color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 255), 20) #RED
+                        else:
+                            color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
                 x_lines=hri.area_inference_camera()
                 #x_lines=[0,0.3,0.4,0.6,0.7,1]
-                color_image=cv2.line(human.image, (int(x_lines[1]*image_width), 0), (int(x_lines[1]*image_width), 600), (0, 255, 0), thickness=2)
-                color_image=cv2.line(human.image, (int(x_lines[2]*image_width), 0), (int(x_lines[2]*image_width), 600), (0, 255, 0), thickness=2)
-                color_image=cv2.line(human.image, (int(x_lines[3]*image_width), 0), (int(x_lines[3]*image_width), 600), (0, 255, 0), thickness=2)
-                color_image=cv2.line(human.image, (int(x_lines[4]*image_width), 0), (int(x_lines[4]*image_width), 600), (0, 255, 0), thickness=2)
+                color_image=cv2.line(human.image, (int(x_lines[1]*image_width), 0), (int(x_lines[1]*image_width), 600), (0, 255, 0), thickness=1)
+                color_image=cv2.line(human.image, (int(x_lines[2]*image_width), 0), (int(x_lines[2]*image_width), 600), (0, 255, 0), thickness=1)
+                color_image=cv2.line(human.image, (int(x_lines[3]*image_width), 0), (int(x_lines[3]*image_width), 600), (0, 255, 0), thickness=1)
+                color_image=cv2.line(human.image, (int(x_lines[4]*image_width), 0), (int(x_lines[4]*image_width), 600), (0, 255, 0), thickness=1)
     cv2.imshow("System outputs",color_image)
     cv2.waitKey(5)
     
@@ -266,7 +268,7 @@ if __name__ == '__main__':
         print(main_counter)    
         print("Distance",round(human.distance,2))
         #print("CRITICAL_INDEX",hri.critical_index)
-        print("IMAGE WIDTH",image_width)
+        print("NO DETECTION",no_detection)
         rate.sleep() #to keep fixed the publishing loop rate
         
         

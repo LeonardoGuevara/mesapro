@@ -48,9 +48,9 @@ pub_hz=0.01 #publising rate in seconds
 n_joints=19
 n_features=36
 #Parameters for camera area inference
-max_dist=7 #in meters, the probabilities are fixed at prob_init from this distance 
-delta_prob_1_4=0.15 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
-delta_prob_2_3=0.13
+max_dist=8 #in meters, the probabilities are fixed at prob_init from this distance 
+delta_prob_1_4=0.17 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
+delta_prob_2_3=0.12
 offset=0.02 #in case camera is not perfectly aligned, can be positive or negative
 prob_2_init=0.45 #in pixels percent of area 2
 prob_3_init=(0.5-prob_2_init)+0.5+offset
@@ -62,23 +62,24 @@ prob_5_init=1 #last area pixel percentage
 row_width=1.3 #in meters
 angle_area=45 # in degrees mesuared from the local x-axis robot frame
 #Parameters for matching
-meter_threshold=1 #meters
-pixel_threshold=100 #pixels
+meter_threshold=1.3 #meters
 tracking_threshold=3 #times a data is received
 w_distance=[0.2,0.8] #weights used for calculating a distance weighted average during matching old with new data
 #Parameters for Motion inference
-n_samples=10 #number of samples used for the motion inference
-n_samples_gest=3 #number of samples used for the gesture inference
-speed_threshold=0.6  # < means static, > means slow motion 
+n_samples=6 #number of samples used for the motion inference
+n_samples_gest=2 #number of samples used for the gesture inference
+speed_threshold=0.5  # < means static, > means slow motion 
 #Paremeters for human Tracking
 image_width=840 #initial value in pixels, it will be updated when the first image is taken from the camera
 threshold_no_data=2 #seconds needed to remove a human from tracking list
 posture_threshold=0.7 #minimum probability from openpose to start tracking new human using camera info
 #General purposes variables
 main_counter=0
-visualization='off' #to show or not a window with the human detection on the photos
+no_camera=False  #to include or not camera topics
+visualization=False #to show or not a window with the human detection on the photos
 new_data=[0,0]     #flag to know if a new data from LiDAR or Camera is available, first element is for LiDAR, second for Camera
-time_data=[0,0]    #list with the time in which data was taken from Lidar or camera
+time_data=[0,0]    #list with the time in which new data was taken from Lidar or camera
+time_diff=[0,0]    #list with the time between two consecutive data taken from lidar or camera
 #########################################################################################################################
 
 class robot_class:
@@ -108,7 +109,7 @@ class human_class:
         self.distance_track=np.zeros([self.n_human,1]) 
         self.sensor=np.zeros([self.n_human,1]) # it can be 0 if the data is from camera and Lidar, 1 if the data is  only from the LiDAR or 2 if the data is only from de camera
         self.motion_track=np.zeros([self.n_human,1]) #from lidar + camara
-        self.time_track=np.ones([self.n_human,2])*(time.time()-time_init) #Vector with the time when a new data is collected from lidar or camera
+        self.time_track=np.ones([self.n_human,2])*(time.time()-time_init) #Vector with the time when the last data was collected from lidar or camera of each human tracked
         self.speed_track=np.zeros([self.n_human,1]) #human speed 
         self.speed_buffer=np.zeros([self.n_human,n_samples]) #buffer with the human speed recorded during n_points
         self.posture_buffer=np.zeros([self.n_human,n_samples_gest]) #buffer with the human gesture recorded during n_points
@@ -120,9 +121,10 @@ class human_class:
         self.image=np.zeros((800,400,3), np.uint8) #initial value
         
     def lidar_callback(self,legs):
+        #Assuming the lidar data is readed only if camera data was readed before
         print("DATA FROM LIDAR")
         pos=self.position
-        if new_data[0]==0: #to read a new data only if the previous data was already used
+        if (new_data[0]==0 and (new_data[1]==1 or no_camera==True)) or new_data[0]==2: #to read a new data only if camera data was readed before
             if legs.poses is None: #if there is no human legs detected
                 print('No human detected from lidar')
             else:
@@ -142,6 +144,7 @@ class human_class:
                     pos=pos[0:k,:]    
                 self.position=pos
                 new_data[0]=1 # update flag for new data
+                time_diff[0]=time.time()-time_init-time_data[0]
                 time_data[0]=time.time()-time_init # update time when the last data was received
         
     def camera_callback(self,image_front, depth_front):
@@ -165,16 +168,17 @@ class human_class:
             data=datum.poseKeypoints
             if data is None: #if there is no human skeleton detected
                 print('No human detected from camera')
+                new_data[0]=2 # update flag for read new data of lidar
             else: #if there is at least 1 human skeleton detected
-                #Feature extraction
-                self.feature_extraction_3D(data,depth_array,n_joints,n_features)
+                self.image_data=data
+                self.image_depth_array=depth_array
                 #print("HUMAN DISTANCE",list(self.distance))
                 
                 self.image=datum.cvOutputData               
-            new_data[1]=1 # update flag for new data
-            time_data[1]=time.time()-time_init # update time when the last data was received
-                
-
+                new_data[1]=1 # update flag for new data
+                time_diff[1]=time.time()-time_init-time_data[1] 
+                time_data[1]=time.time()-time_init # update time when the last data was received
+        
 
 ################################################################################################################            
     def feature_extraction_3D(self,poseKeypoints,depth_array,n_joints,n_features):
@@ -284,7 +288,7 @@ class human_class:
             posture[kk,0]=model_rf.predict([X])
             prob_max=0
             prob=model_rf.predict_proba([X])
-            for ii in range(prob.shape[1]): #depends of the number of gestures to classified
+            for ii in range(0,prob.shape[1]): #depends of the number of gestures to classified
                 if prob[0,ii]>=prob_max:
                     prob_max=prob[0,ii]
             posture[kk,1]=prob_max 
@@ -366,18 +370,22 @@ class human_class:
                             angle=angle-2*pi
                         if angle<-pi:
                             angle=angle+2*pi
-                        print("ANGLE",angle*180/pi)
+                        #print("ANGLE",angle*180/pi)
                         area_new[kk,0]=self.area_inference_lidar(angle,position_new[kk,1],position_new[kk,0])                     
                         ###############################################################################################################################
                         #Determine if a new data match with the k-th human tracked
                         if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]:# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk
-                            time_diff=time_track[k,0]-time_data[0]    
+                            #current_time=time.time()-time_init
+                            #time_diff[0]=time_data[0]-time_track[k,0] 
+                            
                             #Updating speed,motion and time_track
                             dist_lidar=sqrt(position_new[new_index,0]**2+position_new[new_index,1]**2)
                             motion_diff=distance[k,:]-dist_lidar
-                            speed[k,:]=abs(motion_diff/time_diff)-rob_speed
+                            speed[k,:]=abs(motion_diff/time_diff[0])-rob_speed
                             time_track[k,0]=time_data[0]
+                            if sensor[k]==2: # if human was previosly tracked by a camera, then remove the speed_buffer info to only consider newer lidar info
+                                counter_motion[k]=0
                             if counter_motion[k]<n_samples: #while the recorded data is less than n_points                
                                 speed_buffer[k,int(counter_motion[k])]=speed[k,:]
                                 counter_motion[k]=counter_motion[k]+1
@@ -396,7 +404,7 @@ class human_class:
                             if sensor[k]==2: #if before it was only from camera
                                 sensor[k,:]=0 #now is from both
                                 print('New human matches with tracked human, merged')
-                                    
+                            #print("LIDAR SPEED",speed_buffer[k,:])      
                         else:
                             counter_no_new_data=counter_no_new_data+1 #counter to know if the k-th human tracked does not have a new data
                     else:
@@ -476,18 +484,18 @@ class human_class:
                     features=np.append(features,np.zeros([1,n_features]),axis=0)
                     orientation=np.append(orientation,np.zeros([1,1]),axis=0)
                     distance=np.append(distance,np.zeros([1,1]),axis=0)
-                    distance[n_human-1,0]=sqrt((position_new[k,0])**2+(position_new[k,1])**2) 
+                    distance[-1,0]=sqrt((position_new[k,0])**2+(position_new[k,1])**2) 
                     sensor=np.append(sensor,np.ones([1,1]),axis=0) #1 because it is a lidar type data
                     #Motion inference
                     motion=np.append(motion,np.zeros([1,1]),axis=0) #new human detection starts with motion label 0 = "not_defined"
-                    time_track=np.append(time_track,np.ones([1,2])*time_data[0],axis=0)  
+                    time_track=np.append(time_track,np.ones([1,2])*(time.time()-time_init),axis=0)  
                     speed=np.append(speed,np.zeros([1,1]),axis=0) #initial speed is 0
                     speed_buffer=np.append(speed_buffer,np.zeros([1,n_samples]),axis=0) 
-                    speed_buffer[n_human-1,0]=speed[k,0] # first data in the speed_buffer
+                    speed_buffer[-1,0]=speed[-1,0] # first data in the speed_buffer
                     posture_buffer=np.append(posture_buffer,np.zeros([1,n_samples_gest]),axis=0) 
-                    posture_buffer[n_human-1,0]=posture[k,0] # first data in the posture_buffer
+                    posture_buffer[-1,0]=posture[-1,0] # first data in the posture_buffer
                     posture_prob_buffer=np.append(posture_prob_buffer,np.zeros([1,n_samples_gest]),axis=0) 
-                    posture_prob_buffer[n_human-1,0]=posture[k,1] # first data in the posture_prob_buffer
+                    posture_prob_buffer[-1,0]=posture[-1,1] # first data in the posture_prob_buffer
                     counter_motion=np.append(counter_motion,np.ones([1,1]),axis=0) # first data was recorded
                     counter_posture=np.append(counter_posture,np.ones([1,1]),axis=0) # first data was recorded
                     #Human Tracking
@@ -511,19 +519,6 @@ class human_class:
                             
                         if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]: #and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk
-                            time_diff=time_track[k,1]-time_data[1]                        
-                            #Updating speed, motion and time_track
-                            motion_diff=distance[k,:]-distance_new[new_index,:]
-                            speed[k,:]=abs(motion_diff/time_diff)-rob_speed
-                            time_track[k,1]=time_data[1]   
-                            if counter_motion[k]<n_samples: #while the recorded data is less than n_points                
-                                speed_buffer[k,int(counter_motion[k])]=speed[k,:]
-                                counter_motion[k]=counter_motion[k]+1
-                                motion[k]=0 #static
-                            else: #to removed old data and replace for newer data
-                                speed_buffer[k,0:n_samples-1]=speed_buffer[k,1:n_samples]
-                                speed_buffer[k,n_samples-1]=speed[k,:]
-                                motion[k]=self.human_motion_inference(speed_buffer[k,:])
                             #Updating posture, centroid, features, orientation, distance, area, counter_old
                             if counter_posture[k]<n_samples_gest: #while the recorded data is less than n_points 
                                 posture_buffer[k,int(counter_posture[k])]=posture_new[new_index,0]
@@ -541,14 +536,33 @@ class human_class:
                             centroid[k,:]=centroid_new[new_index,:]
                             features[k,:]=features_new[new_index,:]
                             orientation[k,:]=orientation_new[new_index,:]
-                            distance[k,:]=w_distance[0]*distance[k,:]+w_distance[1]*distance_new[new_index,:]
-                            area[k,0]=area_new[new_index,0]
-                            counter_old[k,1]=counter_old[k,1]-1
+                            #Updating distance, motion, time_track and area
+                            if sensor[k]==2: #only update with camera info if no lidar info is available                          
+                                #time_diff=time_data[1]-time_track[k,1]  
+                                #Updating speed, motion and time_track
+                                motion_diff=distance[k,:]-distance_new[new_index,:]
+                                speed[k,:]=abs(motion_diff/time_diff[1])-rob_speed
+                                time_track[k,1]=time_data[1]
+                                if counter_motion[k]<n_samples: #while the recorded data is less than n_points                
+                                    speed_buffer[k,int(counter_motion[k])]=speed[k,:]
+                                    counter_motion[k]=counter_motion[k]+1
+                                    motion[k]=0 #static
+                                else: #to removed old data and replace for newer data
+                                    speed_buffer[k,0:n_samples-1]=speed_buffer[k,1:n_samples]
+                                    speed_buffer[k,n_samples-1]=speed[k,:]
+                                    motion[k]=self.human_motion_inference(speed_buffer[k,:])
+                                distance[k,:]=w_distance[0]*distance[k,:]+w_distance[1]*distance_new[new_index,:]
+                                area[k,0]=area_new[new_index,0]
+                            else:
+                                time_track[k,1]=time_data[1]
+                                
+                            counter_old[k,1]=counter_old[k,1]-1                          
                             new_human_flag[new_index]=1 #it is not a new human
                             #For motion inference and Update the sensor    
                             if sensor[k]==1: #if before it was only from lidar
                                 sensor[k,:]=0 #now is from both
                                 print('New human matches with tracked human, merged')
+                            #print("CAMERA SPEED",speed_buffer[k,:])
                             
                         else:
                             counter_no_new_data=counter_no_new_data+1 #counter to know if the k-th human tracked does not have a new data
@@ -617,7 +631,6 @@ class human_class:
                 distance=np.zeros([n_human,1])
                 sensor=np.zeros([n_human,1])
                 area=np.zeros([n_human,1])
-                
             #To include a new human to be tracked
             for k in range(0,len(new_human_flag)):
                 if new_human_flag[k]==0 and posture_new[k,1]>=posture_threshold: # only if the openpose probability is reliable 
@@ -633,14 +646,14 @@ class human_class:
                     sensor=np.append(sensor,2*np.ones([1,1]),axis=0) #2 because it is a camera type data
                     #Motion infenrece
                     motion=np.append(motion,np.zeros([1,1]),axis=0) #new human detection starts with motion label 0 = "not_defined"
-                    time_track=np.append(time_track,np.ones([1,2])*time_data[1],axis=0) 
+                    time_track=np.append(time_track,np.ones([1,2])*(time.time()-time_init),axis=0) 
                     speed=np.append(speed,np.zeros([1,1]),axis=0) #initial speed is 0
                     speed_buffer=np.append(speed_buffer,np.zeros([1,n_samples]),axis=0) 
-                    speed_buffer[n_human-1,0]=speed[k,0] # first data in the speed_buffer
+                    speed_buffer[-1,0]=speed[-1,0] # first data in the speed_buffer
                     posture_buffer=np.append(posture_buffer,np.zeros([1,n_samples_gest]),axis=0) 
-                    posture_buffer[n_human-1,0]=posture[k,0] # first data in the posture_buffer
+                    posture_buffer[-1,0]=posture[-1,0] # first data in the posture_buffer
                     posture_prob_buffer=np.append(posture_prob_buffer,np.zeros([1,n_samples_gest]),axis=0) 
-                    posture_prob_buffer[n_human-1,0]=posture[k,1] # first data in the posture_prob_buffer
+                    posture_prob_buffer[-1,0]=posture[-1,1] # first data in the posture_prob_buffer
                     counter_motion=np.append(counter_motion,np.ones([1,1]),axis=0) # first data was recorded
                     counter_posture=np.append(counter_posture,np.ones([1,1]),axis=0) # first data was recorded
                     #Human tracking
@@ -811,8 +824,10 @@ class human_class:
                 count=count+1
                 post=posture[k]
         if count>=n_samples_gest-1:
-            posture=post
             prob=np.mean(posture_prob)
+            if prob<posture_threshold: # only if the openpose probability is reliable 
+                post=0 #no gesture
+                prob=0 #probability 0
         else:
             post=0 #no gesture
             prob=0 #probability 0
@@ -896,21 +911,25 @@ if __name__ == '__main__':
     image_front_sub = message_filters.Subscriber('camera/camera1/color/image_raw', Image)
     depth_front_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
     ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01)
-    ts.registerCallback(human.camera_callback)
-    #rospy.Subscriber('/people_tracker/pose_array',PoseArray,human.lidar_callback) 
+    if no_camera==False:
+        ts.registerCallback(human.camera_callback)
+    rospy.Subscriber('/people_tracker/pose_array',PoseArray,human.lidar_callback) 
     #Rate setup
     rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
     while not rospy.is_shutdown():	
         main_counter=main_counter+1
+        #Feature extraction
+        if new_data[1]==1:
+            human.feature_extraction_3D(human.image_data,human.image_depth_array,n_joints,n_features)
         #Human tracking
         human.human_tracking()
         #Human motion inference
-        if new_data[0]==1:
+        if new_data[0]!=0:
             new_data[0]=0
         if new_data[1]==1:
             new_data[1]=0
 
-        if visualization=='on':
+        if visualization==True:
             cv2.imshow("Human tracking",human.image)
             cv2.waitKey(15)  
            
@@ -932,9 +951,11 @@ if __name__ == '__main__':
         msg.sensor_c0 = list(human.counter_old[:,0])
         msg.sensor_c1 = list(human.counter_old[:,1])
         pub.publish(msg)
-        
+        #print("SPEED XXXXXXXXXXXXXXXXX",human.speed_buffer)
+        #print("TIME DIFFERENCE LIDAR", time_diff[0])
+        #print("TIME DIFFERENCE CAMERA", time_diff[1])
         rate.sleep() #to keep fixed the publishing loop rate
         time_end=time.time()
         pub_time=time_end-time_init
-        print("TIME",round(pub_time,2))
+        #print("TIME",round(pub_time,2))
         
