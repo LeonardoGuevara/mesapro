@@ -60,9 +60,9 @@ prob_0_init=0 #initial area pixel percentage
 prob_5_init=1 #last area pixel percentage
 #Parameters for lidar area inference
 row_width=1.3 #in meters
-angle_area=45 # in degrees mesuared from the local x-axis robot frame
+angle_area=60 # in degrees mesuared from the local x-axis robot frame
 #Parameters for matching
-meter_threshold=1.3 #meters
+meter_threshold=[0.5,1] # error in meters within two human detections are considered the same human, different for lidar than for camera
 tracking_threshold=3 #times a data is received
 w_distance=[0.2,0.8] #weights used for calculating a distance weighted average during matching old with new data
 #Parameters for Motion inference
@@ -350,7 +350,6 @@ class human_class:
         #####New LiDAR info#####################################################################################        
         if new_data[0]==1:
             print("NEW DATA LIDAR")
-            error_threshold=meter_threshold #meters
             diff=np.zeros([n_human,len(position_new[:,0])]) #vector with the error between distances
             area_new=np.zeros([len(position_new[:,0]),1]) #vector with the area of the image where the new human is detected
             new_human_flag=np.zeros([len(position_new[:,0]),1]) #assuming all are new humans
@@ -374,6 +373,10 @@ class human_class:
                         area_new[kk,0]=self.area_inference_lidar(angle,position_new[kk,1],position_new[kk,0])                     
                         ###############################################################################################################################
                         #Determine if a new data match with the k-th human tracked
+                        if sensor[k]==2: #if previous data is from camera
+                            error_threshold=meter_threshold[1] #meters                
+                        else:
+                            error_threshold=meter_threshold[0] #meters 
                         if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]:# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk
                             #current_time=time.time()-time_init
@@ -507,7 +510,7 @@ class human_class:
             diff=np.zeros([n_human,len(centroid_new[:,0])])
             area_new=np.zeros([len(centroid_new[:,0]),1]) #vector with the area of the image where the new human is detected
             new_human_flag=np.zeros([len(centroid_new[:,0]),1]) #assuming all are new humans
-            error_threshold=meter_threshold #meters
+            error_threshold=meter_threshold[1] #meters
             for k in range(0,n_human):
                 for kk in range(0,len(distance_new[:,0])):
                     diff[k,kk]=abs(distance[k,:]-distance_new[kk,:])
@@ -663,13 +666,16 @@ class human_class:
         #TO ENSURE THAT THERE ARE NOT REPEATED HUMANS TO BE TRACKED  
         if new_data[0]==1 or new_data[1]==1:
             repeated_index=np.zeros([n_human,1]) #initially all humans are considered different
-            error_threshold=meter_threshold #meters            
             for k in range(0,n_human):
                 dist_1=distance[k,:]     
                 for i in range (0,n_human):
                     if k!=i and repeated_index[k]==0 and repeated_index[i]==0:
                         dist_2=distance[i,:]   
                         dist_diff=abs(dist_1-dist_2)  
+                        if sensor[k]==2 or sensor[i]==2: #if at least one of these two data are from camera
+                            error_threshold=meter_threshold[1] #meters                
+                        else:
+                            error_threshold=meter_threshold[0] #meters 
                         #area_diff=abs(area[k,0]-area[i,0])
                         if dist_diff<=error_threshold and area[k,0]-area[i,0]: #and area_diff<=1:
                             print('Repeated human in track_list, merged')
@@ -837,29 +843,35 @@ class human_class:
         return result
 
     def area_inference_lidar(self,angle,pos_y,pos_x):
+        print("ANGLE",angle*(180/pi))
+        print("POSITION X",pos_x)
+        print("POSITION Y",pos_y)
+        print("CONDITION 1",-(3/2)*row_width)
+        print("CONDITION 2",-row_width/2)
+        print("CONDITION 3",(-pi+angle_area*(pi/180))*(180/pi))
         #Front
         if (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or pos_y>(3/2)*row_width: #if belongs to 0
             area=0
-        elif pos_y>row_width/2 and pos_y<(3/2)*row_width and angle>=0 and angle<angle_area*(pi/180): # if belongs to area 1
+        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=0 and angle<=angle_area*(pi/180): # if belongs to area 1
             area=1
-        elif pos_y>=-row_width/2 and pos_y<row_width/2 and pos_x>=0: # if belongs to area 2
-            area=2
-        elif pos_y>-(3/2)*row_width/2 and pos_y<-row_width/2 and angle<0 and angle>=-angle_area*(pi/180): # if belongs to area 3
+        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=0 and angle>=-angle_area*(pi/180): # if belongs to area 3
             area=3
-        elif (pos_y>=-(3/2)*row_width/2 and pos_y<-row_width/2 and angle<-angle_area*(pi/180) and angle>=-pi/2) or pos_y<-(3/2)*row_width: #if belongs to 4   
+        elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=-angle_area*(pi/180) and angle>=-pi/2) or pos_y<=-(3/2)*row_width: #if belongs to 4   
             area=4
+        elif pos_y>=-row_width/2 and pos_y<=row_width/2 and pos_x>=0: # if belongs to area 2
+            area=2
         #Back
-        elif (pos_y>=-(3/2)*row_width/2 and pos_y<-row_width/2 and angle>=-pi+angle_area*(pi/180) and angle<-pi/2) or pos_y<-(3/2)*row_width: #if belongs to 5   
+        elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi+angle_area*(pi/180) and angle<=-pi/2) or pos_y<=-(3/2)*row_width: #if belongs to 5   
             area=5
-        elif pos_y>-(3/2)*row_width/2 and pos_y<-row_width/2 and angle>=-pi and angle<-pi+angle_area*(pi/180): # if belongs to area 6
+        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi and angle<=-pi+angle_area*(pi/180): # if belongs to area 6
             area=6
-        elif pos_y> -row_width/2 and pos_y<=row_width/2 and pos_x<0: # if belongs to area 7
-            area=7
-        elif pos_y>row_width/2 and pos_y<(3/2)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
+        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
             area=8
-        elif (pos_y>row_width/2 and pos_y<=(3/2)*row_width and angle<pi-angle_area*(pi/180) and angle>pi/2) or pos_y>(3/2)*row_width: #if belongs to 9
+        elif (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi-angle_area*(pi/180) and angle>=pi/2) or pos_y>=(3/2)*row_width: #if belongs to 9
             area=9
-
+        elif pos_y>= -row_width/2 and pos_y<=row_width/2 and pos_x<=0: # if belongs to area 7
+            area=7
+        
         return area
     
     def area_inference_camera(self,centroid,dist):
