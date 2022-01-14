@@ -371,14 +371,17 @@ class hri_class:
         self.critical_index=0 #by default
         if action==0 or action==2: # robot is moving to an initial goal or moving away from the picker
             self.safety_action=5 # no safety action / keep the previous robot action
-            self.audio_message=0 # no message 
+            if action==2:
+                self.audio_message=5 # alert robot moving away
+            else: #action=0
+                self.audio_message=0 # no message
             self.new_goal=final_goal # the current goal is not changed             
         elif action==1: # robot was approaching
             self.safety_action=4 # make it stop for safety purposes, waiting for a human order 
             self.audio_message=2 # message to ask the human for new order
             self.new_goal=final_goal # the current goal is not changed
         elif action==3: # if goal was paused while moving to a goal or moving away from the picker
-            self.audio_message=0 # no message
+            self.audio_message=6 # alert robot presence
             self.safety_action=0 # restart operation making the robot moving to the current goal
             self.new_goal=final_goal # the current goal is not changed
         elif action==4: #if robot is waiting for human order
@@ -396,15 +399,21 @@ class hri_class:
                 if self.risk==True: #only execute if there is risk of producing human injuries 
                     if action==0: #if robot is moving to goal   
                         if self.critical_dist>10: #if human is above 10m from the robot
+                            self.status=1 #safety HRI
+                            self.safety_action=5 # keep the previous robot action
+                        elif self.critical_dist>=7 and self.critical_dist<10: #if human is between 7-10m from the robot
                             self.status=2 #risky HRI
                             self.safety_action=5  # keep the previous robot action
-                        else: #if human is within 10m
+                        else: #if human is within 7m
                             self.status=3 #dangerous HRI
                             self.safety_action=4 # stop UV-C treatment and wait for a new human command to restart
                         self.audio_message=1 #UVC danger message
                         self.new_goal=final_goal # the current goal is not changed
                     else: #if robot is static        
                         if self.critical_dist>10: #if human is above 10m from the robot
+                            self.status=1 #safety HRI
+                            self.safety_action=5 # keep the previous robot action
+                        elif self.critical_dist>10: #if human is within 7-10m from the robot
                             self.status=2 #risky HRI
                             self.safety_action=5 # keep the previous robot action
                         else: #if human is within 10m
@@ -419,7 +428,6 @@ class hri_class:
                     self.status=1 # safety HRI
                 elif self.critical_dist>1.2 and self.critical_dist<=3.6: #if human is between 1.2-3.6m
                     self.status=2 # risky HRI
-                    #self.status=3 #dangerous HRI
                 else: #if human is within 1.2m
                     self.status=3 # dangerous HRI
                 ##IN CASE THE HUMAN PERFORMS BODY GESTURES
@@ -439,16 +447,17 @@ class hri_class:
                 #In case the picker wants the robot to move away, only valid inside polytunnels
                 elif self.human_command==2:# sensor[self.critical_index]!=1 and posture[self.critical_index]==2 and polytunnel==True and self.aligned==True:  #picker is ordering the robot to move away (using both hands)
                      #make the robot move away
-                    self.audio_message=0 #no message
+                    self.audio_message=5 #message moving away
                     self.safety_action=2 # to make the robot move away from the picker
                     self.new_goal=self.find_new_goal(h_global_y,r_pos_y,current_goal_info)
-                #else:
-                #    self.human_command=0 # no human gesture                  
                     
                 if action==0 or action==2: #if robot is moving to an original goal or moving away from the picker
                     if self.status==1: #if human is above 3.6m and robot is on normal operation
                         if self.human_command==0: #if human is not performing any gesture
-                            self.audio_message=0 #no message
+                            if action==2:
+                                self.audio_message=5 # alert robot moving away
+                            else: #action=0
+                                self.audio_message=6 # alert robot presence
                             self.safety_action=5 # keep the previous robot action
                             self.new_goal=final_goal # the current goal is not changed
                     elif self.status==2: #if human is between 1.2-3.6m
@@ -458,7 +467,10 @@ class hri_class:
                                 self.audio_message=3 # message to ask the human for free space to continue moving
                                 self.new_goal=final_goal # the current goal is not changed
                             else:
-                                self.audio_message=0 #no message
+                                if action==2:
+                                    self.audio_message=5 # alert robot moving away
+                                else: #action=0
+                                    self.audio_message=6 # alert robot presence
                                 self.safety_action=5 # keep the previous robot action 
                                 self.new_goal=final_goal # the current goal is not changed
                     
@@ -469,7 +481,10 @@ class hri_class:
                                 self.audio_message=3 # message to ask the human for free space to continue moving
                                 self.new_goal=final_goal # the current goal is not changed
                             else:
-                                self.audio_message=0 #no message
+                                if action==2:
+                                    self.audio_message=5 # alert robot moving away
+                                else:
+                                    self.audio_message=6 # alert robot presence
                                 self.safety_action=5 # keep the previous robot action
                                 self.new_goal=final_goal # the current goal is not changed
                 elif action==1: #if robot is approaching to the picker
@@ -501,7 +516,7 @@ class hri_class:
                 elif action==3: #if robot is in pause mode, waiting till the human is occluding to continue moving
                     if self.status==1: #if human is above 3.6m and robot is on normal operation
                         if self.human_command==0 : #if human is not performing any gesture
-                            self.audio_message=0 # no message
+                            self.audio_message=6 # alert robot presence
                             self.safety_action=0 # restart operation making the robot moving to the current goal
                             self.new_goal=final_goal # the current goal is not changed
                     else: #if human is within 3.6m

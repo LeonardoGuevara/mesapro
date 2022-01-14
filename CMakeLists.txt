@@ -53,6 +53,7 @@ add_message_files(
 #   Message1.msg
 #   Message2.msg
   human_msg.msg
+  human_detector_msg.msg
   hri_msg.msg
 robot_msg.msg
 )

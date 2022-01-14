@@ -52,7 +52,7 @@ class human_class:
         #self.centroid_x=0 #x,y (pixels) of the human centroid, from camera
         #self.centroid_y=0 #x,y (pixels) of the human centroid, from camera
         self.centroids_x=[0]
-        self.centroid_y=[0]
+        self.centroids_y=[0]
         self.orientation=0 # it can be "front" or "back" if the human is facing the robot or not , from camera
         self.distance=0  # distance between the robot and the average of the skeleton joints distances taken from the depth image, from camera
         self.sensor=0 # it can be 0 if the data is from camera and Lidar, 1 if the data is  only from the LiDAR or 2 if the data is only from de camera
@@ -61,7 +61,7 @@ class human_class:
         self.image=np.zeros((800,400,3), np.uint8) #initial value
     
     def human_callback(self,human_info):
-        global no_detection
+        #global no_detection
         #print("NEW HUMAN DATA")
         if hri.critical_index<=len(human_info.posture)-1:
             self.posture=human_info.posture[hri.critical_index]
@@ -77,10 +77,10 @@ class human_class:
             self.orientation=human_info.orientation[hri.critical_index]
             self.area=human_info.area[hri.critical_index]
        
-        if (human.centroids_x[0]+human.centroids_y[0]+human_info.motion[0]+human_info.posture[0]+human_info.position_x[0]+human_info.position_y[0]+human_info.distance[0])==0: #None human detected
-            no_detection=True  
-        else:
-            no_detection=False
+        #if (human.centroids_x[0]+human.centroids_y[0]+human_info.motion[0]+human_info.posture[0]+human_info.position_x[0]+human_info.position_y[0]+human_info.distance[0])==0: #None human detected
+        #    no_detection=True  
+        #else:
+        #    no_detection=False
         #print(no_detection)
     def camera_callback(self,ros_image):
         global image_width
@@ -177,7 +177,7 @@ def demo_outputs(color_image):
     font = cv2.FONT_HERSHEY_SIMPLEX
     
     #Print HUMAN PERCEPTION INFO
-    if no_detection:# or hri.status==0: #None human detected
+    if hri.status==0: #None human detected
         color_image = cv2.putText(color_image,"***NO HUMAN DETECTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
     #elif area=="side_detection":
     #    color_image = cv2.putText(color_image,"***HUMAN DETECTED - NO RISK ***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
