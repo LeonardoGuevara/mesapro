@@ -328,7 +328,8 @@ windows:
   - rosrun mesapro virtual_picker_simulation.py
 - name: safety_system
   panes:
-  -  rosrun mesapro human_safety_system.py
+  - rosrun mesapro human_safety_system.py
+  - rosrun mesapro audio_alerts.py
 - name: localisation_prelims_aditional
   panes:
   - roslaunch rasberry_bringup corner_lasers_merger.launch
