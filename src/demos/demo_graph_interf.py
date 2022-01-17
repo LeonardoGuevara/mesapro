@@ -227,6 +227,7 @@ def demo_outputs(color_image):
                 for k in range(0,len(human.centroids_x)):    
                     if human.centroids_x[k]+human.centroids_y[k]!=0:
                         center_coordinates = (int(human.centroids_x[k]), int(human.centroids_y[k])) 
+                        #center_coordinates=(0,480)
                         if k==hri.critical_index:
                             color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 255), 20) #RED
                         else:

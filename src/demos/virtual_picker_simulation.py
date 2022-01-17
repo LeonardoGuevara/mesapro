@@ -17,6 +17,7 @@ import time
 
 ##########################################################################################
 picker_step=0.05 # maximum picker step each time an action is triggered 
+picker_step_angle=0.1 # maximim picker step in radians
 n_samples=10 #number of samples used for the motion inference
 #new_data=[0,0,0,0,0] #joy, actor0, actor1, robot_pos, robot_vel
 speed_threshold=[0.6,1]  # [static, slow motion] m/s
@@ -57,7 +58,12 @@ class human_class:
         
         #Positions from virtual picker
         pos = p1.pose.position
-        pose= np.array([pos.x,pos.y,0])
+        quat = p1.pose.orientation    
+        # From quaternion to Euler
+        angles = euler_from_quaternion((quat.x,quat.y,quat.z,quat.w))
+        theta = angles[2]
+        pos_theta=np.unwrap([theta])[0]
+        pose= np.array([pos.x,pos.y,pos_theta])
         self.position_global[0,:]=pose
         #Human Motion and distance
         time_new=time.time()-time_init
@@ -92,16 +98,8 @@ class human_class:
                 self.motion[ii]=2
         else:
             self.motion[ii]=0
-        #Human Area (using only y-position in global frame)
-        #print("AREA ERROR",abs(pose[0]-robot.position[0]))
-        #if abs(pose[1]-robot.position[1])<=2:
-        #    self.area[0,0]=2
-        #else:
-        #    self.area[0,0]=0
-        #self.area[0,0]=2
+
         #Transform human_position from global frame to local frame
-        
-        #self.position[0,:]=pose-robot.position
         aux=pose-robot.position
         aux_a=atan2(aux[1],aux[0])
         dist=sqrt(aux[1]**2+aux[0]**2)
@@ -109,6 +107,20 @@ class human_class:
         pos_y=(sin(-robot.position[2]+aux_a)*dist)
         self.position[0,0]=pos_x
         self.position[0,1]=pos_y
+        #Area
+        self.area[0]=area_inference_lidar(pos_y,pos_x)
+        #Orientation
+        #if self.area[0]>=0 and self.area[0]<=4:
+        #    if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
+        #        orientation=1 #back
+        #    else:  #front
+        #        orientation=0
+        #else:
+        #    if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
+        #        orientation=0 #front
+        #    else:  #back
+        #        orientation=1
+        #self.orientation[0]=orientation
         #new_data[1]=1
 
     def actor01_callback(self,p2):
@@ -118,7 +130,12 @@ class human_class:
         
         #Positions from virtual picker
         pos = p2.pose.position
-        pose= np.array([pos.x,pos.y,0])
+        quat = p2.pose.orientation    
+        # From quaternion to Euler
+        angles = euler_from_quaternion((quat.x,quat.y,quat.z,quat.w))
+        theta = angles[2]
+        pos_theta=np.unwrap([theta])[0]
+        pose= np.array([pos.x,pos.y,pos_theta])
         self.position_global[1,:]=pose
         #Human Motion and distance
         time_new=time.time()-time_init
@@ -147,12 +164,7 @@ class human_class:
                 self.motion[ii]=2
         else:
             self.motion[ii]=0
-        #Human Area (using only y-position in global frame)
-        #if abs(pose[1]-robot.position[1])<=1:
-        #    self.area[1,0]=2
-        #else:
-        #    self.area[1,0]=0
-        #self.area[1,0]=2
+       
         #Transform human_position from global frame to local frame (the one which is actually measured by the real robot)
         aux=pose-robot.position
         aux_a=atan2(aux[1],aux[0])
@@ -161,7 +173,20 @@ class human_class:
         pos_y=(sin(-robot.position[2]+aux_a)*dist)
         self.position[1,0]=pos_x
         self.position[1,1]=pos_y
-        
+        #Area
+        self.area[1]=area_inference_lidar(pos_y,pos_x)
+        #Orientation
+        #if self.area[1]>=0 and self.area[1]<=4:
+        #    if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
+        #        orientation=1 #back
+        #    else:  #front
+        #        orientation=0
+        #else:
+        #    if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
+        #        orientation=0 #front
+        #    else:  #back
+        #        orientation=1
+        #self.orientation[1]=orientation
         #new_data[2]=1
 
 class robot_class:
@@ -176,8 +201,7 @@ class robot_class:
 
     def robot_callback_pos(self,pose):
         #print("ROBOTS NEW DATA")
-        #if new_data[3]==0:
-        #pos = odom.pose.pose
+
         pos_x=pose.position.x
         pos_y=pose.position.y
         quat = pose.orientation    
@@ -185,14 +209,9 @@ class robot_class:
         angles = euler_from_quaternion((quat.x,quat.y,quat.z,quat.w))
         theta = angles[2]
         pos_theta=np.unwrap([theta])[0]
-        
-        #robot.position_past=robot.position
+
         self.position=np.array([pos_x, pos_y, pos_theta])
-        #time_new=time.time()-time_init
-        #print("ROBOT POSITION",robot.position) 
-        #robot.speed=sqrt((robot.position_past[0]-pos.position.x)**2+(robot.position_past[1]-pos.position.y)**2)/(time_new-robot.time)
-        #robot.time=time_new
-        #new_data[3]=1
+
     
     def robot_callback_vel(self,rob):
         #print("ROBOTS NEW DATA")
@@ -222,12 +241,12 @@ def joy_callback(data):
                 human.orientation[1]=1
             if buttons[8]>0: #start to change the human orientation to front
                 human.orientation[1]=0
-            if buttons[15]>0: #up to change the human area to any (in front)
-                human.area[1]=2
-            if buttons[17]>0: #down to change the human area to any (back)
-                human.area[1]=7
-            if buttons[14]>0: #left to change the human area to 0 (on the side)
-                human.area[1]=0    
+            #if buttons[15]>0: #up to change the human area to any (in front)
+            #    human.area[1]=2
+            #if buttons[17]>0: #down to change the human area to any (back)
+            #    human.area[1]=7
+            #if buttons[14]>0: #left to change the human area to 0 (on the side)
+            #    human.area[1]=0    
                 
             if np.shape(axes)[0]!=0:
                 #Picker01
@@ -239,6 +258,13 @@ def joy_callback(data):
                     human.position_global[1,1]=human.position_global[1][1]-abs(axes[1])*picker_step
                 if axes[1]<0: #down
                     human.position_global[1,1]=human.position_global[1][1]+abs(axes[1])*picker_step
+                
+                if axes[4]>0: #left trigger
+                    human.position_global[1,2]=human.position_global[1][2]+abs(axes[4])*picker_step_angle
+                if axes[5]>0: #right trigger
+                    human.position_global[1,2]=human.position_global[1][2]-abs(axes[5])*picker_step_angle
+                
+                
             if buttons[3]>0: #X to reset gesture
                 if human.posture[1,0]!=0:
                     human.posture[1,0]=0 #to reset human gesture
@@ -254,12 +280,12 @@ def joy_callback(data):
                 human.orientation[0]=1
             if buttons[8]>0: #start to change the human orientation to front
                 human.orientation[0]=0
-            if buttons[15]>0: #up to change the human area to any (in front)
-                human.area[0]=2
-            if buttons[17]>0: #down to change the human area to any (back)
-                human.area[0]=7
-            if buttons[14]>0: #left to change the human area to 0 (on the side)
-                human.area[0]=0
+            #if buttons[15]>0: #up to change the human area to any (in front)
+            #    human.area[0]=2
+            #if buttons[17]>0: #down to change the human area to any (back)
+            #    human.area[0]=7
+            #if buttons[14]>0: #left to change the human area to 0 (on the side)
+            #    human.area[0]=0
                 
                 
             if np.shape(axes)[0]!=0:
@@ -272,11 +298,49 @@ def joy_callback(data):
                     human.position_global[0,1]=human.position_global[0][1]-abs(axes[1])*picker_step
                 if axes[1]<0: #down
                     human.position_global[0,1]=human.position_global[0][1]+abs(axes[1])*picker_step
+                
+                if axes[4]>0: #left trigger
+                    human.position_global[0,2]=human.position_global[0][2]+abs(axes[4])*picker_step_angle
+                if axes[5]>0: #right trigger
+                    human.position_global[0,2]=human.position_global[0][2]-abs(axes[5])*picker_step_angle
+                
             if buttons[3]>0: #X to reset gesture
                 if human.posture[0,0]!=0:
                     human.posture[0,0]=0 #to reset human gesture
     
-
+def area_inference_lidar(pos_y,pos_x):
+    row_width=1.3 #in meters
+    angle_area=60 # in degrees mesuared from the local x-axis robot frame
+    angle=atan2(pos_y,pos_x)# local x-axis is aligned to the robot orientation
+    if angle>pi: #  to keep the angle between [-180,+180]
+        angle=angle-2*pi
+    if angle<-pi:
+        angle=angle+2*pi
+                        
+    #Front
+    if (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or (pos_y>(3/2)*row_width and pos_x>0): #if belongs to 0
+        area=0
+    elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=0 and angle<=angle_area*(pi/180): # if belongs to area 1
+        area=1
+    elif pos_y>=-row_width/2 and pos_y<=row_width/2 and pos_x>=0: # if belongs to area 2
+        area=2
+    elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=0 and angle>=-angle_area*(pi/180): # if belongs to area 3
+        area=3
+    elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=-angle_area*(pi/180) and angle>=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x>0): #if belongs to 4   
+        area=4
+    #Back
+    elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi+angle_area*(pi/180) and angle<=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x<0): #if belongs to 5   
+        area=5
+    elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi and angle<=-pi+angle_area*(pi/180): # if belongs to area 6
+        area=6
+    elif pos_y>= -row_width/2 and pos_y<=row_width/2 and pos_x<=0: # if belongs to area 7
+        area=7
+    elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
+        area=8
+    elif (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi-angle_area*(pi/180) and angle>=pi/2) or (pos_y>=(3/2)*row_width and pos_x<0): #if belongs to 9
+        area=9
+    
+    return area
 ############################################################################################
 # Main Script
 if __name__ == '__main__':
@@ -328,7 +392,6 @@ if __name__ == '__main__':
         #if new_data[4]==1:
         #    new_data[4]=0
         
-        #if new_data[0]==1:
         #setup publiser in ROS
         pub=rospy.Publisher('/hedge_pos_a',marvelmind_nav.msg.hedge_pos_a, queue_size=10)
         msg= marvelmind_nav.msg.hedge_pos_a()
@@ -337,18 +400,34 @@ if __name__ == '__main__':
         msg.timestamp_ms=0
         msg.x_m = human.position_global[0][0]
         msg.y_m = human.position_global[0][1]
-        msg.z_m = 0.0
-        #msg.flag=0
+        msg.z_m = 0
         pub.publish(msg)
-        #print('PICKER 1 -- X: %4.1f Y: %4.1f'%(human.position_global[0][0],human.position_global[0][1]))
         #Publish command for Picker 2
         msg.address= 2
         msg.timestamp_ms=0
         msg.x_m = human.position_global[1][0]
         msg.y_m = human.position_global[1][1]
-        msg.z_m = 0.0
-        #msg.flag=0
+        msg.z_m = 0
         pub.publish(msg)
+        
+        #pub=rospy.Publisher('/picker01/posestamped',PoseStamped)
+        #msg=PoseStamped()
+        #msg.header.frame_id = "map"
+        #msg.pose.position.x=human.position_global[0][0]
+        #msg.pose.position.y=human.position_global[0][1]
+        #msg.pose.orientation.z=2#human.position_global[0][2]
+        #msg.pose.orientation.x=0#human.position_global[0][2]
+        #msg.pose.orientation.y=0#human.position_global[0][2]
+        #msg.pose.orientation.w = 1.0
+        #pub.publish(msg)
+        #pub=rospy.Publisher('/picker02/posestamped',PoseStamped)
+        #msg=PoseStamped()
+        #msg.pose.position.x=human.position_global[1][0]
+        #msg.pose.position.y=human.position_global[1][1]
+        #msg.pose.orientation.z=human.position_global[1][2]
+        #pub.publish(msg)
+        
+        
         #print('PICKER 2 -- X: %4.1f Y: %4.1f'%(human.position_global[1][0],human.position_global[1][1]))
         rate.sleep() #to keep fixed the control loop rate
         #if new_data[0]==1:    

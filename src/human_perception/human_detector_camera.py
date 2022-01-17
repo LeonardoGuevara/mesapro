@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python3
 
 #required packages
 import rospy #tf
@@ -11,6 +11,7 @@ import numpy as np #to use matrix
 from numpy import linalg as LA
 from cv_bridge import CvBridge, CvBridgeError
 import joblib
+import cv2
 from mesapro.msg import human_detector_msg
 ##########################################################################################
 
@@ -61,12 +62,21 @@ class human_class:
     def camera_callback(self,image_front, depth_front):
         #print("DATA FROM CAMERA")
         try:
-            color_image = bridge.imgmsg_to_cv2(image_front, "bgr8")
-            depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
-            depth_array = np.array(depth_image, dtype=np.float32)/1000
-            self.image_width[0] = depth_array.shape[1]
+            #Front camera info extraction
+            color_image_front = bridge.imgmsg_to_cv2(image_front, "bgr8")
+            depth_image_front = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+            depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
+            self.image_width[0] = depth_array_front.shape[1]
             ##################################################################################
+            #Back camera info extraction
+            color_image_back=color_image_front
+            depth_array_back=depth_array_front
+            self.image_width[1]=self.image_width[0]
             #Here the images from two cameras has to be merged in a single image (front image left, back image back)
+            color_image=np.append(color_image_front,color_image_back,axis=1) 
+            depth_array=np.append(depth_array_front,depth_array_back,axis=1) 
+            #color_image=color_image_front
+            #depth_array=depth_array_front
             #######################################################################################
         except CvBridgeError as e:
             rospy.logerr("CvBridge Error: {0}".format(e))
@@ -92,6 +102,8 @@ class human_class:
             msg.camera_id= list(self.camera_id[:,0])
             msg.image_width= self.image_width
             pub.publish(msg)
+            #cv2.imshow("System outputs",datum.cvOutputData)
+            #cv2.waitKey(5)
            
     
 ################################################################################################################            
@@ -118,7 +130,14 @@ class human_class:
             joints_x_init=poseKeypoints[kk,0:n_joints,0]
             joints_y_init=poseKeypoints[kk,0:n_joints,1]   
             joints_z_init=[0]*n_joints   
+            #print("JOINT X",joints_x_init)
+            #print("JOINT Y",joints_y_init)
             for k in range(0,n_joints):
+                #in case keypoints are out of image range (necessary when two images were merged)
+                if int(joints_y_init[k])>=len(depth_array[:,0]):
+                    joints_y_init[k]=len(depth_array[:,0])-1
+                if int(joints_x_init[k])>=len(depth_array[0,:]):
+                    joints_x_init[k]=len(depth_array[0,:])-1
                 joints_z_init[k]=depth_array[int(joints_y_init[k]),int(joints_x_init[k])]
             #Normalization and scaling
             #Translation
