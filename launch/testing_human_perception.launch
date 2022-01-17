@@ -10,6 +10,8 @@
     <node pkg="mesapro" type="human_detector_camera.py" name="human_info_camera"/>
     
     <node pkg="mesapro" type="human_perception_system.py" name="human_info"/>   
+
+    <node pkg="mesapro" type="demo_graph_interf.py" name="graph_interface"/> 
      
 </launch>
 

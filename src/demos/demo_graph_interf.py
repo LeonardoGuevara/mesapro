@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python3
 
 #required packages
 import rospy #tf
@@ -19,7 +19,8 @@ from mesapro.msg import human_msg, hri_msg, robot_msg
 
 #Importing global parameters from .yaml file
 src_direct=os.getcwd()
-config_direct=src_direct[0:len(src_direct)-9]+"config/"
+#config_direct=src_direct[0:len(src_direct)-9]+"config/"
+config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 direct_param=list(dict.items(parsed_yaml_file["directories_config"]))
