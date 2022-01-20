@@ -11,7 +11,8 @@ import numpy as np #to use matrix
 from numpy import linalg as LA
 from cv_bridge import CvBridge, CvBridgeError
 import joblib
-import cv2
+#import pickle
+#import cv2
 from mesapro.msg import human_detector_msg
 ##########################################################################################
 
@@ -93,13 +94,13 @@ class human_class:
             #self.image=datum.cvOutputData
             print('Human detection')
             #Publish     
-            msg.posture = list(self.posture[:,0])
+            msg.posture = [int(x) for x in list(self.posture[:,0])] #to ensure publish int
             msg.posture_prob = list(self.posture[:,1])
             msg.centroid_x =list(self.centroid[:,0])
             msg.centroid_y =list(self.centroid[:,1])
             msg.distance = list(self.distance[:,0])
-            msg.orientation = list(self.orientation[:,0])
-            msg.camera_id= list(self.camera_id[:,0])
+            msg.orientation = [int(x) for x in list(self.orientation[:,0])] #to ensure publish int
+            msg.camera_id= [int(x) for x in list(self.camera_id[:,0])] #to ensure publish int
             msg.image_width= self.image_width
             pub.publish(msg)
             #cv2.imshow("System outputs",datum.cvOutputData)

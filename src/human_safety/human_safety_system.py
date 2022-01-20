@@ -3,15 +3,13 @@
 #required packages
 import rospy
 from tf.transformations import euler_from_quaternion
-import geometry_msgs.msg
 from geometry_msgs.msg import Pose
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
-import os
 import yaml
 from std_msgs.msg import String
 from topological_navigation.route_search2 import TopologicalRouteSearch2
-from topological_navigation.tmap_utils import *
+#from topological_navigation.tmap_utils import *
 from mesapro.msg import human_msg, hri_msg, robot_msg
 ##########################################################################################
 
@@ -28,8 +26,6 @@ class robot_class:
         self.pos_y=0 #Y
         self.pos_theta=0 #orientation
         self.action=0 #initial value
-        self.current_goal_x=0 #current robot goal X
-        self.current_goal_y=0 #current robot goal Y
         self.current_goal="Unknown"  #name of current robot goal
         self.current_goal_info="Unknown"   #initial condition
         self.polytunnel=False #to know if robot is moving inside the polytunnel or not
@@ -46,8 +42,6 @@ class robot_class:
             self.action=robot_info.action
             self.polytunnel=polytunnel
             self.current_goal=robot_info.current_node
-            self.current_node_x=parent["node"]["pose"]["position"]["x"]    
-            self.current_node_y=parent["node"]["pose"]["position"]["y"]           
             self.current_goal_info=parent
             self.final_goal=robot_info.goal_node
             
@@ -65,45 +59,32 @@ class robot_class:
 class human_class:
     def __init__(self): 
         self.posture=[0]
-        self.posture_prob=[0]
         self.motion=[0] 
-        self.position_x=[0] #lidar local frame
-        self.position_y=[0] #lidar local frame
-        self.centroid_x=[0] #image frame
-        self.centroid_y=[0] #image frame
         self.distance=[0]
         self.orientation=[0]
         self.area=[0]
         self.sensor=[0]
-        self.sensor_t0=[0]
-        self.sensor_t1=[0]
-        self.sensor_c0=[0]
-        self.sensor_c1=[0]
+        self.detection=False #true if a human is detected
         
     def human_callback(self,human_info):
         self.posture=human_info.posture
-        self.posture_prob=human_info.posture_prob
         self.motion=human_info.motion   
-        self.position_x=human_info.position_x
-        self.position_y=human_info.position_y
-        self.centroid_x=human_info.centroid_x
-        self.centroid_y=human_info.centroid_y
         self.distance=human_info.distance
         self.orientation=human_info.orientation
         self.area=human_info.area
         self.sensor=human_info.sensor
-        self.sensor_t0=human_info.sensor_t0
-        self.sensor_t1=human_info.sensor_t1
-        self.sensor_c0=human_info.sensor_c0
-        self.sensor_c1=human_info.sensor_c1  
-        
+        if human_info.n_human>0:
+            self.detection=True #there is at least one human detected
+        else:
+            self.detection=False
+  
         
     def human_pose_global(self,dist,area,r_pos_x,r_pos_y,r_pos_theta):
         #################################################################################################################
         #assuming human global pose is always aligned to the robot orientation but with an offset equal to the distance
         #################################################################################################################
         #To compensate the thorvald dimensions and the lidars/cameras locations (local frame)
-        dist=dist+1 #because of extra 1m used to compute distance in virtual_picker_simulation.py
+        #dist=dist+1 #because of extra 1m used to compute distance in virtual_picker_simulation.py
         #######################################################################################################
         #assuming the local x-axis is aligned to the robot orientation
         if area<=4: #if human was detected in front of the robot (areas 0 to 4)
@@ -347,14 +328,11 @@ class hri_class:
         #HUMAN INFO
         sensor=human.sensor
         motion=human.motion
-        centroid_x=human.centroid_x
-        centroid_y=human.centroid_y
         posture=human.posture
-        h_pos_x=human.position_x
-        h_pos_y=human.position_y
         dist=human.distance
         area=human.area
         orientation=human.orientation
+        detection=human.detection
         #ROBOT INFO
         r_pos_x=robot.pos_x
         r_pos_y=robot.pos_y
@@ -374,7 +352,7 @@ class hri_class:
             if action==2:
                 self.audio_message=5 # alert robot moving away
             else: #action=0
-                self.audio_message=0 # no message
+                self.audio_message=6 # alert robot presence
             self.new_goal=final_goal # the current goal is not changed             
         elif action==1: # robot was approaching
             self.safety_action=4 # make it stop for safety purposes, waiting for a human order 
@@ -389,7 +367,7 @@ class hri_class:
             self.audio_message=2 # message to ask the human for new order
             self.new_goal=final_goal # the current goal is not changed
         ## HOW TO UPDATE ROBOT ACTION IN CASE OF HRI
-        if len(sensor)>1 or (len(sensor)==1 and (motion[0]+centroid_x[0]+centroid_y[0]+posture[0]+h_pos_x[0]+h_pos_y[0]+dist[0])!=0): #execute only if at least a human is detected     
+        if detection==True: #execute only if at least a human is detected     
             #Critical human selection
             h_global_y=self.critical_human_selection(polytunnel,posture,dist,area,sensor,orientation,motion,current_goal,final_goal,r_pos_x,r_pos_y,r_pos_theta)
             print("DISTANCE TO CRITICAL HUMAN",self.critical_dist)
@@ -450,7 +428,8 @@ class hri_class:
                     self.audio_message=5 #message moving away
                     self.safety_action=2 # to make the robot move away from the picker
                     self.new_goal=self.find_new_goal(h_global_y,r_pos_y,current_goal_info)
-                    
+                
+                
                 if action==0 or action==2: #if robot is moving to an original goal or moving away from the picker
                     if self.status==1: #if human is above 3.6m and robot is on normal operation
                         if self.human_command==0: #if human is not performing any gesture

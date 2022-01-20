@@ -25,13 +25,14 @@ from topological_navigation.edge_reconfigure_manager import EdgeReconfigureManag
 from copy import deepcopy
 from threading import Lock
 
-######################################################################
-from mesapro.msg import human_msg, hri_msg, robot_msg
-import numpy as np
-from topological_navigation_msgs.msg import NavRoute
+#########################################################################################################    
+#### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+#########################################################################################################
+from mesapro.msg import hri_msg, robot_msg
+#from topological_navigation_msgs.msg import NavRoute
 from math import * #to avoid prefix math.
-#######################################################################
-
+##########################################################################################################
+##########################################################################################################
 # A list of parameters topo nav is allowed to change and their mapping from dwa speak.
 # If not listed then the param is not sent, e.g. TrajectoryPlannerROS doesn't have tolerances.
 DYNPARAM_MAPPING = {
@@ -152,17 +153,20 @@ class TopologicalNavServer(object):
         rospy.Subscriber("closest_edges", ClosestEdges, self.closestEdgesCallback)
         rospy.Subscriber("current_node", String, self.currentNodeCallback)
         rospy.loginfo("...done")
-        ##########################################################################################
-        self.robot_action=4                  # current robot operation, waiting for human command as initial condition
-        self.past_action=self.robot_action   # past robot operation
-        self.goal= "Unknown"                 # Current final goal node to reach
-        self.hri_goal = self.goal            # New final goal node given by the safety system 
-        self.hri_safety_action=5              # new safety action from the safety system, no safety action as initial condition
-        self.hri_safety_action_past=self.hri_safety_action #past safety action already taken
-        self.op_mode="logistics"              # assuming logistics as initial op_mode, initial condition
-        self.current_target="Unknown"               # initial condition
+        #########################################################################################################    
+        #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+        #########################################################################################################
+        self.robot_action=4                  # current robot action, "waiting for human command" as initial condition
+        self.past_action=self.robot_action   # past robot action
+        self.goal= "Unknown"                 # Current final goal node to reach, initial condition "Unknown"
+        self.hri_goal = self.goal            # New final goal node determined by the safety_system 
+        self.hri_safety_action=5              # New safety action from the safety_system, "no safety action" as initial condition
+        self.hri_safety_action_past=self.hri_safety_action # past safety action already taken
+        self.op_mode="logistics"              # assuming logistics as operation mode, it can also be "UV-C" mode
+        self.current_target="Unknown"        # current closest node in the route plan, initial condition "Unknown"
         rospy.Subscriber('human_safety_info',hri_msg,self.safety_callback)  
-        #############################################################################################
+        ##########################################################################################################
+        #########################################################################################################
         
         try:
             rospy.loginfo("Waiting for restrictions...")
@@ -183,9 +187,12 @@ class TopologicalNavServer(object):
         self.executing_fail_policy = {}
 
         rospy.loginfo("All Done.")
-        ########################################################################################
-        #rospy.spin()
-        #######################################################################################
+        #########################################################################################################    
+        #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+        #########################################################################################################
+        #rospy.spin() #Commented to allow this node to publish robot_msg
+        #########################################################################################################
+        #########################################################################################################
         
     def _on_node_shutdown(self):
         with self.navigation_lock:
@@ -313,17 +320,21 @@ class TopologicalNavServer(object):
             
             self._feedback.route = "Starting..."
             self._as.publish_feedback(self._feedback)
-            #####################################################################################################
-            if self.current_node==self.goal or self.goal=="Unknown": #execute only if robot already accomplished previos task or if it is the first command    
-                self.robot_action=0 # operation when the robot is moving to a original goal
-                self.past_action=self.robot_action #to give priority to a new human command goal
+            #########################################################################################################    
+            #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+            #########################################################################################################
+            if self.current_node==self.goal or self.goal=="Unknown": #execute only if robot already finished previos route plan or if it is the first rviz goal given    
+                self.robot_action=0 # change action to "moving to a rviz goal"
+                self.past_action=self.robot_action  #to lock new robot_action
                 self.goal=goal.target
-                self.navigate(goal.target)
-                self.robot_action=4
-            elif self.hri_safety_action==5:# only if no safety action is required
-                self.robot_action=0 # operation when the robot is moving to a original goal
-                self.goal=goal.target #save new goal
-                self.past_action=3 #to not update new goal with the hri_goal
+                self.navigate(goal.target) #navigation is executed
+                if self.robot_action!=0 or self.current_node==self.goal: #if route was completed or new robot action is not "going to rviz goal"
+                    self.robot_action=4 # change robot_action to "wait for new command"
+            elif self.hri_safety_action==5:# execute only if no safety action is required, i.e. any safety action has priority over action "moving to rviz goal"
+                self.robot_action=0 # change action to "moving to a rviz goal"
+                self.goal=goal.target #save new goal given by clicking rviz
+                self.past_action=3 #to not update the new rviz goal with the hri_goal    
+            ###########################################################################################################
             ###########################################################################################################
         else:
             rospy.logwarn("Could not cancel current navigation action, GO-TO-NODE goal aborted")
@@ -1007,8 +1018,10 @@ class TopologicalNavServer(object):
             self.move_act_pub.publish(String(json.dumps(d)))
         self.prev_status = status
 
-    #######################################################################################################     
-    
+    #########################################################################################################    
+    #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+    #########################################################################################################
+        
     def safety_callback(self,safety_info):
         self.hri_safety_action=safety_info.safety_action
         self.hri_goal=safety_info.new_goal
@@ -1016,7 +1029,7 @@ class TopologicalNavServer(object):
         #Only update the robot_action if new safety action is required or new hri_goal is required.
         if (self.hri_safety_action!=self.robot_action and self.hri_safety_action!=5) or (self.robot_action==self.hri_safety_action and self.goal!=self.hri_goal): 
             self.robot_action=self.hri_safety_action
-            self.preemptCallback() #to stop current action
+            self.preemptCallback() #to stop current navigation_action
             
         #Publish current robot operation
         pub_robot = rospy.Publisher('robot_info', robot_msg)
@@ -1027,31 +1040,28 @@ class TopologicalNavServer(object):
             parent=self.current_target
         else:
             parent="Unknown"
-        rob_msg.current_node=parent #current goal
+        rob_msg.current_node=parent #current goal in the route
         rob_msg.action=self.robot_action
-        rob_msg.goal_node=self.goal #final goal
+        rob_msg.goal_node=self.goal #final goal in the route
         pub_robot.publish(rob_msg)
         
     def robot_update_action(self):               
-        #Robot goal update if required
-        if (self.robot_action==3 or self.robot_action==4):# to make the robot stop / without changing the goal
+        if (self.robot_action==3 or self.robot_action==4):# to make the robot stop / without updating the goal
             if self.past_action!=3 and self.past_action!=4: #to ensure that it is executed only once
                 self.past_action=self.robot_action   
-                with self.navigation_lock:
+                with self.navigation_lock: #to stop current navigation_action
                     if self.cancel_current_action(timeout_secs=10):
-                        # we successfully stopped the previous action, claim the title to activate navigation
                         self.navigation_activated = False
-        elif self.robot_action==0 or self.robot_action==1 or self.robot_action==2: #to change the goal for approch/move away or resume a paused goal after being waiting
-            #To update robot_action If robot requires to change the goal
+        elif self.robot_action==0 or self.robot_action==1 or self.robot_action==2: #to update the goal for approch/move away or resume a paused goal after being waiting
+            #To update robot_action if robot requires to change the goal
             if (self.past_action!=self.robot_action) or (self.past_action==self.robot_action and self.goal!=self.hri_goal and self.robot_action!=0): #to ensure that it is executed only once, and allow changes of goal but keeping the same robot_action 
                 can_start = False
-                if self.past_action!=3:#not neccesary to change goal after paused mode or when original_goal has been blocked
+                if self.past_action!=3:#not neccesary to change goal after paused mode or when rviz goal has been locked
                     self.goal=self.hri_goal
                 
                 self.past_action=self.robot_action
                 with self.navigation_lock:
                     if self.cancel_current_action(timeout_secs=10):
-                        # we successfully stopped the previous action, claim the title to activate navigation
                         self.navigation_activated = True
                         can_start = True
                 
@@ -1063,7 +1073,8 @@ class TopologicalNavServer(object):
                     self._as.publish_feedback(self._feedback)
                     
                     self.navigate(self.goal)
-                    self.robot_action=4
+                    if self.robot_action!=0 or self.current_node==self.goal: #if route was completed or new robot action is not "going to rviz goal"
+                        self.robot_action=4
                 else:
                     rospy.logwarn("Could not cancel current navigation action, GO-TO-NODE goal aborted")
                     self._as.set_aborted()
@@ -1071,17 +1082,20 @@ class TopologicalNavServer(object):
             
     
     ###########################################################################################################  
+    ###########################################################################################################  
 
 if __name__ == "__main__":
     rospy.init_node("topological_navigation")
     mode = "normal"
     server = TopologicalNavServer(rospy.get_name(), mode)
-    ###################################################################################################################
+    #########################################################################################################    
+    #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+    #########################################################################################################
     rate = rospy.Rate(1/0.01) # rate in Hz
     while not rospy.is_shutdown():	
-        print("ROBOT OPERATION MAIN",server.robot_action)
+        #print("ROBOT OPERATION MAIN",server.robot_action)
         server.robot_update_action()
         rate.sleep() #to keep fixed loop rate
     ###################################################################################################################
+    ###################################################################################################################
     rospy.loginfo("Exiting.")
-###################################################################################################################

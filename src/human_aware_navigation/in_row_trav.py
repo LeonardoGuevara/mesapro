@@ -44,9 +44,12 @@ from polytunnel_navigation_actions.msg import TwoInts
 from polytunnel_navigation_actions.msg import RowTraversalHealth
 from topological_navigation_msgs.msg import ClosestEdges
 
-######################################################################
+#########################################################################################################    
+#### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+#########################################################################################################
 from mesapro.msg import hri_msg , robot_msg
-#######################################################################
+#########################################################################################################
+#########################################################################################################
 
 class inRowTravServer(object):
 
@@ -120,13 +123,16 @@ class inRowTravServer(object):
                                 'functions':[self.define_safety_zone, self.define_safety_zone, self.reconf_tf_listener,
                                              self.setup_controllers, self.setup_controllers, self.setup_controllers, self.setup_controllers, self.setup_controllers, self.setup_controllers]}
         
-        #######################################################################################################
-        self.hri_dist=100                         # distance to the critical human
-        self.hri_safety_action=5                # new safety action from the safety system
-        self.robot_action=4                     # current robot action, initially waiting for human command
-        self.han_start_dist=3.6                 # Distance to human at which the robot starts to slow down
-        self.han_final_dist=1                   # Distance to human at which the robot must stop
+        #########################################################################################################    
+        #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+        #########################################################################################################
+        self.hri_dist=100                       # distance to the critical human computed by the safety_system
+        self.hri_safety_action=5                # new safety action determined by the safety_system
+        self.robot_action=4                     # current robot action, initially waiting for human command,
+        self.han_start_dist=3.6                 # Human to robot Distance at which the robot starts to slow down
+        self.han_final_dist=1                   # Human to robot Distance at which the robot must stop
         ########################################################################################################### 
+        ###########################################################################################################
         # Useful variables
         self.object_detected = False
         self.curr_distance_to_object=-1.0
@@ -191,10 +197,13 @@ class inRowTravServer(object):
         rospy.Subscriber('/row_detector/obstacles', ObstacleArray, self.obstacles_callback,  queue_size=1)
         rospy.Subscriber('/teleop_joy/joy_priority', Bool, self.joy_lock_cb)
         rospy.Subscriber('/closest_edges', ClosestEdges, self.closest_edges_cb)
-        ##########################################################################################
+        #########################################################################################################    
+        #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+        #########################################################################################################
         rospy.Subscriber('robot_info',robot_msg,self.robot_callback)  
         rospy.Subscriber('human_safety_info',hri_msg,self.safety_callback)  
-        #############################################################################################
+        #########################################################################################################
+        #########################################################################################################
         self._tf_listerner = tf.TransformListener(cache_time=rospy.Duration(self.tf_buffer_size))
 
         self.ppub = rospy.Publisher('/row_traversal/row_line', Path, queue_size=1)
@@ -959,8 +968,10 @@ class inRowTravServer(object):
 
 
     def get_row_entry_speed(self, distance_travelled):
-        ##########################################################################################
-        if self.hri_safety_action==0 or self.hri_safety_action==2 or self.hri_safety_action==5: #if normal operation or moving away
+        #########################################################################################################    
+        #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+        #########################################################################################################
+        if self.hri_safety_action==0 or self.hri_safety_action==2 or self.hri_safety_action==5: #execute if safety action is "going to goal" or "moving away" or "no safety action"
             if not self.constant_forward_speed:
                 if not self.object_detected and self.curr_distance_to_object <= self.approach_dist_to_obj:
                     speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
@@ -974,28 +985,27 @@ class inRowTravServer(object):
             else:
                 speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
         
-        else: #if a safety action is required
-            if self.hri_safety_action==1: #if the speed is reduced while approaching
+        else: #execute if safety action is "reduce speed" or "stop" or "pause"
+            if self.hri_safety_action==1: #if safety action is "reduce speed" while approaching
                 dist=self.hri_dist  
                 if dist <= self.han_start_dist:
                     slowdown_delta = self.han_start_dist - self.han_final_dist
                     current_percent = (dist - self.han_final_dist) / slowdown_delta
                     if current_percent >0:
-                        print("Limiting speed")
-                        #speed = min((current_percent*self.forward_speed), (self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))))
+                        #print("Limiting speed")
                         speed = (current_percent*self.forward_speed)
                     else:
-                        print("stop")
+                        #print("stop")
                         speed = 0.0
                 else:
                     speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
-                    #speed = self.row_entry_min_speed 
-            elif self.hri_safety_action==3 or self.hri_safety_action==4: #if a safety stop is required or the robot needs a human command
-                print("stop")
+            elif self.hri_safety_action==3 or self.hri_safety_action==4: #if a safety action is "stop" or if the robot is "waiting for a human command" 
+                #print("stop")
                 speed = 0.0
         if self.backwards_mode:
             speed = -speed
-
+        #################################################################################################
+        ###################################################################################################
         return speed
     
 
@@ -1049,8 +1059,10 @@ class inRowTravServer(object):
 
 
     def get_forward_speed(self):
-        ##########################################################################################
-        if self.hri_safety_action==0 or self.hri_safety_action==2 or self.hri_safety_action==5: #if normal operation or moving away
+        #########################################################################################################    
+        #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+        #########################################################################################################
+        if self.hri_safety_action==0 or self.hri_safety_action==2 or self.hri_safety_action==5: #execute if safety action is "going to goal" or "moving away" or "no safety action"
             if not self.constant_forward_speed:
                 if not self.object_detected and self.curr_distance_to_object <= self.approach_dist_to_obj:
                     #print "not limiting"
@@ -1059,7 +1071,6 @@ class inRowTravServer(object):
                     else:
                         speed = self.forward_speed
                 else:
-                    #print "limiting"
                     slowdown_delta=self.approach_dist_to_obj-self.min_dist_to_obj
                     current_percent = (self.curr_distance_to_object-self.min_dist_to_obj)/slowdown_delta
                     if current_percent >0:
@@ -1069,25 +1080,22 @@ class inRowTravServer(object):
                     if self.backwards_mode:
                         speed = -speed
             else:
-                #print "not limiting"
                 if self.backwards_mode:
                     speed = -self.forward_speed
                 else:
                     speed = self.forward_speed
-        else: #if a safety action is required
-            if self.hri_safety_action==1: #if the speed is reduced while approaching
+        else:  #execute if safety action is "reduce speed" or "stop" or "pause"
+            if self.hri_safety_action==1: #if safety action is "reduce speed" while approaching
                 dist=self.hri_dist  
                 if dist <= self.han_start_dist:
                     slowdown_delta = self.han_start_dist - self.han_final_dist
                     current_percent = (dist - self.han_final_dist) / slowdown_delta
                     if current_percent >0:
-                        print("Limiting speed")
-                        #speed = min((current_percent*self.forward_speed), (self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))))
+                        #print("Limiting speed")
                         speed = (current_percent*self.forward_speed)
                     else:
-                        print("stop")
+                        #print("stop")
                         speed = 0.0
-                    #speed=0.138*dist
                     if self.backwards_mode:
                             speed = -speed
                 else:
@@ -1095,10 +1103,11 @@ class inRowTravServer(object):
                         speed = -self.forward_speed
                     else:
                         speed = self.forward_speed
-            elif self.hri_safety_action==3 or self.hri_safety_action==4: #if a safety stop is required or the robot needs a human command
+            elif self.hri_safety_action==3 or self.hri_safety_action==4: #if a safety action is "stop" or if the robot is "waiting for a human command" 
                 print("stop")
                 speed = 0.0
-        ##############################################################################
+        #############################################################################################################
+        #############################################################################################################
         return speed
 
 
@@ -1582,7 +1591,9 @@ class inRowTravServer(object):
         # self.backwards_mode=False
         self.active = False
 
-   #######################################################################################    
+    #########################################################################################################    
+    #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+    #########################################################################################################
     def robot_callback(self,robot_info):
         self.robot_action=robot_info.action
         
@@ -1590,11 +1601,10 @@ class inRowTravServer(object):
         if safety_info.safety_action!=self.hri_safety_action and safety_info.safety_action!=5: #if safety action is required
             self.hri_safety_action=safety_info.safety_action 
         elif safety_info.safety_action==5: #if no safety action is required
-            self.hri_safety_action=self.robot_action
-            
+            self.hri_safety_action=self.robot_action          
         self.hri_dist=safety_info.critical_dist   
-    ##############################################################################################
-
+    ########################################################################################################
+    ########################################################################################################
 def load_data_from_yaml(filename):
     with open(filename, 'r') as f:
         return yaml.load(f)

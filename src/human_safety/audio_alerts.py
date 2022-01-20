@@ -32,8 +32,10 @@ class hri_class:
         change=self.change_audio
         if current!=new_audio:
             #self.past_audio=self.current_audio
+            #print("OLD",current)
             current=new_audio
             change=True
+            #print("NEW",current)
             print("Update audio alert")
         return current,change
         
@@ -71,7 +73,7 @@ if __name__ == '__main__':
     #aux=1
     while not rospy.is_shutdown():
         audio_index=hri.current_audio
-        if audio_index!=0 and hri.new_goal!="Unknown": #if there is a message to be reprodiced
+        if audio_index!=0 and hri.new_goal!="Unknown": #if there is a message to be reproduced
             if hri.change_audio==True or hri.repeat_audio==True:
                 message=hri.select_message(audio_index)
                 p = multiprocessing.Process(target=playsound, args=(message,))  

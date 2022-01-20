@@ -3,15 +3,13 @@
 #required packages
 import rospy #tf
 from sensor_msgs.msg import Joy
-import geometry_msgs.msg, nav_msgs.msg
+import geometry_msgs.msg
 from geometry_msgs.msg import Pose
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 import marvelmind_nav.msg
-import std_msgs.msg
-#import tf
 from tf.transformations import euler_from_quaternion
-from mesapro.msg import human_msg, hri_msg, robot_msg
+from mesapro.msg import human_msg
 from geometry_msgs.msg import PoseStamped
 import time
 
@@ -19,11 +17,9 @@ import time
 picker_step=0.05 # maximum picker step each time an action is triggered 
 picker_step_angle=0.1 # maximim picker step in radians
 n_samples=10 #number of samples used for the motion inference
-#new_data=[0,0,0,0,0] #joy, actor0, actor1, robot_pos, robot_vel
 speed_threshold=[0.6,1]  # [static, slow motion] m/s
 areas_angle=[150,100,80,30,0] #in degrees
 main_counter=0
-#Main class definition
 
 class human_class:
     def __init__(self): #It is done only the first iteration
@@ -36,12 +32,6 @@ class human_class:
         self.orientation=np.zeros([2,1]) # it can be "front" or "back" if the human is facing the robot or not , from camera
         self.distance=np.zeros([2,1])  # distance between the robot and the average of the skeleton joints distances taken from the depth image, from camera
         self.sensor=np.zeros([2,1]) # it can be 0 if the data is from camera and Lidar, 1 if the data is  only from the LiDAR or 2 if the data is only from de camera
-        self.sensor_t=np.zeros([2,2])
-        self.sensor_c=np.zeros([2,2])
-        self.sensor_c[0,1]=-1 # to make the camera info the latest one 
-        self.sensor_c[1,1]=-1 # to make the camera info the latest one
-        self.sensor_t[0,1]=1 # to make the camera info the latest one 
-        self.sensor_t[1,1]=1 # to make the camera info the latest one
         self.motion=np.zeros([2,1]) 
         self.centroid=np.zeros([2,2])
         self.area=np.zeros([2,1]) #initially considered on the side of the robot
@@ -366,21 +356,47 @@ if __name__ == '__main__':
         pub_human = rospy.Publisher('human_info', human_msg)
         msg = human_msg()
          #Publish Human_info from Gazebo
-        msg.posture = list(human.posture[:,0])
-        msg.posture_prob = list(human.posture[:,1])
-        msg.motion = list(human.motion[:,0])
-        msg.position_x = list(human.position[:,0])
-        msg.position_y = list(human.position[:,1])
-        msg.centroid_x =list(human.centroid[:,0])
-        msg.centroid_y =list(human.centroid[:,1])
-        msg.distance = list(human.distance[:,0])
-        msg.orientation = list(human.orientation[:,0])
-        msg.area = list(human.area[:,0])
-        msg.sensor = list(human.sensor[:,0])
-        msg.sensor_t0 = list(human.sensor_t[:,0])
-        msg.sensor_t1 = list(human.sensor_t[:,1])
-        msg.sensor_c0 = list(human.sensor_c[:,0])
-        msg.sensor_c1 = list(human.sensor_c[:,1])
+        if human.distance[0,0]<=9 and human.distance[1,0]<=9: 
+            msg.posture = list(human.posture[:,0])
+            msg.posture_prob = list(human.posture[:,1])
+            msg.motion = list(human.motion[:,0])
+            msg.position_x = list(human.position[:,0])
+            msg.position_y = list(human.position[:,1])
+            msg.centroid_x =list(human.centroid[:,0])
+            msg.centroid_y =list(human.centroid[:,1])
+            msg.distance = list(human.distance[:,0])
+            msg.orientation = list(human.orientation[:,0])
+            msg.area = list(human.area[:,0])
+            msg.sensor = list(human.sensor[:,0])
+            msg.n_human = 2
+        elif human.distance[0,0]>9 and human.distance[1,0]>9: 
+            msg.n_human= 0
+        elif human.distance[0,0]<=9 and human.distance[1,0]>9:
+            msg.posture = [human.posture[0,0]]
+            msg.posture_prob = [human.posture[0,1]]
+            msg.motion = [human.motion[0,0]]
+            msg.position_x = [human.position[0,0]]
+            msg.position_y = [human.position[0,1]]
+            msg.centroid_x =[human.centroid[0,0]]
+            msg.centroid_y =[human.centroid[0,1]]
+            msg.distance = [human.distance[0,0]]
+            msg.orientation = [human.orientation[0,0]]
+            msg.area = [human.area[0,0]]
+            msg.sensor = [human.sensor[0,0]]
+            msg.n_human = 1
+        elif human.distance[0,0]>9 and human.distance[1,0]<=9:
+            msg.posture = [human.posture[1,0]]
+            msg.posture_prob = [human.posture[1,1]]
+            msg.motion = [human.motion[1,0]]
+            msg.position_x = [human.position[1,0]]
+            msg.position_y = [human.position[1,1]]
+            msg.centroid_x =[human.centroid[1,0]]
+            msg.centroid_y =[human.centroid[1,1]]
+            msg.distance = [human.distance[1,0]]
+            msg.orientation = [human.orientation[1,0]]
+            msg.area = [human.area[1,0]]
+            msg.sensor = [human.sensor[1,0]]
+            msg.n_human = 1
         pub_human.publish(msg)
         rate.sleep() #to keep fixed the control loop rate
         #if new_data[1]==1:

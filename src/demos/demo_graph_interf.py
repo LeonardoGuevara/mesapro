@@ -2,13 +2,12 @@
 
 #required packages
 import rospy #tf
-import message_filters #to sync the messages
 import geometry_msgs.msg
 from geometry_msgs.msg import Pose
 #from tf.transformations import euler_from_quaternion
 #from sklearn.ensemble import RandomForestClassifier
 from sensor_msgs.msg import Image
-from math import * #to avoid prefix math.
+#from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 from cv_bridge import CvBridge, CvBridgeError
 import os
