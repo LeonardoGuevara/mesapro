@@ -6,7 +6,9 @@ from playsound import playsound
 import time
 from mesapro.msg import hri_msg
 
-intervals=[10,10,10,10,10,10,10] #time between two consecutive voice messages, in seconds, it depedns of each message
+intervals_long=[10,10,10,10,10,10,10] #time till a message is repeated in the first version, in seconds, it depedns of each message
+intervals_short=[3,3,3,4,3,3,3] #time between two versions of the same message
+version=0 #to know which language has to be used
         
 class hri_class:
     def __init__(self): #It is done only the first iteration
@@ -40,7 +42,12 @@ class hri_class:
         return current,change
         
     def select_message(self,audio_index):
-        folder="/home/leo/rasberry_ws/src/mesapro/audio/"
+        if version==0:
+            folder="/home/leo/rasberry_ws/src/mesapro/audio/english/"
+            #version=1
+        elif version==1:
+            folder="/home/leo/rasberry_ws/src/mesapro/audio/polish/"
+            #version=0
         if audio_index==1:
             audio="warning_uvc_ligth_activated.mp3"
         if audio_index==2:
@@ -75,16 +82,24 @@ if __name__ == '__main__':
         audio_index=hri.current_audio
         if audio_index!=0 and hri.new_goal!="Unknown": #if there is a message to be reproduced
             if hri.change_audio==True or hri.repeat_audio==True:
+                if hri.change_audio==True:
+                    version=0 #always start with the english version
                 message=hri.select_message(audio_index)
                 p = multiprocessing.Process(target=playsound, args=(message,))  
                 p.start()
                 hri.time_audio=time.time()
                 hri.repeat_audio=False
                 hri.change_audio=False
-                print("Audio alert is played")
-                while hri.change_audio==False and hri.repeat_audio==False:
-                    if time.time()-hri.time_audio>=intervals[audio_index]:
+                print("Audio alert is played in version", version)
+                while hri.change_audio==False and hri.repeat_audio==False:   
+                    #if hri.change_audio==False:
+                    if (time.time()-hri.time_audio>=intervals_long[audio_index] and version==1) or (time.time()-hri.time_audio>=intervals_short[audio_index] and version==0):
                         hri.repeat_audio=True
+                        #To change the version in the next iteration
+                        if version==1:
+                            version=0
+                        elif version==0:
+                            version=1        
                     #print("Audio alert is repeated")
                 p.join() #to make sure the new message is not overlapping the past message
         else:
