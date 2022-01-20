@@ -316,19 +316,23 @@ windows:
   - if $GRASPBERRY_ROBOT; then roslaunch harvester_coordinator harvester_coordinator.launch robot_config:=$(rospack find harvester_coordinator)/config/properties/$ROBOT_NAME.yaml ; fi
   - if $GRASPBERRY_ROBOT; then roslaunch thorvald_hri safety_beacon.launch service_manual:='/tg2/rl5' service_auto:='/tg2/rl6' service_error:='/tg2/rl7'; fi
   tags: [nav]
-################################################################################### Simulated human perception & safety system
+################################################################################### Human perception & safety system - Using off-line data
 - name: human_perception
   panes:
+  - roslaunch mesapro bags_data.launch
   - rosrun mesapro human_detector_camera.py
   - rosrun mesapro human_perception_system.py
 - name: safety_system
   panes:
   - rosrun mesapro human_safety_system.py
   - rosrun mesapro audio_alerts.py
+- name: hri_visualization
+  panes:
+  - roslaunch mesapro hri_visualization.launch visual_mode:=3 #argument "3" means perception+topological navigation info
+#############################################################################################
 - name: localisation_prelims_aditional
   panes:
   - roslaunch rasberry_bringup corner_lasers_merger.launch
-#############################################################################################
 - name: rviz
   panes:
   - if ! $USE_HOME_GUI; then DISPLAY=:0 rviz -d $RVIZ_CONFIG; fi

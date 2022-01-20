@@ -330,10 +330,13 @@ windows:
   panes:
   - rosrun mesapro human_safety_system.py
   - rosrun mesapro audio_alerts.py
+- name: hri_visualization
+  panes:
+  - roslaunch mesapro hri_visualization.launch visual_mode:=2 #argument "2" means only topological navigation info
+#############################################################################################
 - name: localisation_prelims_aditional
   panes:
   - roslaunch rasberry_bringup corner_lasers_merger.launch
-#############################################################################################
 - name: rviz
   panes:
   - if ! $USE_HOME_GUI; then DISPLAY=:0 rviz -d $RVIZ_CONFIG; fi

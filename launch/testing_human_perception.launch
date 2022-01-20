@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="bag_file" default="/home/leo/aa_data/new_data/data_05-11-21/people_detection_zotac_3_2021-11-05-12-12-12.bag" />
-    
-    <node pkg="rosbag" type="play" name="rosbag_play_map"
+    <arg name="visual_mode" default="1" />    
+
+    <node pkg="rosbag" type="play" name="rosbag_play_sensors"
     args="--loop $(arg bag_file)"/>  
 
     <node pkg="mesapro" type="human_safety_system.py" name="human_safety_info"/>
@@ -11,8 +12,9 @@
     
     <node pkg="mesapro" type="human_perception_system.py" name="human_info"/>   
 
-    <node pkg="mesapro" type="demo_graph_interf.py" name="graph_interface"/> 
-     
+    <node pkg="mesapro" type="demo_graph_interf.py" name="hri_visualization"> 
+	<param name="visual_mode" type="int" value="$(arg visual_mode)"/>
+    </node>
 </launch>
 
 
