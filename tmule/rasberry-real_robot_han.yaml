@@ -205,7 +205,15 @@ init_cmd: |
   export_default DETECTION_SCORE "0.5"
   export_default DETECTION_RESULTS "/rasberry_perception/results"
   export_default DETECTION_POSES "/rasberry_perception/poses/all"
-
+  #########################################################################################
+  # HUMAN-AWARE NAVIGATION
+  export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of config file
+  export_default AUDIO_DIRECT "$(rospack find mesapro)/audio/" #directory of audio files
+  export_default VISUAL_MODE 3 # "3" means perception+topological navigation info is displayed
+  export_default OPENPOSE_PYTHON "$(rospack find mesapro)/openpose/build/python" #assuming OpenPose is inside the mesapro folder
+  export_default OPENPOSE_MODELS "$(rospack find mesapro)/openpose/models"
+  export_default POSTURE_CLASSIFIER_MODEL "$(rospack find mesapro)/config/classifier_model_3D_v2.joblib" #model of the human gesture classifier
+  ###########################################################################################
 
   # Home GUI
   export_default USE_HOME_GUI false
@@ -317,18 +325,16 @@ windows:
   - if $GRASPBERRY_ROBOT; then roslaunch thorvald_hri safety_beacon.launch service_manual:='/tg2/rl5' service_auto:='/tg2/rl6' service_error:='/tg2/rl7'; fi
   tags: [nav]
 ################################################################################### Human perception & safety system - Using off-line data
-- name: human_perception
+- name: hri_perception
   panes:
   - roslaunch mesapro bags_data.launch
-  - rosrun mesapro human_detector_camera.py
-  - rosrun mesapro human_perception_system.py
-- name: safety_system
+  - roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL
+- name: hri_safety_system
   panes:
-  - rosrun mesapro human_safety_system.py
-  - rosrun mesapro audio_alerts.py
+  - roslaunch mesapro hri_safety_system.launch audio_direct:=$AUDIO_DIRECT
 - name: hri_visualization
   panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=3 #argument "3" means perception+topological navigation info
+  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT 
 #############################################################################################
 - name: localisation_prelims_aditional
   panes:

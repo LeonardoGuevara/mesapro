@@ -4,26 +4,18 @@
 import rospy #tf
 import geometry_msgs.msg
 from geometry_msgs.msg import Pose
-#from tf.transformations import euler_from_quaternion
-#from sklearn.ensemble import RandomForestClassifier
 from sensor_msgs.msg import Image
-#from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 from cv_bridge import CvBridge, CvBridgeError
-import os
 import cv2
 import yaml
-import sys
 from mesapro.msg import human_msg, hri_msg, robot_msg
 ##########################################################################################
 
 #Importing global parameters from .yaml file
-src_direct=os.getcwd()
-#config_direct=src_direct[0:len(src_direct)-9]+"config/"
-config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+config_direct=rospy.get_param("/hri_visualization/config_direct") #you have to change /hri_visualization/ if the node is not named like this
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
-direct_param=list(dict.items(parsed_yaml_file["directories_config"]))
 ar_param=list(dict.items(parsed_yaml_file["action_recog_config"]))
 hs_param=list(dict.items(parsed_yaml_file["human_safety_config"]))
 r_param=list(dict.items(parsed_yaml_file["robot_config"]))
@@ -40,7 +32,7 @@ human_command_label=hs_param[3][1]
 action_label=r_param[0][1]
 main_counter=0
 pub_hz=0.01
-visual_mode = rospy.get_param("/hri_visualization/visual_mode",1) #change /hri_visualization/ if the node is not named like this
+visual_mode = rospy.get_param("/hri_visualization/visual_mode") #you have to change /hri_visualization/ if the node is not named like this
 no_detection=True  
 image_width=840
 #########################################################################################################################
@@ -50,8 +42,6 @@ class human_class:
         self.position_x=0
         self.position_y=0
         self.posture=0 #from camera [posture_label,posture_probability]
-        #self.centroid_x=0 #x,y (pixels) of the human centroid, from camera
-        #self.centroid_y=0 #x,y (pixels) of the human centroid, from camera
         self.centroids_x=[0]
         self.centroids_y=[0]
         self.orientation=0 # it can be "front" or "back" if the human is facing the robot or not , from camera
@@ -63,16 +53,12 @@ class human_class:
         self.n_human=0
     
     def human_callback(self,human_info):
-        #global no_detection
-        #print("NEW HUMAN DATA")
         self.n_human=human_info.n_human
         if hri.critical_index<=self.n_human-1 and self.n_human!=0:
             self.posture=human_info.posture[hri.critical_index]
             self.motion=human_info.motion[hri.critical_index]   
             self.position_x=human_info.position_x[hri.critical_index]
             self.position_y=human_info.position_y[hri.critical_index]
-            #self.centroid_x=human_info.centroid_x[hri.critical_index]
-            #self.centroid_y=human_info.centroid_y[hri.critical_index]
             self.centroids_x=human_info.centroid_x
             self.centroids_y=human_info.centroid_y
             self.distance=human_info.distance[hri.critical_index]
@@ -80,17 +66,10 @@ class human_class:
             self.orientation=human_info.orientation[hri.critical_index]
             self.area=human_info.area[hri.critical_index]
             
-        #if (human.centroids_x[0]+human.centroids_y[0]+human_info.motion[0]+human_info.posture[0]+human_info.position_x[0]+human_info.position_y[0]+human_info.distance[0])==0: #None human detected
-        #    no_detection=True  
-        #else:
-        #    no_detection=False
-        #print(no_detection)
     def camera_callback(self,ros_image):
         global image_width
         try:
             self.image = bridge.imgmsg_to_cv2(ros_image, "bgr8")
-            #image_width = self.image.shape[1]
-            #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
             size = np.array(self.image)
             image_width = size.shape[1]
         except CvBridgeError as e:
@@ -131,10 +110,8 @@ class hri_class:
         else:
             prob_2=(delta_prob_2_3/max_dist)*dist+prob_2_init-delta_prob_2_3
             prob_3=(0.5-prob_2)+0.5+offset
-            #prob_3=(delta_prob_2_3/max_dist)*dist+prob_3_init+delta_prob_2_3
             prob_1=(delta_prob_1_4/max_dist)*dist+prob_1_init-delta_prob_1_4
             prob_4=(0.5-prob_1)+0.5+offset
-            #prob_4=(delta_prob_1_4/max_dist)*dist+prob_4_init+delta_prob_1_4
             areas_percent=[prob_0_init,prob_1,prob_2,prob_3,prob_4,prob_5_init]
         return areas_percent
 
@@ -170,12 +147,6 @@ def visual_outputs(color_image):
     if human.sensor==2:
         sensor="camera"
     
-    #if human.area>=1 and human.area<=3:
-    #    area="frontal_detection"
-    #elif human.area>=6 and human.area<=8:
-    #    area="back_detection"
-    #else:
-    #    area="side_detection"
     
     font = cv2.FONT_HERSHEY_SIMPLEX
     
@@ -198,8 +169,6 @@ def visual_outputs(color_image):
     #Print HUMAN PERCEPTION INFO
     if human.n_human==0: #None human detected
         color_image = cv2.putText(color_image,"***NO HUMAN DETECTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-    #elif area=="side_detection":
-    #    color_image = cv2.putText(color_image,"***HUMAN DETECTED - NO RISK ***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
     else:
         if sensor=="lidar":# and human.centroids_x[hri.critical_index]+human.centroids_y[hri.critical_index]!=0:
             color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)

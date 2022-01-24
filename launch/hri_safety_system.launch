@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="audio_direct" default="" /> 
+    
+    <node pkg="mesapro" type="human_safety_system.py" name="hri_safety_system"/> 
+	
+    <node pkg="mesapro" type="audio_alerts.py" name="hri_audio_alerts"> 
+	<param name="audio_direct" value="$(arg audio_direct)"/>
+    </node>
+</launch>
+
+

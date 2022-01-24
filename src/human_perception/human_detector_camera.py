@@ -17,19 +17,22 @@ from mesapro.msg import human_detector_msg
 ##########################################################################################
 
 ##Importing RF model for posture recognition
-posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
+#posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
 model_rf = joblib.load(posture_classifier_model)   
 ##Openpose initialization 
-open_pose_python='/home/leo/rasberry_ws/src/mesapro/openpose/build/python'
-open_pose_models="/home/leo/rasberry_ws/src/mesapro/openpose/models"
+openpose_python=rospy.get_param("/hri_camera_detector/openpose_python") #you have to change /hri_camera_detector/ if the node is not named like this
+openpose_models=rospy.get_param("/hri_camera_detector/openpose_models") #you have to change /hri_camera_detector/ if the node is not named like this
+#openpose_python='/home/leo/rasberry_ws/src/mesapro/openpose/build/python'
+#openpose_models="/home/leo/rasberry_ws/src/mesapro/openpose/models"
 try:
-    sys.path.append(open_pose_python);
+    sys.path.append(openpose_python);
     from openpose import pyopenpose as op
 except ImportError as e:
     print('Error: OpenPose library could not be found. Did you enable `BUILD_PYTHON` in CMake and have this Python script in the right folder?')
     raise e
 params = dict()
-params["model_folder"] = open_pose_models
+params["model_folder"] = openpose_models
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
 opWrapper.start()

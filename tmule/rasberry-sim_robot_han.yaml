@@ -205,8 +205,13 @@ init_cmd: |
   export_default DETECTION_SCORE "0.5"
   export_default DETECTION_RESULTS "/rasberry_perception/results"
   export_default DETECTION_POSES "/rasberry_perception/poses/all"
-
-
+  
+  #########################################################################################
+  # HUMAN-AWARE NAVIGATION
+  export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of config file
+  export_default AUDIO_DIRECT "$(rospack find mesapro)/audio/" #directory of audio files
+  export_default VISUAL_MODE 2 #"2" means only topological navigation info is displayed
+  ###########################################################################################
   # Home GUI
   export_default USE_HOME_GUI false
 # tags: core, nav
@@ -319,21 +324,20 @@ windows:
   - if $GRASPBERRY_ROBOT; then roslaunch thorvald_hri safety_beacon.launch service_manual:='/tg2/rl5' service_auto:='/tg2/rl6' service_error:='/tg2/rl7'; fi
   tags: [nav]
 ################################################################################### Simulated human perception & safety system
-- name: human_perception
+- name: hri_perception
   panes:
   - rostopic pub /hedge_pos_a marvelmind_nav/hedge_pos_a -- '1' '0' '7.9' '4.6' '0.0' '0'
   - rostopic pub /hedge_pos_a marvelmind_nav/hedge_pos_a -- '2' '0' '7.5' '-2' '0.0' '0'
   - rosrun rasberry_people_perception simple_marvel_localiser.py
   - roslaunch mesapro ds4_driver.launch
   - rosrun mesapro virtual_picker_simulation.py
-- name: safety_system
+- name: hri_safety_system
   panes:
-  - rosrun mesapro human_safety_system.py
-  - rosrun mesapro audio_alerts.py
+  - roslaunch mesapro hri_safety_system.launch audio_direct:=$AUDIO_DIRECT
+
 - name: hri_visualization
   panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=2 #argument "2" means only topological navigation info
-#############################################################################################
+  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT #############################################################################################
 - name: localisation_prelims_aditional
   panes:
   - roslaunch rasberry_bringup corner_lasers_merger.launch

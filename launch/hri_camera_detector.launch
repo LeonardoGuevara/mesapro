@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="openpose_python" default="" />
+    <arg name="openpose_models" default="" />
+    <arg name="posture_classifier_model" default="" />  
+    
+    <node pkg="mesapro" type="human_detector_camera.py" name="hri_camera_detector">
+        <param name="openpose_python" value="$(arg openpose_python)"/>
+        <param name="openpose_models" value="$(arg openpose_models)"/>
+        <param name="posture_classifier_model" value="$(arg posture_classifier_model)"/>
+    </node>
+</launch>
+
+

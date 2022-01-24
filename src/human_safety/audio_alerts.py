@@ -6,6 +6,7 @@ from playsound import playsound
 import time
 from mesapro.msg import hri_msg
 
+audio_direct=rospy.get_param("/hri_audio_alerts/audio_direct") #you have to change /hri_audio_alerts/ if the node is not named like this
 intervals_long=[10,10,10,10,10,10,10] #time till a message is repeated in the first version, in seconds, it depedns of each message
 intervals_short=[3,3,3,4,3,3,3] #time between two versions of the same message
 version=0 #to know which language has to be used
@@ -43,10 +44,10 @@ class hri_class:
         
     def select_message(self,audio_index):
         if version==0:
-            folder="/home/leo/rasberry_ws/src/mesapro/audio/english/"
+            folder=audio_direct+"/english/"
             #version=1
         elif version==1:
-            folder="/home/leo/rasberry_ws/src/mesapro/audio/polish/"
+            folder=audio_direct+"/polish/"
             #version=0
         if audio_index==1:
             audio="warning_uvc_ligth_activated.mp3"
