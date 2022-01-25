@@ -1,0 +1,61 @@
+---
+session: human_perception
+init_cmd: |
+  #exec /bin/bash
+  cd @TMULE_CONFIG_DIR@ || true
+  set -o pipefail
+  function export_default () {
+    var_name="$1"
+    var_default="$2"
+    eval $var_name="${!var_name:-$var_default}"
+    export $var_name
+    echo "  $0 -> $var_name=${!var_name}"
+  }
+
+  # Set up ROS, robot and scenario configs, catkin_workspace, robot number:
+  # Source ROS
+  # source "/opt/ros/$(rosversion -d)/setup.bash"
+
+  # Configure the development workspace (assuming we are in rasberry_bringup/tmule)
+  #export_default CATKIN_WORKSPACE "`readlink -f ../../../.. || echo $HOME/rasberry_ws`"
+  #source "$CATKIN_WORKSPACE/devel/setup.bash"
+  # source ~/rasberry_ws/devel/setup.bash
+  # source ~/catkin_build_ws/install/setup.bash --extend
+  
+  # Search for VPN tun device
+  #export_default VPN_BASE_ADDR "10.8.0.0"
+  #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
+  default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
+  # Set ROS_MASTER to the correct IP
+  export_default ROS_MASTER $default_ip
+  # Set ROS_IP not to the IP that we will connect to remotely
+  export_default ROS_IP `ip route get $ROS_MASTER | grep "src" | sed 's/.*src \([0-9\.]*\).*/\1/' || echo $ROS_MASTER`
+  # Set ROS_HOSTNAME to the ROS_IP to avoid configuring /etc/hosts for anyone who connects
+  export_default ROS_HOSTNAME "$ROS_IP"
+  export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+
+  #########################################################################################
+  # HUMAN-AWARE NAVIGATION
+  export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of config file
+  export_default AUDIO_DIRECT "$(rospack find mesapro)/audio/" #directory of audio files
+  export_default VISUAL_MODE 3 # "3" means perception+topological navigation info is displayed
+  export_default OPENPOSE_PYTHON "$(rospack find mesapro)/openpose/build/python" #assuming OpenPose is inside the mesapro folder
+  export_default OPENPOSE_MODELS "$(rospack find mesapro)/openpose/models"
+  export_default POSTURE_CLASSIFIER_MODEL "$(rospack find mesapro)/config/classifier_model_3D_v2.joblib" #model of the human gesture classifier
+  ###########################################################################################
+
+################################################################################### Human perception & safety system - Using off-line data
+windows:
+- name: hri_perception
+  panes:
+  - roslaunch mesapro bags_data.launch
+  - roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL
+  - rosrun mesapro human_perception_system.py 
+- name: hri_safety_system
+  panes:
+  - roslaunch mesapro hri_safety_system.launch audio_direct:=$AUDIO_DIRECT
+- name: hri_visualization
+  panes:
+  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT 
+#############################################################################################
+
