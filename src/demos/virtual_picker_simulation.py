@@ -340,7 +340,7 @@ if __name__ == '__main__':
     human=human_class()
     robot=robot_class()
     #Setup ROS publiser
-    pub_human = rospy.Publisher('human_info', human_msg)
+    pub_human = rospy.Publisher('human_info', human_msg, queue_size=1)
     rospy.Subscriber('joy',Joy,joy_callback)  
     rospy.Subscriber('/picker01/posestamped',PoseStamped, human.actor00_callback)
     rospy.Subscriber('/picker02/posestamped',PoseStamped, human.actor01_callback)

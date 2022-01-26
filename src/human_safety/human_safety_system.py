@@ -14,7 +14,7 @@ from mesapro.msg import human_msg, hri_msg, robot_msg
 ##########################################################################################
 
 #Setup ROS publiser
-pub_safety = rospy.Publisher('human_safety_info', hri_msg)
+pub_safety = rospy.Publisher('human_safety_info', hri_msg,queue_size=1)
 safety_msg = hri_msg()
 #General purposes variables
 main_counter=0

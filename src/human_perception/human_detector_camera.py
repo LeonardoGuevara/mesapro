@@ -33,6 +33,8 @@ except ImportError as e:
     raise e
 params = dict()
 params["model_folder"] = openpose_models
+params["net_resolution"] = "-1x256" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+#params["camera_resolution"]= "848x480"
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
 opWrapper.start()
@@ -40,7 +42,7 @@ datum = op.Datum()
 #Initializating cv_bridge
 bridge = CvBridge()
 #Setup ROS publiser
-pub = rospy.Publisher('human_info_camera', human_detector_msg)
+pub = rospy.Publisher('human_info_camera', human_detector_msg,queue_size=1) #small queue means priority to new data
 msg = human_detector_msg()
 #Feature extraction variables
 n_joints=19

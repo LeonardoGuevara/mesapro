@@ -1032,7 +1032,7 @@ class TopologicalNavServer(object):
             self.preemptCallback() #to stop current navigation_action
             
         #Publish current robot operation
-        pub_robot = rospy.Publisher('robot_info', robot_msg)
+        pub_robot = rospy.Publisher('robot_info',robot_msg,queue_size=1)#small queue means priority to new data
         rob_msg = robot_msg()
         if self.current_node != "none": # if robot is located at a node
             parent=self.current_node

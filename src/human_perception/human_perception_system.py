@@ -12,7 +12,7 @@ from mesapro.msg import human_msg, human_detector_msg
 ##########################################################################################
 
 #Setup ROS publiser
-pub = rospy.Publisher('human_info', human_msg)
+pub = rospy.Publisher('human_info', human_msg,queue_size=1) #small queue means priority to new data
 msg = human_msg()
 pub_hz=0.01 #publising rate in seconds
 #Parameters for camera area inference

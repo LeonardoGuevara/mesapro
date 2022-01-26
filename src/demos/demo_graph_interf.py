@@ -196,9 +196,11 @@ def visual_outputs(color_image):
                 color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 240) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
                 color_image = cv2.putText(color_image,"area:        "+str(human.area),(50, 270) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             if visual_mode!=2 : #visual_mode==1 or visual_mode==3
-                for k in range(0,len(human.centroids_x)):    
-                    if human.centroids_x[k]+human.centroids_y[k]!=0:
-                        center_coordinates = (int(human.centroids_x[k]), int(human.centroids_y[k])) 
+                centroids_x=human.centroids_x
+                centroids_y=human.centroids_y
+                for k in range(0,len(centroids_x)):    
+                    if centroids_x[k]+centroids_y[k]!=0:
+                        center_coordinates = (int(centroids_x[k]), int(centroids_y[k])) 
                         #center_coordinates=(0,480)
                         if k==hri.critical_index:
                             color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 255), 20) #RED
