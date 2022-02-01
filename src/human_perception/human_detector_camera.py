@@ -67,25 +67,25 @@ class human_class:
         
     def camera_callback(self,image_front, depth_front):
         #print("DATA FROM CAMERA")
-        try:
-            #Front camera info extraction
-            color_image_front = bridge.imgmsg_to_cv2(image_front, "bgr8")
-            depth_image_front = bridge.imgmsg_to_cv2(depth_front, "passthrough")
-            depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
-            self.image_width[0] = depth_array_front.shape[1]
-            ##################################################################################
-            #Back camera info extraction
-            color_image_back=color_image_front
-            depth_array_back=depth_array_front
-            self.image_width[1]=self.image_width[0]
-            #Here the images from two cameras has to be merged in a single image (front image left, back image back)
-            color_image=np.append(color_image_front,color_image_back,axis=1) 
-            depth_array=np.append(depth_array_front,depth_array_back,axis=1) 
-            #color_image=color_image_front
-            #depth_array=depth_array_front
-            #######################################################################################
-        except CvBridgeError as e:
-            rospy.logerr("CvBridge Error: {0}".format(e))
+        #try:
+        #Front camera info extraction
+        color_image_front = bridge.imgmsg_to_cv2(image_front, "bgr8")
+        depth_image_front = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
+        self.image_width[0] = depth_array_front.shape[1]
+        ##################################################################################
+        #Back camera info extraction
+        color_image_back=color_image_front
+        depth_array_back=depth_array_front
+        self.image_width[1]=self.image_width[0]
+        #Here the images from two cameras has to be merged in a single image (front image left, back image back)
+        color_image=np.append(color_image_front,color_image_back,axis=1) 
+        depth_array=np.append(depth_array_front,depth_array_back,axis=1) 
+        #color_image=color_image_front
+        #depth_array=depth_array_front
+        #######################################################################################
+        #except CvBridgeError as e:
+        #    rospy.logerr("CvBridge Error: {0}".format(e))
 
         datum.cvInputData = color_image
         opWrapper.emplaceAndPop(op.VectorDatum([datum]))

@@ -208,10 +208,10 @@ def visual_outputs(color_image):
                             color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
                 x_lines=hri.area_inference_camera()
                 #x_lines=[0,0.3,0.4,0.6,0.7,1]
-                color_image=cv2.line(human.image, (int(x_lines[1]*image_width), 0), (int(x_lines[1]*image_width), 600), (0, 255, 0), thickness=1)
-                color_image=cv2.line(human.image, (int(x_lines[2]*image_width), 0), (int(x_lines[2]*image_width), 600), (0, 255, 0), thickness=1)
-                color_image=cv2.line(human.image, (int(x_lines[3]*image_width), 0), (int(x_lines[3]*image_width), 600), (0, 255, 0), thickness=1)
-                color_image=cv2.line(human.image, (int(x_lines[4]*image_width), 0), (int(x_lines[4]*image_width), 600), (0, 255, 0), thickness=1)
+                color_image=cv2.line(color_image, (int(x_lines[1]*image_width), 0), (int(x_lines[1]*image_width), 600), (0, 255, 0), thickness=1)
+                color_image=cv2.line(color_image, (int(x_lines[2]*image_width), 0), (int(x_lines[2]*image_width), 600), (0, 255, 0), thickness=1)
+                color_image=cv2.line(color_image, (int(x_lines[3]*image_width), 0), (int(x_lines[3]*image_width), 600), (0, 255, 0), thickness=1)
+                color_image=cv2.line(color_image, (int(x_lines[4]*image_width), 0), (int(x_lines[4]*image_width), 600), (0, 255, 0), thickness=1)
     
     
     cv2.imshow("System outputs",color_image)
