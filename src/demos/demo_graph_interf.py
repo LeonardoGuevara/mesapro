@@ -13,7 +13,8 @@ from mesapro.msg import human_msg, hri_msg, robot_msg
 ##########################################################################################
 
 #Importing global parameters from .yaml file
-config_direct=rospy.get_param("/hri_visualization/config_direct") #you have to change /hri_visualization/ if the node is not named like this
+config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+#config_direct=rospy.get_param("/hri_visualization/config_direct") #you have to change /hri_visualization/ if the node is not named like this
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 ar_param=list(dict.items(parsed_yaml_file["action_recog_config"]))
@@ -35,6 +36,17 @@ pub_hz=0.01
 visual_mode = rospy.get_param("/hri_visualization/visual_mode") #you have to change /hri_visualization/ if the node is not named like this
 no_detection=True  
 image_width=840
+#Areas
+max_dist=8 #in meters, the probabilities are fixed at prob_init from this distance 
+delta_prob_1_4=0.17 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
+delta_prob_2_3=0.12
+offset=0.02 #in case camera is not perfectly aligned, can be positive or negative
+prob_2_init=0.45 #in pixels percent of area 2
+prob_3_init=(0.5-prob_2_init)+0.5+offset
+prob_1_init=prob_2_init-delta_prob_2_3
+prob_4_init=prob_3_init+delta_prob_2_3
+prob_0_init=0 #initial area pixel percentage
+prob_5_init=1 #last area pixel percentage
 #########################################################################################################################
 
 class human_class:
@@ -93,16 +105,6 @@ class hri_class:
         self.critical_index=safety_info.critical_index   
     
     def area_inference_camera(self):
-        max_dist=8 #in meters, the probabilities are fixed at prob_init from this distance 
-        delta_prob_1_4=0.17 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
-        delta_prob_2_3=0.12
-        offset=0.02 #in case camera is not perfectly aligned, can be positive or negative
-        prob_2_init=0.45 #in pixels percent of area 2
-        prob_3_init=(0.5-prob_2_init)+0.5+offset
-        prob_1_init=prob_2_init-delta_prob_2_3
-        prob_4_init=prob_3_init+delta_prob_2_3
-        prob_0_init=0 #initial area pixel percentage
-        prob_5_init=1 #last area pixel percentage
         #Update area according to the distance
         dist=human.distance
         if dist>=max_dist:
@@ -149,7 +151,7 @@ def visual_outputs(color_image):
     
     
     font = cv2.FONT_HERSHEY_SIMPLEX
-    
+    x_lines=[prob_0_init,prob_1_init,prob_2_init,prob_3_init,prob_4_init,prob_5_init] #by default
     if visual_mode>=2:
         #Print SAFETY SYMTEM INFO    
         color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 300) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
@@ -208,11 +210,11 @@ def visual_outputs(color_image):
                             color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
                 x_lines=hri.area_inference_camera()
                 #x_lines=[0,0.3,0.4,0.6,0.7,1]
-                color_image=cv2.line(color_image, (int(x_lines[1]*image_width), 0), (int(x_lines[1]*image_width), 600), (0, 255, 0), thickness=1)
-                color_image=cv2.line(color_image, (int(x_lines[2]*image_width), 0), (int(x_lines[2]*image_width), 600), (0, 255, 0), thickness=1)
-                color_image=cv2.line(color_image, (int(x_lines[3]*image_width), 0), (int(x_lines[3]*image_width), 600), (0, 255, 0), thickness=1)
-                color_image=cv2.line(color_image, (int(x_lines[4]*image_width), 0), (int(x_lines[4]*image_width), 600), (0, 255, 0), thickness=1)
-    
+    color_image=cv2.line(color_image, (int(x_lines[1]*image_width), 0), (int(x_lines[1]*image_width), 600), (0, 255, 0), thickness=1)
+    color_image=cv2.line(color_image, (int(x_lines[2]*image_width), 0), (int(x_lines[2]*image_width), 600), (0, 255, 0), thickness=1)
+    color_image=cv2.line(color_image, (int(x_lines[3]*image_width), 0), (int(x_lines[3]*image_width), 600), (0, 255, 0), thickness=1)
+    color_image=cv2.line(color_image, (int(x_lines[4]*image_width), 0), (int(x_lines[4]*image_width), 600), (0, 255, 0), thickness=1)
+
     
     cv2.imshow("System outputs",color_image)
     cv2.waitKey(5)

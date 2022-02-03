@@ -35,6 +35,7 @@ except ImportError as e:
 params = dict()
 params["model_folder"] = openpose_models
 params["net_resolution"] = "-1x256" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+#params["maximize_positives"] = True
 #params["camera_resolution"]= "848x480"
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
@@ -48,8 +49,9 @@ msg = human_detector_msg()
 #Feature extraction variables
 n_joints=19
 n_features=36
+joints_min=7 #minimum number of joints to consider a detection
 #General purposes variables
-visualization=True #to show or not a window with the human detection on the photos
+visualization=False #to show or not a window with the human detection on the photos
 performance="normal" 
 time_threshold=3 #3 seconds as the minimum time between two consecute changes of openpose performance
 time_change=0 #initial value
@@ -106,6 +108,7 @@ class human_class:
                 params = dict()
                 params["model_folder"] = openpose_models
                 params["net_resolution"] = "-1x352" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+                #params["maximize_positives"] = True
                 opWrapper.stop()
                 opWrapper.configure(params)
                 opWrapper.start()
@@ -115,6 +118,7 @@ class human_class:
                 params = dict()
                 params["model_folder"] = openpose_models
                 params["net_resolution"] = "-1x256" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+                #params["maximize_positives"] = True
                 opWrapper.stop()
                 opWrapper.configure(params)
                 opWrapper.start()
@@ -122,7 +126,7 @@ class human_class:
                 #datum = op.Datum()
 
         print("PERFORMANCE",performance)
-        print("MAX DIS",max(self.distance))
+        #print("MAX DIS",max(self.distance))
         print("MIN DIS",min(self.distance))
         
         datum.cvInputData = color_image
@@ -204,94 +208,99 @@ class human_class:
             joints_z_trans=joints_z_init-J_mean_z
             #Normalization   
             J_sum2=0
+            valid=0
             for k in range(0,n_joints):  
-                J_sum2=joints_x_trans[k]**2+joints_y_trans[k]**2+joints_z_trans[k]**2+J_sum2    
+                J_sum2=joints_x_trans[k]**2+joints_y_trans[k]**2+joints_z_trans[k]**2+J_sum2  
+                if joints_x_trans[k]!=0 and joints_y_trans[k]!=0 and joints_z_trans[k]!=0:
+                    valid=valid+1
             Js=sqrt(J_sum2/(n_joints))
-            joints_x = joints_x_trans/Js      
-            joints_y = joints_y_trans/Js
-            joints_z = joints_z_trans/Js
-               
-            #Distances from each joint to the neck joint
-            dist=[0]*n_joints
-            for k in range(0,n_joints):
-               dist[k]=sqrt((joints_x[k]-joints_x[1])**2+(joints_y[k]-joints_y[1])**2+(joints_z[k]-joints_z[1])**2)  
-        
-            #Vectors between joints
-            v1_2=[joints_x[1]-joints_x[2], joints_y[1]-joints_y[2], joints_z[1]-joints_z[2]]  
-            v2_3=[joints_x[2]-joints_x[3], joints_y[2]-joints_y[3], joints_z[2]-joints_z[3]]  
-            v3_4=[joints_x[3]-joints_x[4], joints_y[3]-joints_y[4], joints_z[3]-joints_z[4]]  
-            v1_5=[joints_x[1]-joints_x[5], joints_y[1]-joints_y[5], joints_z[1]-joints_z[5]]  
-            v5_6=[joints_x[5]-joints_x[6], joints_y[5]-joints_y[6], joints_z[5]-joints_z[6]]  
-            v6_7=[joints_x[6]-joints_x[7], joints_y[6]-joints_y[7], joints_z[6]-joints_z[7]]  
-            v1_0=[joints_x[1]-joints_x[0], joints_y[1]-joints_y[0], joints_z[1]-joints_z[0]]  
-            v0_15=[joints_x[0]-joints_x[15], joints_y[0]-joints_y[15], joints_z[0]-joints_z[15]]  
-            v15_17=[joints_x[15]-joints_x[17], joints_y[15]-joints_y[17], joints_z[15]-joints_z[17]]  
-            v0_16=[joints_x[0]-joints_x[16], joints_y[0]-joints_y[16], joints_z[0]-joints_z[16]]
-            v16_18=[joints_x[16]-joints_x[18], joints_y[16]-joints_y[18], joints_z[16]-joints_z[18]]  
-            v1_8=[joints_x[1]-joints_x[8], joints_y[1]-joints_y[8], joints_z[1]-joints_z[8]]
-            v8_9=[joints_x[8]-joints_x[9], joints_y[8]-joints_y[9], joints_z[8]-joints_z[9]]  
-            v9_10=[joints_x[9]-joints_x[10], joints_y[9]-joints_y[10], joints_z[9]-joints_z[10]]  
-            v10_11=[joints_x[10]-joints_x[11], joints_y[10]-joints_y[11], joints_z[10]-joints_z[11]]  
-            v8_12=[joints_x[8]-joints_x[12], joints_y[8]-joints_y[12], joints_z[8]-joints_z[12]]  
-            v12_13=[joints_x[12]-joints_x[13], joints_y[12]-joints_y[13], joints_z[12]-joints_z[13]]  
-            v13_14=[joints_x[13]-joints_x[14], joints_y[13]-joints_y[14], joints_z[13]-joints_z[14]] 
-    
-            #Angles between joints  
-            angles=[0]*(n_joints-2) #17 angles
-            angles[0] = atan2(LA.norm(np.cross(v15_17,v0_15)),np.dot(v15_17,v0_15))
-            angles[1] = atan2(LA.norm(np.cross(v0_15,v1_0)),np.dot(v0_15,v1_0))
-            angles[2] = atan2(LA.norm(np.cross(v16_18,v0_16)),np.dot(v16_18,v0_16))
-            angles[3] = atan2(LA.norm(np.cross(v0_16,v1_0)),np.dot(v0_16,v1_0))
-            angles[4] = atan2(LA.norm(np.cross(v1_0,v1_2)),np.dot(v1_0,v1_2))
-            angles[5] = atan2(LA.norm(np.cross(v1_2,v2_3)),np.dot(v1_2,v2_3))
-            angles[6] = atan2(LA.norm(np.cross(v2_3,v3_4)),np.dot(v2_3,v3_4))
-            angles[7] = atan2(LA.norm(np.cross(v1_0,v1_5)),np.dot(v1_0,v1_5))
-            angles[8] = atan2(LA.norm(np.cross(v1_5,v5_6)),np.dot(v1_5,v5_6))
-            angles[9] = atan2(LA.norm(np.cross(v5_6,v6_7)),np.dot(v5_6,v6_7))
-            angles[10] = atan2(LA.norm(np.cross(v1_2,v1_8)),np.dot(v1_2,v1_8))
-            angles[11] = atan2(LA.norm(np.cross(v1_8,v8_9)),np.dot(v1_8,v8_9))
-            angles[12] = atan2(LA.norm(np.cross(v8_9,v9_10)),np.dot(v8_9,v9_10))
-            angles[13] = atan2(LA.norm(np.cross(v9_10,v10_11)),np.dot(v9_10,v10_11))
-            angles[14] = atan2(LA.norm(np.cross(v1_8,v8_12)),np.dot(v1_8,v8_12))
-            angles[15] = atan2(LA.norm(np.cross(v8_12,v12_13)),np.dot(v8_12,v12_13))
-            angles[16] = atan2(LA.norm(np.cross(v12_13,v13_14)),np.dot(v12_13,v13_14))
             
-            #HUMAN FEATURES CALCULATION
-            features[kk,:]=dist+angles  
-            #HUMAN POSTURE RECOGNITION
-            X=np.array(features[kk,:]).transpose()
-            posture[kk,0]=model_rf.predict([X])
-            prob_max=0
-            prob=model_rf.predict_proba([X])
-            for ii in range(0,prob.shape[1]): #depends of the number of gestures to classified
-                if prob[0,ii]>=prob_max:
-                    prob_max=prob[0,ii]
-            posture[kk,1]=prob_max 
-            #HUMAN DISTANCE AND CENTROID CALCULATION
-            n_joints_cent=0
-            dist_sum=0
-            x_sum=0
-            y_sum=0
-            #no_zero=0 #number of joints which are not 0
-            for k in range(0,n_joints):
-                if joints_x_init[k]!=0 and joints_y_init[k]!=0 and joints_z_init[k]!=0:
-                    #no_zero=no_zero+1
-                    if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==12: #Only consider keypoints in the center of the body
-                        dist_sum=joints_z_init[k]+dist_sum
-                        x_sum=x_sum+joints_x_init[k]
-                        y_sum=y_sum+joints_y_init[k]
-                        n_joints_cent=n_joints_cent+1
-            if n_joints_cent!=0:
-                distance[kk,:]=dist_sum/n_joints_cent
-                centroid[kk,0]=x_sum/n_joints_cent
-                centroid[kk,1]=y_sum/n_joints_cent
-                index_to_keep=index_to_keep+[kk]
-                    
-            for k in range(0,len(camera_id)):
-                if centroid[k,0]<=self.image_width[0]: #camera front
-                    camera_id[k]=0
-                else:#camera back
-                    camera_id[k]=1
+            if Js!=0 and valid>=joints_min: #only continue if there are enough joints detected
+                joints_x = joints_x_trans/Js      
+                joints_y = joints_y_trans/Js
+                joints_z = joints_z_trans/Js
+                   
+                #Distances from each joint to the neck joint
+                dist=[0]*n_joints
+                for k in range(0,n_joints):
+                   dist[k]=sqrt((joints_x[k]-joints_x[1])**2+(joints_y[k]-joints_y[1])**2+(joints_z[k]-joints_z[1])**2)  
+            
+                #Vectors between joints
+                v1_2=[joints_x[1]-joints_x[2], joints_y[1]-joints_y[2], joints_z[1]-joints_z[2]]  
+                v2_3=[joints_x[2]-joints_x[3], joints_y[2]-joints_y[3], joints_z[2]-joints_z[3]]  
+                v3_4=[joints_x[3]-joints_x[4], joints_y[3]-joints_y[4], joints_z[3]-joints_z[4]]  
+                v1_5=[joints_x[1]-joints_x[5], joints_y[1]-joints_y[5], joints_z[1]-joints_z[5]]  
+                v5_6=[joints_x[5]-joints_x[6], joints_y[5]-joints_y[6], joints_z[5]-joints_z[6]]  
+                v6_7=[joints_x[6]-joints_x[7], joints_y[6]-joints_y[7], joints_z[6]-joints_z[7]]  
+                v1_0=[joints_x[1]-joints_x[0], joints_y[1]-joints_y[0], joints_z[1]-joints_z[0]]  
+                v0_15=[joints_x[0]-joints_x[15], joints_y[0]-joints_y[15], joints_z[0]-joints_z[15]]  
+                v15_17=[joints_x[15]-joints_x[17], joints_y[15]-joints_y[17], joints_z[15]-joints_z[17]]  
+                v0_16=[joints_x[0]-joints_x[16], joints_y[0]-joints_y[16], joints_z[0]-joints_z[16]]
+                v16_18=[joints_x[16]-joints_x[18], joints_y[16]-joints_y[18], joints_z[16]-joints_z[18]]  
+                v1_8=[joints_x[1]-joints_x[8], joints_y[1]-joints_y[8], joints_z[1]-joints_z[8]]
+                v8_9=[joints_x[8]-joints_x[9], joints_y[8]-joints_y[9], joints_z[8]-joints_z[9]]  
+                v9_10=[joints_x[9]-joints_x[10], joints_y[9]-joints_y[10], joints_z[9]-joints_z[10]]  
+                v10_11=[joints_x[10]-joints_x[11], joints_y[10]-joints_y[11], joints_z[10]-joints_z[11]]  
+                v8_12=[joints_x[8]-joints_x[12], joints_y[8]-joints_y[12], joints_z[8]-joints_z[12]]  
+                v12_13=[joints_x[12]-joints_x[13], joints_y[12]-joints_y[13], joints_z[12]-joints_z[13]]  
+                v13_14=[joints_x[13]-joints_x[14], joints_y[13]-joints_y[14], joints_z[13]-joints_z[14]] 
+        
+                #Angles between joints  
+                angles=[0]*(n_joints-2) #17 angles
+                angles[0] = atan2(LA.norm(np.cross(v15_17,v0_15)),np.dot(v15_17,v0_15))
+                angles[1] = atan2(LA.norm(np.cross(v0_15,v1_0)),np.dot(v0_15,v1_0))
+                angles[2] = atan2(LA.norm(np.cross(v16_18,v0_16)),np.dot(v16_18,v0_16))
+                angles[3] = atan2(LA.norm(np.cross(v0_16,v1_0)),np.dot(v0_16,v1_0))
+                angles[4] = atan2(LA.norm(np.cross(v1_0,v1_2)),np.dot(v1_0,v1_2))
+                angles[5] = atan2(LA.norm(np.cross(v1_2,v2_3)),np.dot(v1_2,v2_3))
+                angles[6] = atan2(LA.norm(np.cross(v2_3,v3_4)),np.dot(v2_3,v3_4))
+                angles[7] = atan2(LA.norm(np.cross(v1_0,v1_5)),np.dot(v1_0,v1_5))
+                angles[8] = atan2(LA.norm(np.cross(v1_5,v5_6)),np.dot(v1_5,v5_6))
+                angles[9] = atan2(LA.norm(np.cross(v5_6,v6_7)),np.dot(v5_6,v6_7))
+                angles[10] = atan2(LA.norm(np.cross(v1_2,v1_8)),np.dot(v1_2,v1_8))
+                angles[11] = atan2(LA.norm(np.cross(v1_8,v8_9)),np.dot(v1_8,v8_9))
+                angles[12] = atan2(LA.norm(np.cross(v8_9,v9_10)),np.dot(v8_9,v9_10))
+                angles[13] = atan2(LA.norm(np.cross(v9_10,v10_11)),np.dot(v9_10,v10_11))
+                angles[14] = atan2(LA.norm(np.cross(v1_8,v8_12)),np.dot(v1_8,v8_12))
+                angles[15] = atan2(LA.norm(np.cross(v8_12,v12_13)),np.dot(v8_12,v12_13))
+                angles[16] = atan2(LA.norm(np.cross(v12_13,v13_14)),np.dot(v12_13,v13_14))
+                
+                #HUMAN FEATURES CALCULATION
+                features[kk,:]=dist+angles  
+                #HUMAN POSTURE RECOGNITION
+                X=np.array(features[kk,:]).transpose()
+                posture[kk,0]=model_rf.predict([X])
+                prob_max=0
+                prob=model_rf.predict_proba([X])
+                for ii in range(0,prob.shape[1]): #depends of the number of gestures to classified
+                    if prob[0,ii]>=prob_max:
+                        prob_max=prob[0,ii]
+                posture[kk,1]=prob_max 
+                #HUMAN DISTANCE AND CENTROID CALCULATION
+                n_joints_cent=0
+                dist_sum=0
+                x_sum=0
+                y_sum=0
+                #no_zero=0 #number of joints which are not 0
+                for k in range(0,n_joints):
+                    if joints_x_init[k]!=0 and joints_y_init[k]!=0 and joints_z_init[k]!=0:
+                        #no_zero=no_zero+1
+                        if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==12: #Only consider keypoints in the center of the body
+                            dist_sum=joints_z_init[k]+dist_sum
+                            x_sum=x_sum+joints_x_init[k]
+                            y_sum=y_sum+joints_y_init[k]
+                            n_joints_cent=n_joints_cent+1
+                if n_joints_cent!=0:
+                    distance[kk,:]=dist_sum/n_joints_cent
+                    centroid[kk,0]=x_sum/n_joints_cent
+                    centroid[kk,1]=y_sum/n_joints_cent
+                    index_to_keep=index_to_keep+[kk]
+                        
+                for k in range(0,len(camera_id)):
+                    if centroid[k,0]<=self.image_width[0]: #camera front
+                        camera_id[k]=0
+                    else:#camera back
+                        camera_id[k]=1
         #return features,posture,orientation,distance,centroid,camera_id
         if index_to_keep!=[]:
             self.features=features[np.array(index_to_keep)]
@@ -319,19 +328,21 @@ if __name__ == '__main__':
     depth_front_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
     ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01)
     ts.registerCallback(human.camera_callback)
-    #rospy.spin()
-    #Rate setup
-    rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
-    while not rospy.is_shutdown():	
-        if visualization==True:
-            centroids_x=human.centroid[:,0]
-            centroids_y=human.centroid[:,1]
-            color_image=human.image 
-            if human.n_human>0:
-                for k in range(0,len(centroids_x)):    
-                    center_coordinates = (int(centroids_x[k]), int(centroids_y[k])) 
-                    color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE           
-
-            cv2.imshow("Human detector",color_image  )
-            cv2.waitKey(10)  
-        
+    if visualization==False:
+        rospy.spin()
+    else:
+        #Rate setup
+        rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
+        while not rospy.is_shutdown():	
+            if visualization==True:
+                centroids_x=human.centroid[:,0]
+                centroids_y=human.centroid[:,1]
+                color_image=human.image 
+                if human.n_human>0:
+                    for k in range(0,len(centroids_x)):    
+                        center_coordinates = (int(centroids_x[k]), int(centroids_y[k])) 
+                        color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE           
+    
+                cv2.imshow("Human detector",color_image  )
+                cv2.waitKey(10)  
+            

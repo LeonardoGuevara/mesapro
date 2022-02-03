@@ -25,6 +25,9 @@ except ImportError as e:
 params = dict()
 params["model_folder"] = openpose_models
 params["net_resolution"] = "-1x256" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+#params["maximize_positives"] = True
+#params["body"]=2
+#params["model_pose"]="COCO"
 #params["camera_resolution"]= "848x480"
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
@@ -135,7 +138,7 @@ class human_class:
         if index_to_keep!=[]:
             self.centroid=centroid[np.array(index_to_keep)]
             self.camera_id=camera_id[np.array(index_to_keep)]
-            self.n_human=len(camera_id)
+            self.n_human=len(index_to_keep)
         else:
             self.n_human=0
 ################################################################################################################            
@@ -162,12 +165,12 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():	
         if visualization==True:
             print("MAIN")
-            n_human=human.n_human
             centroid=human.centroid
             image=human.image
+            n_human=len(centroid[:,0])
             print("N_human",n_human)
             print("Centroid",centroid)
-            if n_human>0:
+            if n_human>0 and human.n_human>0:
                 for i in range(0,n_human):
                     center_coordinates = (int(centroid[i,0]), int(centroid[i,1]))                        
                     #print(center_coordinates)              
