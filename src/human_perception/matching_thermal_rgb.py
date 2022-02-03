@@ -24,7 +24,7 @@ except ImportError as e:
     raise e
 params = dict()
 params["model_folder"] = openpose_models
-params["net_resolution"] = "-1x240" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+params["net_resolution"] = "-1x256" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
 #params["camera_resolution"]= "848x480"
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
@@ -50,18 +50,18 @@ class human_class:
     def image_callback(self,thermal_front,rgb_front,depth_front):
         #Front camera info extraction
         img_thermal = bridge.imgmsg_to_cv2(thermal_front, "bgr8") #theated as a colored image even if is a gray scale image
+        
         #Rotate camera (assuming it is placed on the robot in portrait mode)
-        img_t_rot=cv2.rotate(img_thermal,cv2.ROTATE_90_CLOCKWISE)
+        img_t_rot=cv2.rotate(img_thermal,cv2.ROTATE_90_COUNTERCLOCKWISE)
         img_rgb=bridge.imgmsg_to_cv2(rgb_front, "bgr8") 
         #Rotate camera (assuming it is placed on the robot in portrait mode)
         print(img_rgb.shape)
-        
-        img_rgb_rot=cv2.rotate(img_rgb,cv2.ROTATE_90_CLOCKWISE)
-        #Parameters to crop rgb images from 1280x720 to 160x120
-        y=330
-        x=100
-        h=img_rgb_rot.shape[0]-630
-        w=img_rgb_rot.shape[1]-230
+        img_rgb_rot=cv2.rotate(img_rgb,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        #Parameters to crop rgb images from any size to 160x120
+        y=150 #330 for 1280x720, 150 for 640x480
+        x=125 #100 for 1280x720, 125 for 640x480
+        h=img_rgb_rot.shape[0]-230 #630 for 1280x720, 230 for 640x480
+        w=img_rgb_rot.shape[1]-180 #230 for 1280x720, 180 for 640x480
         img_rgb_crop = img_rgb_rot[y:y+h, x:x+w]
         img_rgb_rz=cv2.resize(img_rgb_crop, (120, 160))
         ##################################################################################
@@ -73,6 +73,8 @@ class human_class:
         #imageToProcess=np.append(image_f_rot,image_b_rot,axis=1) 
         
         imageToProcess=np.append(img_t_rot,img_rgb_rz,axis=1) 
+        #imageToProcess=img_t_rot
+        #imageToProcess=img_rgb_rot
         ##Scale only for visualization purposes
         if visualization==True:
             imageToProcess=cv2.resize(imageToProcess, (640, 480))
@@ -83,18 +85,21 @@ class human_class:
         opWrapper.emplaceAndPop(op.VectorDatum([datum]))
         #Keypoints extraction using OpenPose
         keypoints=datum.poseKeypoints
+        self.image=datum.cvOutputData
         if keypoints is None: #if there is no human skeleton detected
             print('No human detected')
+            self.n_human=0
         else: #if there is at least 1 human skeleton detected
             #Feature extraction
             self.centroid_extraction(keypoints,n_joints)
-            self.image=imageToProcess
+            #self.image=imageToProcess
             self.image_size = self.image.shape
             print('Human detection')
     
     def centroid_extraction(self,poseKeypoints,n_joints):
         centroid=np.zeros([len(poseKeypoints[:,0,0]),2]) 
         camera_id=np.zeros([len(poseKeypoints[:,0,0]),1]) 
+        index_to_keep=[]
         for kk in range(0,len(poseKeypoints[:,0,0])):
             #Using only the important joints
             joints_x_init=poseKeypoints[kk,0:n_joints,0]
@@ -102,25 +107,37 @@ class human_class:
             
             #HUMAN CENTROID CALCULATION
             n_joints_cent=0
-            x_average=0
-            y_average=0
+            x_sum=0
+            y_sum=0
+            #no_zero=0 #number of joints which are not 0
             for k in range(0,n_joints):
-                if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==12: #Only consider keypoints in the center of the body
-                    if joints_x_init[k]!=0 and joints_y_init[k]!=0:       
-                        x_average=x_average+joints_x_init[k]
-                        y_average=y_average+joints_y_init[k]
+                if joints_x_init[k]!=0 and joints_y_init[k]!=0:
+                    #no_zero=no_zero+1
+                    if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==12: #Only consider keypoints in the center of the body
+                        x_sum=x_sum+joints_x_init[k]
+                        y_sum=y_sum+joints_y_init[k]
                         n_joints_cent=n_joints_cent+1
-            centroid[kk,0]=x_average/n_joints_cent
-            centroid[kk,1]=y_average/n_joints_cent
+            if n_joints_cent!=0:
+                centroid[kk,0]=x_sum/n_joints_cent
+                centroid[kk,1]=y_sum/n_joints_cent
+                index_to_keep=index_to_keep+[kk]
+            #elif no_zero!=0:
+            #    centroid[kk,0]=sum(joints_x_init)/no_zero
+            #    centroid[kk,1]=sum(joints_y_init)/no_zero
+            #    index_to_keep=index_to_keep+[kk]
+                
             for k in range(0,len(camera_id)):
                 if centroid[k,0]<=self.image_size[1]: #camera front
                     camera_id[k]=0
                 else:#camera back
                     camera_id[k]=1
         #return features,posture,orientation,distance,centroid,camera_id
-        self.centroid=centroid
-        self.camera_id=camera_id
-        self.n_human=len(poseKeypoints[:,0,0])
+        if index_to_keep!=[]:
+            self.centroid=centroid[np.array(index_to_keep)]
+            self.camera_id=camera_id[np.array(index_to_keep)]
+            self.n_human=len(camera_id)
+        else:
+            self.n_human=0
 ################################################################################################################            
     
 ###############################################################################################
@@ -148,10 +165,13 @@ if __name__ == '__main__':
             n_human=human.n_human
             centroid=human.centroid
             image=human.image
-            for i in range(0,n_human):
-                center_coordinates = (int(centroid[i,0]), int(centroid[i,1]))                        
-                #print(center_coordinates)              
-                image = cv2.circle(image, center_coordinates, 5, (0, 255,0), 10)
+            print("N_human",n_human)
+            print("Centroid",centroid)
+            if n_human>0:
+                for i in range(0,n_human):
+                    center_coordinates = (int(centroid[i,0]), int(centroid[i,1]))                        
+                    #print(center_coordinates)              
+                    image = cv2.circle(image, center_coordinates, 5, (0, 255,0), 10)
             cv2.imshow("Thermal clustering",image)
             cv2.waitKey(10)  
         

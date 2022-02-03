@@ -29,7 +29,8 @@ class human_class:
         #print("DATA FROM CAMERA")
         try:
             #Front camera info extraction
-            image_front = bridge.imgmsg_to_cv2(image_front, "mono8") #assuming grey scale thermal output
+            image_front = bridge.imgmsg_to_cv2(image_front, "bgr8") #assuming grey scale thermal output
+            image_front=cv2.rotate(image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             ##################################################################################
             #######################################################################################
             [self.image,self.centroid,self.n_human,self.camera_id]=self.clustering(image_front,0) #front camera clustering
@@ -56,28 +57,30 @@ class human_class:
         no_signal=False
         filt_max=220 
         filt_min=30
-        filt=100 #init
+        filt=160 #init
         n_iteration=4
         n=0
-        while size_ok==False and occlusion==False and no_signal==False and n<n_iteration:
-            n=n+1
-            ret, thresh1 = cv2.threshold(image, filt, 255, cv2.THRESH_BINARY)
-            X=np.argwhere(thresh1==255)
-            print("SIZE",X.shape)
-            print("FILT",filt)
-            if X.shape[0]>min_samples_clust and X.shape[0]<max_samples_clust:
-                size_ok=True
-            elif X.shape[0]<=min_samples_clust:
-                factor=(min_samples_clust-X.shape[0])/min_samples_clust
-                filt=int(filt/(1+factor))
-                if filt<filt_min:
-                    no_signal=True #There is not thermal signal 
-            elif X.shape[0]>=max_samples_clust:
-                factor=(X.shape[0]-max_samples_clust)/X.shape[0]
-                filt=int(filt*(1+factor))
-                if filt>filt_max:
-                    occlusion=True #There is a person just in front of the camera                   
-             
+        #while size_ok==False and occlusion==False and no_signal==False and n<n_iteration:
+        #    n=n+1
+        #    ret, thresh1 = cv2.threshold(image, filt, 255, cv2.THRESH_BINARY)
+        #    X=np.argwhere(thresh1==255)
+        #    print("SIZE",X.shape)
+        #    print("FILT",filt)
+        #    if X.shape[0]>min_samples_clust and X.shape[0]<max_samples_clust:
+        #        size_ok=True
+        #    elif X.shape[0]<=min_samples_clust:
+        #        factor=(min_samples_clust-X.shape[0])/min_samples_clust
+        #        filt=int(filt/(1+factor))
+        #        if filt<filt_min:
+        #            no_signal=True #There is not thermal signal 
+        #    elif X.shape[0]>=max_samples_clust:
+        #        factor=(X.shape[0]-max_samples_clust)/X.shape[0]
+        #        filt=int(filt*(1+factor))
+        #        if filt>filt_max:
+        #            occlusion=True #There is a person just in front of the camera                   
+        ret, thresh1 = cv2.threshold(image, filt, 255, cv2.THRESH_BINARY)
+        X=np.argwhere(thresh1==255)
+        
         if X.shape[0]>min_samples_clust and X.shape[0]<max_samples_clust:
             bandwidth = estimate_bandwidth(X, quantile=0.05, n_samples=min_samples_clust)
             ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
@@ -164,10 +167,11 @@ if __name__ == '__main__':
         if visualization==True:
             n_human=human.n_human
             centroid=human.centroid
-            image=np.zeros((120,160,3), np.uint8)
-            image[:,:,0]=human.image
-            image[:,:,1]=human.image
-            image[:,:,2]=human.image
+            #image=np.zeros((120,160,3), np.uint8)
+            #image[:,:,0]=human.image
+            #image[:,:,1]=human.image
+            #image[:,:,2]=human.image
+            image=human.image
             for i in range(0,n_human):
                 center_coordinates = (int(centroid[i,0]), int(centroid[i,1]))                        
                 #print(center_coordinates)              

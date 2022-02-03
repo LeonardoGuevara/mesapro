@@ -12,19 +12,20 @@ from numpy import linalg as LA
 from cv_bridge import CvBridge, CvBridgeError
 import joblib
 #import pickle
-#import cv2
+import time
+import cv2
 from mesapro.msg import human_detector_msg
 ##########################################################################################
 
 ##Importing RF model for posture recognition
-posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
-#posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+#posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
+posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
 model_rf = joblib.load(posture_classifier_model)   
 ##Openpose initialization 
-openpose_python=rospy.get_param("/hri_camera_detector/openpose_python") #you have to change /hri_camera_detector/ if the node is not named like this
-openpose_models=rospy.get_param("/hri_camera_detector/openpose_models") #you have to change /hri_camera_detector/ if the node is not named like this
-#openpose_python='/home/leo/rasberry_ws/src/mesapro/openpose/build/python'
-#openpose_models="/home/leo/rasberry_ws/src/mesapro/openpose/models"
+#openpose_python=rospy.get_param("/hri_camera_detector/openpose_python") #you have to change /hri_camera_detector/ if the node is not named like this
+#openpose_models=rospy.get_param("/hri_camera_detector/openpose_models") #you have to change /hri_camera_detector/ if the node is not named like this
+openpose_python='/home/leo/rasberry_ws/src/mesapro/openpose/build/python'
+openpose_models="/home/leo/rasberry_ws/src/mesapro/openpose/models"
 try:
     sys.path.append(openpose_python);
     from openpose import pyopenpose as op
@@ -48,8 +49,10 @@ msg = human_detector_msg()
 n_joints=19
 n_features=36
 #General purposes variables
-#visualization=False #to show or not a window with the human detection on the photos
-new_data=0     #flag to know if a new data from LiDAR or Camera is available, first element is for LiDAR, second for Camera
+visualization=True #to show or not a window with the human detection on the photos
+performance="normal" 
+time_threshold=3 #3 seconds as the minimum time between two consecute changes of openpose performance
+time_change=0 #initial value
 #########################################################################################################################
 
 class human_class:
@@ -63,14 +66,17 @@ class human_class:
         self.distance=np.zeros([self.n_human,1])  # distance between the robot and the average of the skeleton joints distances taken from the depth image, from camera
         self.image_width=[848,848] #initial condition of each camera
         self.camera_id=np.zeros([self.n_human,1]) #to know which camera detected the human
-        #self.image=np.zeros((848,400,3), np.uint8) #initial value
+        self.image=np.zeros((848,400,3), np.uint8) #initial value
         
     def camera_callback(self,image_front, depth_front):
+        global performance, time_change
         #print("DATA FROM CAMERA")
         #try:
         #Front camera info extraction
         color_image_front = bridge.imgmsg_to_cv2(image_front, "bgr8")
+        #color_image_front=cv2.resize(color_image_front, (848,400))
         depth_image_front = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        #depth_image_front=cv2.resize(depth_image_front, (848,400))
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         self.image_width[0] = depth_array_front.shape[1]
         ##################################################################################
@@ -86,28 +92,63 @@ class human_class:
         #######################################################################################
         #except CvBridgeError as e:
         #    rospy.logerr("CvBridge Error: {0}".format(e))
+        if time.time()-time_change>time_threshold: #only admit update if time_threshold is satisfied
+            performance_past=performance
+            if self.n_human>0:
+                if min(self.distance)>7:
+                    performance="high"
+                else:
+                    performance="normal"
+            else:
+                performance="normal"
+            
+            if performance=="high" and performance_past!=performance:
+                params = dict()
+                params["model_folder"] = openpose_models
+                params["net_resolution"] = "-1x352" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+                opWrapper.stop()
+                opWrapper.configure(params)
+                opWrapper.start()
+                time_change=time.time()
+                #datum = op.Datum()
+            elif performance=="normal" and performance_past!=performance:
+                params = dict()
+                params["model_folder"] = openpose_models
+                params["net_resolution"] = "-1x256" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+                opWrapper.stop()
+                opWrapper.configure(params)
+                opWrapper.start()
+                time_change=time.time()
+                #datum = op.Datum()
 
+        print("PERFORMANCE",performance)
+        print("MAX DIS",max(self.distance))
+        print("MIN DIS",min(self.distance))
+        
         datum.cvInputData = color_image
         opWrapper.emplaceAndPop(op.VectorDatum([datum]))
         #Keypoints extraction using OpenPose
         keypoints=datum.poseKeypoints
+        self.image=datum.cvOutputData
+            
         if keypoints is None: #if there is no human skeleton detected
             print('No human detected')
+            self.n_human=0
         else: #if there is at least 1 human skeleton detected
             #Feature extraction
             self.feature_extraction_3D(keypoints,depth_array,n_joints,n_features)
-            #self.image=datum.cvOutputData
             print('Human detection')
             #Publish     
-            msg.posture = [int(x) for x in list(self.posture[:,0])] #to ensure publish int
-            msg.posture_prob = list(self.posture[:,1])
-            msg.centroid_x =list(self.centroid[:,0])
-            msg.centroid_y =list(self.centroid[:,1])
-            msg.distance = list(self.distance[:,0])
-            msg.orientation = [int(x) for x in list(self.orientation[:,0])] #to ensure publish int
-            msg.camera_id= [int(x) for x in list(self.camera_id[:,0])] #to ensure publish int
-            msg.image_width= self.image_width
-            pub.publish(msg)
+            if self.n_human>0:
+                msg.posture = [int(x) for x in list(self.posture[:,0])] #to ensure publish int
+                msg.posture_prob = list(self.posture[:,1])
+                msg.centroid_x =list(self.centroid[:,0])
+                msg.centroid_y =list(self.centroid[:,1])
+                msg.distance = list(self.distance[:,0])
+                msg.orientation = [int(x) for x in list(self.orientation[:,0])] #to ensure publish int
+                msg.camera_id= [int(x) for x in list(self.camera_id[:,0])] #to ensure publish int
+                msg.image_width= self.image_width
+                pub.publish(msg)
             #cv2.imshow("System outputs",datum.cvOutputData)
             #cv2.waitKey(5)
            
@@ -120,6 +161,7 @@ class human_class:
         orientation=np.zeros([len(poseKeypoints[:,0,0]),1])
         distance=np.zeros([len(poseKeypoints[:,0,0]),1]) 
         camera_id=np.zeros([len(poseKeypoints[:,0,0]),1]) 
+        index_to_keep=[]
         for kk in range(0,len(poseKeypoints[:,0,0])):
             #Orientation inference using nose, ears, eyes keypoints
             if poseKeypoints[kk,0,0]!=0 and poseKeypoints[kk,15,0]!=0 and poseKeypoints[kk,16,0]!=0 : 
@@ -226,42 +268,49 @@ class human_class:
                     prob_max=prob[0,ii]
             posture[kk,1]=prob_max 
             #HUMAN DISTANCE AND CENTROID CALCULATION
-            n_joints_dist=0
             n_joints_cent=0
-            dist_average=0
-            x_average=0
-            y_average=0
+            dist_sum=0
+            x_sum=0
+            y_sum=0
+            #no_zero=0 #number of joints which are not 0
             for k in range(0,n_joints):
-                if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==12: #Only consider keypoints in the center of the body
-                    if joints_z_init[k]!=0:
-                        dist_average=joints_z_init[k]+dist_average
-                        n_joints_dist=n_joints_dist+1
-                    if joints_x_init[k]!=0 and joints_y_init[k]!=0:       
-                        x_average=x_average+joints_x_init[k]
-                        y_average=y_average+joints_y_init[k]
+                if joints_x_init[k]!=0 and joints_y_init[k]!=0 and joints_z_init[k]!=0:
+                    #no_zero=no_zero+1
+                    if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==12: #Only consider keypoints in the center of the body
+                        dist_sum=joints_z_init[k]+dist_sum
+                        x_sum=x_sum+joints_x_init[k]
+                        y_sum=y_sum+joints_y_init[k]
                         n_joints_cent=n_joints_cent+1
-            distance[kk,:]=dist_average/n_joints_dist
-            centroid[kk,0]=x_average/n_joints_cent
-            centroid[kk,1]=y_average/n_joints_cent
+            if n_joints_cent!=0:
+                distance[kk,:]=dist_sum/n_joints_cent
+                centroid[kk,0]=x_sum/n_joints_cent
+                centroid[kk,1]=y_sum/n_joints_cent
+                index_to_keep=index_to_keep+[kk]
+                    
             for k in range(0,len(camera_id)):
                 if centroid[k,0]<=self.image_width[0]: #camera front
                     camera_id[k]=0
                 else:#camera back
                     camera_id[k]=1
         #return features,posture,orientation,distance,centroid,camera_id
-        self.features=features
-        self.posture=posture
-        self.orientation=orientation
-        self.distance=distance
-        self.centroid=centroid
-        self.camera_id=camera_id
-            
-    
+        if index_to_keep!=[]:
+            self.features=features[np.array(index_to_keep)]
+            self.posture=posture[np.array(index_to_keep)]
+            self.orientation=orientation[np.array(index_to_keep)]
+            self.distance=distance[np.array(index_to_keep)]
+            self.centroid=centroid[np.array(index_to_keep)]
+            self.camera_id=camera_id[np.array(index_to_keep)]
+            self.n_human=len(distance)
+        else:
+            self.n_human=0
+
+        
 ###############################################################################################
 # Main Script
 
 if __name__ == '__main__':
     # Initialize our node
+    time_init=time.time() 
     human=human_class()  
     rospy.init_node('human_detector_camera',anonymous=True)
     # Setup and call subscription
@@ -270,11 +319,19 @@ if __name__ == '__main__':
     depth_front_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
     ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01)
     ts.registerCallback(human.camera_callback)
-    rospy.spin()
+    #rospy.spin()
     #Rate setup
-    #rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
-    #while not rospy.is_shutdown():	
-    #    if visualization==True:
-    #        cv2.imshow("Human detector",human.image  )
-    #        cv2.waitKey(10)  
+    rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
+    while not rospy.is_shutdown():	
+        if visualization==True:
+            centroids_x=human.centroid[:,0]
+            centroids_y=human.centroid[:,1]
+            color_image=human.image 
+            if human.n_human>0:
+                for k in range(0,len(centroids_x)):    
+                    center_coordinates = (int(centroids_x[k]), int(centroids_y[k])) 
+                    color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE           
+
+            cv2.imshow("Human detector",color_image  )
+            cv2.waitKey(10)  
         

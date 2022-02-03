@@ -696,6 +696,8 @@ class human_class:
             areas_percent=[prob_0_init,prob_1,prob_2,prob_3,prob_4,prob_5_init]
 
         #Front camera
+        print("CENTROID",centroid)
+        print("WIDTH",image_width)
         if centroid>=areas_percent[4]*image_width[0] and centroid<=areas_percent[5]*image_width[0]:
             area=4
         elif centroid>=areas_percent[3]*image_width[0] and centroid<=areas_percent[4]*image_width[0]:
