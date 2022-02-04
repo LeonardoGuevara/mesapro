@@ -1,0 +1,50 @@
+---
+session: hri_lidar_perception
+init_cmd: |
+  #exec /bin/bash
+  cd @TMULE_CONFIG_DIR@ || true
+  set -o pipefail
+  function export_default () {
+    var_name="$1"
+    var_default="$2"
+    eval $var_name="${!var_name:-$var_default}"
+    export $var_name
+    echo "  $0 -> $var_name=${!var_name}"
+  }
+
+  # Set up ROS, robot and scenario configs, catkin_workspace, robot number:
+  # Source ROS
+  # source "/opt/ros/$(rosversion -d)/setup.bash"
+
+  # Configure the development workspace (assuming we are in rasberry_bringup/tmule)
+  export_default CATKIN_WORKSPACE "`readlink -f ../../../.. || echo $HOME/rasberry_ws`"
+  source "$CATKIN_WORKSPACE/devel/setup.bash"
+  source ~/rasberry_ws/devel/setup.bash
+  #source ~/catkin_build_ws/install/setup.bash --extend
+  
+  # Search for VPN tun device
+  #export_default VPN_BASE_ADDR "10.8.0.0"
+  #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
+  default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
+  # Set ROS_MASTER to the correct IP
+  export_default ROS_MASTER $default_ip
+  # Set ROS_IP not to the IP that we will connect to remotely
+  export_default ROS_IP `ip route get $ROS_MASTER | grep "src" | sed 's/.*src \([0-9\.]*\).*/\1/' || echo $ROS_MASTER`
+  # Set ROS_HOSTNAME to the ROS_IP to avoid configuring /etc/hosts for anyone who connects
+  export_default ROS_HOSTNAME "$ROS_IP"
+  export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+
+  
+################################################################################### Human perception & safety system - Using off-line data
+windows:
+- name: hri_dr_spaam_detector
+  panes:
+  - source /home/thorvald/miniconda3/etc/profile.d/conda.sh ; conda activate mypython3 ; roslaunch dr_spaam_ros dr_spaam_ros.launch
+  check: "rostopic list | grep -q /dr_spaam_detections" 
+- name: hri_leg_tracking
+  panes:
+  - roslaunch dr_spaam_ros leg_tracking.launch 
+  check: "rostopic list | grep -q /people_tracker/pose_array" 
+
+#############################################################################################
+

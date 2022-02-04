@@ -34,6 +34,7 @@ action_label=r_param[0][1]
 main_counter=0
 pub_hz=0.01
 visual_mode = rospy.get_param("/hri_visualization/visual_mode") #you have to change /hri_visualization/ if the node is not named like this
+#visual_mode=1 means only perception, visual_mode=2 means simulated perception + simulated topo nav, visual_mode=3 means real robot
 no_detection=True  
 image_width=840
 #Areas
@@ -210,12 +211,12 @@ def visual_outputs(color_image):
                             color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
                 x_lines=hri.area_inference_camera()
                 #x_lines=[0,0.3,0.4,0.6,0.7,1]
-    color_image=cv2.line(color_image, (int(x_lines[1]*image_width), 0), (int(x_lines[1]*image_width), 600), (0, 255, 0), thickness=1)
-    color_image=cv2.line(color_image, (int(x_lines[2]*image_width), 0), (int(x_lines[2]*image_width), 600), (0, 255, 0), thickness=1)
-    color_image=cv2.line(color_image, (int(x_lines[3]*image_width), 0), (int(x_lines[3]*image_width), 600), (0, 255, 0), thickness=1)
-    color_image=cv2.line(color_image, (int(x_lines[4]*image_width), 0), (int(x_lines[4]*image_width), 600), (0, 255, 0), thickness=1)
-
-    
+    if visual_mode!=2:
+        color_image=cv2.line(color_image, (int(x_lines[1]*image_width), 0), (int(x_lines[1]*image_width), 600), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[2]*image_width), 0), (int(x_lines[2]*image_width), 600), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[3]*image_width), 0), (int(x_lines[3]*image_width), 600), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[4]*image_width), 0), (int(x_lines[4]*image_width), 600), (0, 255, 0), thickness=1)
+ 
     cv2.imshow("System outputs",color_image)
     cv2.waitKey(5)
     
