@@ -35,10 +35,12 @@ opWrapper.start()
 datum = op.Datum()
 #Feature extraction variables
 n_joints=19
-
+#Parameters to resize thermal images from 160x120 size to 640x480 
+resize_param=[150,115,300,400] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode
 #Initializating cv_bridge
 bridge = CvBridge()
 visualization=True
+matching=False #True to match images, False to run Openpose side by side
 #########################################################################################################################
 
 class human_class:
@@ -51,54 +53,50 @@ class human_class:
         self.image=np.zeros((120,160), np.uint8) #initial condition
         
     def image_callback(self,thermal_front,rgb_front,depth_front):
-        #Front camera info extraction
         img_thermal = bridge.imgmsg_to_cv2(thermal_front, "bgr8") #theated as a colored image even if is a gray scale image
-        
-        #Rotate camera (assuming it is placed on the robot in portrait mode)
         img_t_rot=cv2.rotate(img_thermal,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        img_t_rot=cv2.resize(img_t_rot,(resize_param[2],resize_param[3]))
+                
         img_rgb=bridge.imgmsg_to_cv2(rgb_front, "bgr8") 
-        #Rotate camera (assuming it is placed on the robot in portrait mode)
-        print(img_rgb.shape)
-        img_rgb_rot=cv2.rotate(img_rgb,cv2.ROTATE_90_COUNTERCLOCKWISE)
-        #Parameters to crop rgb images from any size to 160x120
-        y=150 #330 for 1280x720, 150 for 640x480
-        x=125 #100 for 1280x720, 125 for 640x480
-        h=img_rgb_rot.shape[0]-230 #630 for 1280x720, 230 for 640x480
-        w=img_rgb_rot.shape[1]-180 #230 for 1280x720, 180 for 640x480
-        img_rgb_crop = img_rgb_rot[y:y+h, x:x+w]
-        img_rgb_rz=cv2.resize(img_rgb_crop, (120, 160))
+        img_rgb_rot=cv2.rotate(img_rgb,cv2.ROTATE_90_COUNTERCLOCKWISE)        
+        img_rgb_rz=np.zeros((img_t_rot.shape[0],img_t_rot.shape[1],3),np.uint8)
+        img_rgb_rz=img_rgb_rot[resize_param[0]:resize_param[0]+img_t_rot.shape[0],resize_param[1]:resize_param[1]+img_t_rot.shape[1],:]
+        
+        
+        #img_t_rz=np.zeros((img_rgb_rot.shape[0],img_rgb_rot.shape[1],3),np.uint8)
+        #img_t_rz[resize_param[0]:resize_param[0]+img_t_rot.shape[0],resize_param[1]:resize_param[1]+img_t_rot.shape[1],:]=img_t_rot
+        
         ##################################################################################
-        #Back camera info extraction
-        #image_back= image_front
-        #Rotate camera (assuming it is placed on the robot in portrait mode)
-        #image_b_rot=cv2.rotate(image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
-        
-        #imageToProcess=np.append(image_f_rot,image_b_rot,axis=1) 
-        
+        #imageToProcess=np.append(img_t_rz,img_rgb_rot,axis=1) 
         imageToProcess=np.append(img_t_rot,img_rgb_rz,axis=1) 
-        #imageToProcess=img_t_rot
-        #imageToProcess=img_rgb_rot
+        
         ##Scale only for visualization purposes
         if visualization==True:
-            imageToProcess=cv2.resize(imageToProcess, (640, 480))
-            self.image=imageToProcess
+            #imageToProcess=cv2.resize(imageToProcess, (640, 480))
+            #imageToProcess=cv2.resize(imageToProcess, (1080, 920))
         
-        ###################################################################################
-        datum.cvInputData = imageToProcess#image_front
-        opWrapper.emplaceAndPop(op.VectorDatum([datum]))
-        #Keypoints extraction using OpenPose
-        keypoints=datum.poseKeypoints
-        self.image=datum.cvOutputData
-        if keypoints is None: #if there is no human skeleton detected
-            print('No human detected')
-            self.n_human=0
-        else: #if there is at least 1 human skeleton detected
-            #Feature extraction
-            self.centroid_extraction(keypoints,n_joints)
-            #self.image=imageToProcess
-            self.image_size = self.image.shape
-            print('Human detection')
-    
+            ###################################################################################
+            if matching==False:
+                datum.cvInputData = imageToProcess#image_front
+                opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+                #Keypoints extraction using OpenPose
+                keypoints=datum.poseKeypoints
+                self.image=datum.cvOutputData
+                if keypoints is None: #if there is no human skeleton detected
+                    print('No human detected')
+                    self.n_human=0
+                else: #if there is at least 1 human skeleton detected
+                    #Feature extraction
+                    self.centroid_extraction(keypoints,n_joints)
+                    #self.image=imageToProcess
+                    self.image_size = self.image.shape
+                    print('Human detection')
+            else:
+                overlay_image = cv2.addWeighted(img_t_rot,0.7,img_rgb_rz,0.3,0)
+                #overlay_image = cv2.addWeighted(img_t_rz,0.7,img_rgb_rot,0.3,0)
+                imageToProcess=cv2.resize(overlay_image, (640, 480))
+                self.image=imageToProcess
+        
     def centroid_extraction(self,poseKeypoints,n_joints):
         centroid=np.zeros([len(poseKeypoints[:,0,0]),2]) 
         camera_id=np.zeros([len(poseKeypoints[:,0,0]),1]) 
@@ -129,11 +127,11 @@ class human_class:
             #    centroid[kk,1]=sum(joints_y_init)/no_zero
             #    index_to_keep=index_to_keep+[kk]
                 
-            for k in range(0,len(camera_id)):
-                if centroid[k,0]<=self.image_size[1]: #camera front
-                    camera_id[k]=0
+            #for k in range(0,len(camera_id)):
+                if centroid[kk,0]<=self.image_size[1]: #camera front
+                    camera_id[kk]=0
                 else:#camera back
-                    camera_id[k]=1
+                    camera_id[kk]=1
         #return features,posture,orientation,distance,centroid,camera_id
         if index_to_keep!=[]:
             self.centroid=centroid[np.array(index_to_keep)]
