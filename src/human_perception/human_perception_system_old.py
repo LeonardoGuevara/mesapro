@@ -24,8 +24,8 @@ from mesapro.msg import human_msg
 posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
 model_rf = joblib.load(posture_classifier_model)   
 ##Openpose initialization 
-open_pose_python='/home/leo/rasberry_ws/src/mesapro/openpose/build/python'
-open_pose_models="/home/leo/rasberry_ws/src/mesapro/openpose/models"
+open_pose_python='/home/leo/rasberry_ws/src/openpose/build/python'
+open_pose_models="/home/leo/rasberry_ws/src/openpose/models"
 try:
     sys.path.append(open_pose_python);
     from openpose import pyopenpose as op

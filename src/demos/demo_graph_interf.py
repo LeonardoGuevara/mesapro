@@ -62,7 +62,7 @@ class human_class:
         self.sensor=0 # it can be 0 if the data is from camera and Lidar, 1 if the data is  only from the LiDAR or 2 if the data is only from de camera
         self.motion=0 #from lidar + camara
         self.area=0 
-        self.image=np.zeros((800,400,3), np.uint8) #initial value
+        self.image=np.zeros((650,650,3), np.uint8) #initial value
         self.n_human=0
     
     def human_callback(self,human_info):
@@ -142,7 +142,10 @@ class robot_class:
 
 
 def visual_outputs(color_image):
-    
+    if visual_mode!=2:
+        black_image=np.zeros((color_image.shape[0],650,3), np.uint8)
+        color_image=np.append(black_image,color_image,axis=1) 
+        extra=black_image.shape[1]
     if human.sensor==0:
         sensor="camera+lidar"
     if human.sensor==1:
@@ -203,7 +206,7 @@ def visual_outputs(color_image):
                 centroids_y=human.centroids_y
                 for k in range(0,len(centroids_x)):    
                     if centroids_x[k]+centroids_y[k]!=0:
-                        center_coordinates = (int(centroids_x[k]), int(centroids_y[k])) 
+                        center_coordinates = (int(centroids_x[k])+extra, int(centroids_y[k])) 
                         #center_coordinates=(0,480)
                         if k==hri.critical_index:
                             color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 255), 20) #RED
@@ -212,10 +215,10 @@ def visual_outputs(color_image):
                 x_lines=hri.area_inference_camera()
                 #x_lines=[0,0.3,0.4,0.6,0.7,1]
     if visual_mode!=2:
-        color_image=cv2.line(color_image, (int(x_lines[1]*image_width), 0), (int(x_lines[1]*image_width), 600), (0, 255, 0), thickness=1)
-        color_image=cv2.line(color_image, (int(x_lines[2]*image_width), 0), (int(x_lines[2]*image_width), 600), (0, 255, 0), thickness=1)
-        color_image=cv2.line(color_image, (int(x_lines[3]*image_width), 0), (int(x_lines[3]*image_width), 600), (0, 255, 0), thickness=1)
-        color_image=cv2.line(color_image, (int(x_lines[4]*image_width), 0), (int(x_lines[4]*image_width), 600), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[1]*image_width)+extra, 0), (int(x_lines[1]*image_width)+extra, 600), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[2]*image_width)+extra, 0), (int(x_lines[2]*image_width)+extra, 600), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[3]*image_width)+extra, 0), (int(x_lines[3]*image_width)+extra, 600), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[4]*image_width)+extra, 0), (int(x_lines[4]*image_width)+extra, 600), (0, 255, 0), thickness=1)
  
     cv2.imshow("System outputs",color_image)
     cv2.waitKey(5)

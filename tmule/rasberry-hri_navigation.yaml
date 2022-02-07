@@ -15,7 +15,7 @@ init_cmd: |
   # Set up ROS, robot and scenario configs, catkin_workspace, robot number:
   # Source ROS
   ###########################################################################################
-  # source "/opt/ros/$(rosversion -d)/setup.bash"
+  #source "/opt/ros/$(rosversion -d)/setup.bash"
 
   # Configure the development workspace (assuming we are in rasberry_bringup/tmule)
   # export_default CATKIN_WORKSPACE "`readlink -f ../../../.. || echo $HOME/rasberry_ws`"
@@ -36,10 +36,10 @@ init_cmd: |
   if [ -r "$BASE_CONFIG_DIR/scenarios/$SCENARIO_NAME.sh" ]; then echo "*** loading $BASE_CONFIG_DIR/scenarios/$SCENARIO_NAME.sh" ; source "$BASE_CONFIG_DIR/scenarios/$SCENARIO_NAME.sh"; fi  
 
   # Search for VPN tun device
-  #############################################################################################
+  ###############################################################################################
   #export_default VPN_BASE_ADDR "10.8.0.0"
   #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
-  ###############################################################################################
+  ################################################################################################
   default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
   # Set ROS_MASTER to the correct IP
   export_default ROS_MASTER $default_ip

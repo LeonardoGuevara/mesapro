@@ -14,8 +14,8 @@ import sys
 ##Openpose initialization 
 #openpose_python=rospy.get_param("/hri_camera_detector/openpose_python") #you have to change /hri_camera_detector/ if the node is not named like this
 #openpose_models=rospy.get_param("/hri_camera_detector/openpose_models") #you have to change /hri_camera_detector/ if the node is not named like this
-openpose_python='/home/leo/rasberry_ws/src/mesapro/openpose/build/python'
-openpose_models="/home/leo/rasberry_ws/src/mesapro/openpose/models"
+openpose_python='/home/leo/rasberry_ws/src/openpose/build/python'
+openpose_models="/home/leo/rasberry_ws/src/openpose/models"
 try:
     sys.path.append(openpose_python);
     from openpose import pyopenpose as op

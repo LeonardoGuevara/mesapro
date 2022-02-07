@@ -37,6 +37,9 @@ init_cmd: |
   
 ################################################################################### Human perception & safety system - Using off-line data
 windows:
+- name: bag_files
+  panes:
+  - roslaunch mesapro bags_data_rgbd_lidar.launch
 - name: hri_dr_spaam_detector
   panes:
   - source /home/thorvald/miniconda3/etc/profile.d/conda.sh ; conda activate mypython3 ; roslaunch dr_spaam_ros dr_spaam_ros.launch
