@@ -57,7 +57,7 @@ thermal_info=True
 #thermal_info=rospy.get_param("/hri_camera_detector/thermal_info") #you have to change /hri_camera_detector/ if the node is not named like this
 #Parameters to resize rgbd images from 640x480 size to 160x120 
 resize_param=[150,115,300,400] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode
-temp_thresh=200 #threshold to determine if the temperature if a pixel is considered as higher as human temperature
+temp_thresh=140 #threshold to determine if the temperature if a pixel is considered as higher as human temperature
 detection_thresh=0.1 #percentage of pixels in the thermal image which have to satisfy the temp_thresh in order to rise the thermal_detection flag
 #General purposes variables
 visualization=True #to show or not a window with the human detection on the photos
@@ -76,9 +76,10 @@ class human_class:
         self.img_rgbd_size=[480,640] #initial condition, assuming portrait mode
         self.img_therm_size=[120,160] #initial condition, assuming portrait mode
         self.camera_id=np.zeros([self.n_human,1]) #to know which camera detected the human
-        self.image=np.zeros((848,400,3), np.uint8) #initial value
-        self.intensity=np.zeros([self.n_human,1])
-        self.thermal_detection=False
+        self.image_color=np.zeros((848,400,3), np.uint8) #initial value
+        self.image_intensity=np.zeros((848,400,3), np.uint8) #initial value
+        self.intensity=np.zeros([self.n_human,1]) #from thermal camera
+        self.thermal_detection=False #assuming no thermal detection as initial value
     
     def rgbd_thermal_callback(self,rgb_front, depth_front, therm_front):
         global performance, time_change
@@ -96,8 +97,8 @@ class human_class:
         depth_image_front = bridge.imgmsg_to_cv2(depth_front, "passthrough")
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
-        img_d_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #to match the thermal field of view
-        img_d_rz_front=img_d_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]     
+        img_d_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1]),np.uint8) #to match the thermal field of view
+        img_d_rz_front=img_d_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]     
         
         self.img_rgbd_size = img_rgb_rot_front.shape
         self.img_therm_size = img_t_rot_front.shape
@@ -118,8 +119,8 @@ class human_class:
         #depth_image_back = bridge.imgmsg_to_cv2(depth_back, "passthrough")
         #depth_array_back = np.array(depth_image_back, dtype=np.float32)/1000
         img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
-        img_d_rz_back=np.zeros((img_t_rot_back.shape[0],img_t_rot_back.shape[1],3),np.uint8)
-        img_d_rz_back=img_d_rot_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1],:]
+        img_d_rz_back=np.zeros((img_t_rot_back.shape[0],img_t_rot_back.shape[1]),np.uint8)
+        img_d_rz_back=img_d_rot_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1]]
                
         ##############################################################################################
         #Here the images from two cameras has to be merged in a single image (front image left, back image back)
@@ -211,7 +212,9 @@ class human_class:
         opWrapper.emplaceAndPop(op.VectorDatum([datum]))
         #Keypoints extraction using OpenPose
         keypoints=datum.poseKeypoints
-        self.image=datum.cvOutputData #for visualization           
+        self.image_color=datum.cvOutputData #for visualization 
+        self.image_intensity = cv2.cvtColor(therm_image,cv2.COLOR_GRAY2RGB)
+         
         if keypoints is None: #if there is no human skeleton detected
             print('No human detected')
             self.n_human=0
@@ -225,9 +228,9 @@ class human_class:
             if self.n_human>0: 
                 self.thermal_detection=True #if a human was detected, it means there is thermal detection
             else: #if no human was detected, we should evaluate if there is thermal detection or not
-                n_pixels=therm_image.size[0]*therm_image.size[1]
+                n_pixels=therm_image.shape[0]*therm_image.shape[1]
                 filt=np.argwhere(therm_image>temp_thresh)
-                if filt.size[0]>detection_thresh*n_pixels:
+                if filt.shape[0]>detection_thresh*n_pixels:
                     self.thermal_detection=True #if there are enough number of pixels with high intensity, it means there is thermal detection even if the human is not detected by the Openpose
                 else:
                     self.thermal_detection=False   
@@ -241,9 +244,13 @@ class human_class:
             msg.distance = list(self.distance[:,0])
             msg.orientation = [int(x) for x in list(self.orientation[:,0])] #to ensure publish int
             msg.camera_id= [int(x) for x in list(self.camera_id[:,0])] #to ensure publish int
-            msg.image_width= self.img_rgbd_size[0]
-            msg.thermal_detection=self.thermal_detection
-            msg.intensity=list(self.intensity[:,0])
+            if n_cameras==1:
+                msg.image_width= [int(self.img_rgbd_size[0])]
+            else:#two cameras
+                msg.image_width= [int(self.img_rgbd_size[0]),int(self.img_rgbd_size[0])]
+                
+            msg.thermal_detection=int(self.thermal_detection)
+            msg.intensity=[int(x) for x in list(self.intensity[:,0])] #to ensure publish int 
             pub.publish(msg)
         elif self.n_human==0 and self.thermal_detection==True:
             print('Thermal detection')
@@ -308,8 +315,8 @@ class human_class:
                 J_sum2=joints_x_trans[k]**2+joints_y_trans[k]**2+joints_z_trans[k]**2+J_sum2  
                 if joints_x_trans[k]!=0 and joints_y_trans[k]!=0 and joints_z_trans[k]!=0:
                     valid=valid+1
-                    if temp_max<joints_temp_init[k,0]:
-                        temp_max=joints_temp_init[k,0]
+                    if temp_max<joints_temp_init[k]:
+                        temp_max=joints_temp_init[k]
             Js=sqrt(J_sum2/(n_joints))
              #only continue if there are enough joints detected on the skeleton and/or temp_max satisfy the threshold
             if Js!=0 and valid>=joints_min and ((temp_max>=temp_thresh and thermal_info==True) or thermal_info==False):
@@ -440,15 +447,17 @@ if __name__ == '__main__':
         #Rate setup
         rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
         while not rospy.is_shutdown():	
-            if visualization==True:
+            if visualization==True:    
                 centroids_x=human.centroid[:,0]
                 centroids_y=human.centroid[:,1]
-                color_image=human.image 
+                color_image=human.image_color
+                intensity_image=human.image_intensity
+                if thermal_info==True:
+                    color_image = cv2.addWeighted(color_image,0.7,intensity_image,0.7,0)
                 if human.n_human>0:
                     for k in range(0,len(centroids_x)):    
                         center_coordinates = (int(centroids_x[k]), int(centroids_y[k])) 
                         color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE           
-    
                 cv2.imshow("Human detector",color_image  )
                 cv2.waitKey(10)  
             

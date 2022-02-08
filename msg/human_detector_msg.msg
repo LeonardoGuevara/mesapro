@@ -6,4 +6,5 @@ float64[] posture_prob
 float64[] centroid_x
 float64[] centroid_y
 float64[] distance
-
+int64[] intensity
+bool thermal_detection
