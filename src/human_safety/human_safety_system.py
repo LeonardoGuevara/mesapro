@@ -12,7 +12,8 @@ from topological_navigation.route_search2 import TopologicalRouteSearch2
 #from topological_navigation.tmap_utils import *
 from mesapro.msg import human_msg, hri_msg, robot_msg
 ##########################################################################################
-
+#operation_mode=rospy.get_param("/hri_safety_system/operation_mode") #you have to change /hri_safety_system/ if the node is not named like this
+operation_mode="logistics" #UVC or logistics
 #Setup ROS publiser
 pub_safety = rospy.Publisher('human_safety_info', hri_msg,queue_size=1)
 safety_msg = hri_msg()
@@ -65,6 +66,7 @@ class human_class:
         self.area=[0]
         self.sensor=[0]
         self.detection=False #true if a human is detected
+        self.thermal_detection=False #true if thermal detection flag is also True
         
     def human_callback(self,human_info):
         self.posture=human_info.posture
@@ -73,6 +75,7 @@ class human_class:
         self.orientation=human_info.orientation
         self.area=human_info.area
         self.sensor=human_info.sensor
+        self.thermal_detection=human_info.thermal_detection
         if human_info.n_human>0:
             self.detection=True #there is at least one human detected
         else:
@@ -117,7 +120,7 @@ class hri_class:
         self.critical_dist=0 #distance of the critical human
         self.risk=False #it is true if the detected human is considered in risk, used to avoid unnecesary stops with human who is not occluding the robot path
         self.new_goal="none" #name of the new final goal
-        self.operation="logistics"   # logistics or UVC
+        self.operation=operation_mode   # logistics or UVC
         #self.aligned=False #True if is the human is aligned to the robot front or back, False if the human is on the sides of the robot   
         self.safe_cond=False #True if the human is static and facing the robot, False if not satisfying this safety condition
 
@@ -333,6 +336,7 @@ class hri_class:
         area=human.area
         orientation=human.orientation
         detection=human.detection
+        thermal_detection=human.thermal_detection
         #ROBOT INFO
         r_pos_x=robot.pos_x
         r_pos_y=robot.pos_y
@@ -347,25 +351,30 @@ class hri_class:
         self.status=0 #no human/human but without risk
         self.human_command=0 #no human command
         self.critical_index=0 #by default
-        if action==0 or action==2: # robot is moving to an initial goal or moving away from the picker
-            self.safety_action=5 # no safety action / keep the previous robot action
-            if action==2:
-                self.audio_message=5 # alert robot moving away
-            else: #action=0
+        if self.operation=="logistics":
+            if action==0 or action==2: # robot is moving to an initial goal or moving away from the picker
+                self.safety_action=5 # no safety action / keep the previous robot action
+                if action==2:
+                    self.audio_message=5 # alert robot moving away
+                else: #action=0
+                    self.audio_message=6 # alert robot presence
+                self.new_goal=final_goal # the current goal is not changed             
+            elif action==1: # robot was approaching
+                self.safety_action=4 # make it stop for safety purposes, waiting for a human order 
+                self.audio_message=2 # message to ask the human for new order
+                self.new_goal=final_goal # the current goal is not changed
+            elif action==3: # if goal was paused while moving to a goal or moving away from the picker
                 self.audio_message=6 # alert robot presence
-            self.new_goal=final_goal # the current goal is not changed             
-        elif action==1: # robot was approaching
-            self.safety_action=4 # make it stop for safety purposes, waiting for a human order 
-            self.audio_message=2 # message to ask the human for new order
+                self.safety_action=0 # restart operation making the robot moving to the current goal
+                self.new_goal=final_goal # the current goal is not changed
+            elif action==4: #if robot is waiting for human order
+                self.safety_action=5 # no safety action / keep the previous robot action
+                self.audio_message=2 # message to ask the human for new order
+                self.new_goal=final_goal # the current goal is not changed
+        else: #UVC
             self.new_goal=final_goal # the current goal is not changed
-        elif action==3: # if goal was paused while moving to a goal or moving away from the picker
-            self.audio_message=6 # alert robot presence
-            self.safety_action=0 # restart operation making the robot moving to the current goal
-            self.new_goal=final_goal # the current goal is not changed
-        elif action==4: #if robot is waiting for human order
             self.safety_action=5 # no safety action / keep the previous robot action
-            self.audio_message=2 # message to ask the human for new order
-            self.new_goal=final_goal # the current goal is not changed
+            self.audio_message=0 #no message
         ## HOW TO UPDATE ROBOT ACTION IN CASE OF HRI
         if detection==True: #execute only if at least a human is detected     
             #Critical human selection
@@ -514,8 +523,14 @@ class hri_class:
                             self.safety_action=5 # still waiting for another human order 
                             self.audio_message=2 # message to ask the human for new order
                             self.new_goal=final_goal # the current goal is not changed
-                    
- 
+        
+        elif thermal_detection==True and self.operation=="UVC": #even if no human was detected but thermal_detection is TRUE, only for UVC treatment
+            self.human_command=0 #no human command expected during uv-c treatment
+            self.status=2 #risky HRI
+            self.safety_action=5 # keep the previous robot action     
+            self.audio_message=1 #UVC danger message
+            self.new_goal=final_goal # the current goal is not changed 
+             
 ###############################################################################################
 # Main Script
 

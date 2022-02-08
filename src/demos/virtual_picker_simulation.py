@@ -19,6 +19,8 @@ picker_step_angle=0.1 # maximim picker step in radians
 n_samples=10 #number of samples used for the motion inference
 speed_threshold=[0.6,1]  # [static, slow motion] m/s
 areas_angle=[150,100,80,30,0] #in degrees
+dist_detection=7 #range in meters of human detection
+dist_thermal_detection=10 #range in meters of thermal detection
 main_counter=0
 
 class human_class:
@@ -39,7 +41,7 @@ class human_class:
         self.speed_buffer=np.zeros([2,n_samples]) #buffer with the human speed recorded during n_points
         self.counter_motion=np.zeros([2,1]) # vector with the number of samples that have been recorded for motion inference
         self.time=np.zeros([2,1])# time of data recorded for each human
-        
+        self.thermal_detection=False #initial condition
         
     def actor00_callback(self,p1):
         #print("ACTOR00 NEW DATA")
@@ -355,8 +357,8 @@ if __name__ == '__main__':
         #Setup ROS publiser
         pub_human = rospy.Publisher('human_info', human_msg)
         msg = human_msg()
-         #Publish Human_info from Gazebo
-        if human.distance[0,0]<=9 and human.distance[1,0]<=9: 
+        #Publish Human_info from Gazebo
+        if human.distance[0,0]<=dist_detection and human.distance[1,0]<=dist_detection: 
             msg.posture = list(human.posture[:,0])
             msg.posture_prob = list(human.posture[:,1])
             msg.motion = list(human.motion[:,0])
@@ -369,9 +371,9 @@ if __name__ == '__main__':
             msg.area = list(human.area[:,0])
             msg.sensor = list(human.sensor[:,0])
             msg.n_human = 2
-        elif human.distance[0,0]>9 and human.distance[1,0]>9: 
+        elif human.distance[0,0]>dist_detection and human.distance[1,0]>dist_detection: 
             msg.n_human= 0
-        elif human.distance[0,0]<=9 and human.distance[1,0]>9:
+        elif human.distance[0,0]<=dist_detection and human.distance[1,0]>dist_detection:
             msg.posture = [human.posture[0,0]]
             msg.posture_prob = [human.posture[0,1]]
             msg.motion = [human.motion[0,0]]
@@ -384,7 +386,7 @@ if __name__ == '__main__':
             msg.area = [human.area[0,0]]
             msg.sensor = [human.sensor[0,0]]
             msg.n_human = 1
-        elif human.distance[0,0]>9 and human.distance[1,0]<=9:
+        elif human.distance[0,0]>dist_detection and human.distance[1,0]<=dist_detection:
             msg.posture = [human.posture[1,0]]
             msg.posture_prob = [human.posture[1,1]]
             msg.motion = [human.motion[1,0]]
@@ -397,6 +399,10 @@ if __name__ == '__main__':
             msg.area = [human.area[1,0]]
             msg.sensor = [human.sensor[1,0]]
             msg.n_human = 1
+        if human.distance[0,0]<=dist_thermal_detection or human.distance[1,0]<=dist_thermal_detection:
+            msg.thermal_detection=True
+        else:
+            msg.thermal_detection=False
         pub_human.publish(msg)
         rate.sleep() #to keep fixed the control loop rate
         #if new_data[1]==1:

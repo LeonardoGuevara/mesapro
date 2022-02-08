@@ -1,5 +1,5 @@
 int64[] camera_id
-int64[] image_width
+int64[] image_size
 int64[] orientation
 int64[] posture
 float64[] posture_prob

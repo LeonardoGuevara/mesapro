@@ -38,9 +38,8 @@ n_samples=8 #number of samples used for the motion inference
 n_samples_gest=2 #number of samples used for the gesture inference
 speed_threshold=0.5  # < means static, > means slow motion 
 #Paremeters for human Tracking
-image_width=840 #initial value in pixels, it will be updated when the first image is taken from the camera
 threshold_no_data=2 #seconds needed to remove a human from tracking list
-posture_threshold=0.7 #minimum probability from openpose to start tracking new human using camera info
+posture_threshold=0.3 #minimum probability delivered by gesture recognition algoritm to start tracking new human using camera info
 #General purposes variables
 main_counter=0
 new_data=[0,0]     #flag to know if a new data from LiDAR or Camera is available, first element is for LiDAR, second for Camera
@@ -59,7 +58,7 @@ class human_class:
     def __init__(self): #It is done only the first iteration
         #General purposes variables
         self.n_human=1 # considering up to 1 human to track initially
-        self.image_width=[848,848] #initial value
+        self.image_width=848 #initial value
         #Variables to store temporally the info of human detectection at each time instant
         self.position=np.zeros([self.n_human,2]) #[x,y] from lidar local frame
         self.posture=np.zeros([self.n_human,2]) #from camera [posture_label,posture_probability]
@@ -84,13 +83,15 @@ class human_class:
         self.counter_posture=np.zeros([self.n_human,1]) #vector with the number of samples that have been recorded for gesture inference
         self.area=np.zeros([self.n_human,1]) # vector with the number of the area of the image in which the human was detected, it can be 0-3, 0 is the left area of the image and 3 is the right area. HUman captired by Lidar has to be mapped to this areas too.
         self.counter_old=np.ones([self.n_human,2]) # vector with the number of times the human tracked has not been uptated with data from lidar or camera, counter>0 means is not longer detected, counter<=0 means is being detected 
+        #Thermal detection
+        self.thermal_detection=False #assuming no thermal detection as initial value
         
     def lidar_callback(self,legs):
         #print("DATA FROM LIDAR")
         if new_data[0]==0:
             #if legs.poses is None: #if there is no human legs detected
             #    print('No human detected from lidar')
-            if legs.poses is not None: #if there are legs detected           
+            if legs.poses is not None: #only if there are legs detected           
                 k=0
                 pos=self.position
                 for pose in legs.poses:
@@ -113,7 +114,7 @@ class human_class:
         
     def camera_callback(self,data):
         #print("DATA FROM CAMERA")
-        if new_data[1]==0:
+        if new_data[1]==0 and len(data.distance)>0: #only if there is at least one human detected by camera
             k=0
             posture=self.posture
             orientation=self.orientation
@@ -146,12 +147,12 @@ class human_class:
             self.orientation=orientation
             self.distance=distance
             self.centroid=centroid
-            self.image_width=data.image_width
+            self.image_width=data.image_size[1]
         
             new_data[1]=1 # update flag for new data
             time_diff[1]=time.time()-time_init-time_data[1] 
             time_data[1]=time.time()-time_init # update time when the last data was received
-            
+        self.thermal_detection=data.thermal_detection
             
     def human_tracking(self):
         sensor=self.sensor
@@ -180,6 +181,8 @@ class human_class:
         rob_speed=robot.speed
         ##############################################################################################################################################
         #TO MERGE NEW HUMAN DETECTION WITH TRACKED LIST, OR TO ADD NEW DETECTION TO THE TRACKING LIST, OR TO REMOVE OLD DETECTIONS OR FALSE POSITIVES FROM THE LIST
+        print("NEW",centroid_new[:,0])
+        print("TRACK",centroid[:,0])
         
         #####New LiDAR info#####################################################################################        
         if new_data[0]==1:
@@ -456,9 +459,12 @@ class human_class:
                 sensor=np.zeros([n_human,1])
                 area=np.zeros([n_human,1])
             #To include a new human to be tracked
+            print("FLAG",new_human_flag)
+            print("PROB",posture_new[:,1])
             for k in range(0,len(new_human_flag)):
-                if new_human_flag[k]==0 and posture_new[k,1]>=posture_threshold: # only if the openpose probability is reliable 
+                if new_human_flag[k]==0 and posture_new[k,1]>=posture_threshold: # only if the gesture estimation probability is reliable 
                     #print('New human tracked from the camera')
+                    print("ADDED",centroid_new[k,0])
                     n_human=n_human+1
                     #Human perception
                     position=np.append(position,np.zeros([1,2]),axis=0)
@@ -496,7 +502,7 @@ class human_class:
                             error_threshold=meter_threshold[1] #meters                
                         else:
                             error_threshold=meter_threshold[0] #meters 
-                        if dist_diff<=error_threshold and area[k,0]-area[i,0]: 
+                        if dist_diff<=error_threshold and area[k,0]==area[i,0]: 
                             #print('Repeated human in track_list, merged')
                             if min(counter_old[k,:])<=min(counter_old[i,:]):
                                 repeated_index[i]=1
@@ -696,29 +702,30 @@ class human_class:
             areas_percent=[prob_0_init,prob_1,prob_2,prob_3,prob_4,prob_5_init]
 
         #Front camera
-        print("CENTROID",centroid)
-        print("WIDTH",image_width)
-        if centroid>=areas_percent[4]*image_width[0] and centroid<=areas_percent[5]*image_width[0]:
+        #print("CENTROID",centroid)
+        #print("WIDTH",image_width)
+        if centroid>=areas_percent[4]*image_width and centroid<=areas_percent[5]*image_width:
             area=4
-        elif centroid>=areas_percent[3]*image_width[0] and centroid<=areas_percent[4]*image_width[0]:
+        elif centroid>=areas_percent[3]*image_width and centroid<=areas_percent[4]*image_width:
             area=3
-        elif centroid>=areas_percent[2]*image_width[0] and centroid<=areas_percent[3]*image_width[0]:
+        elif centroid>=areas_percent[2]*image_width and centroid<=areas_percent[3]*image_width:
             area=2
-        elif centroid>=areas_percent[1]*image_width[0] and centroid<=areas_percent[2]*image_width[0]:
+        elif centroid>=areas_percent[1]*image_width and centroid<=areas_percent[2]*image_width:
             area=1
-        elif centroid>=areas_percent[0]*image_width[0] and centroid<=areas_percent[1]*image_width[0]:
+        elif centroid>=areas_percent[0]*image_width and centroid<=areas_percent[1]*image_width:
             area=0    
         #Back camera
-        elif centroid>=image_width[0]+areas_percent[4]*image_width[1] and centroid<=image_width[0]+areas_percent[5]*image_width[1]:
+        elif centroid>=image_width+areas_percent[4]*image_width and centroid<=image_width+areas_percent[5]*image_width:
             area=9
-        elif centroid>=image_width[0]+areas_percent[3]*image_width[1] and centroid<=image_width[0]+areas_percent[4]*image_width[1]:
+        elif centroid>=image_width+areas_percent[3]*image_width and centroid<=image_width+areas_percent[4]*image_width:
             area=8
-        elif centroid>=image_width[0]+areas_percent[2]*image_width[1] and centroid<=image_width[0]+areas_percent[3]*image_width[1]:
+        elif centroid>=image_width+areas_percent[2]*image_width and centroid<=image_width+areas_percent[3]*image_width:
             area=7
-        elif centroid>=image_width[0]+areas_percent[1]*image_width[1] and centroid<=image_width[0]+areas_percent[2]*image_width[1]:
+        elif centroid>=image_width+areas_percent[1]*image_width and centroid<=image_width+areas_percent[2]*image_width:
             area=6
-        elif centroid>=image_width[0]+areas_percent[0]*image_width[1] and centroid<=image_width[0]+areas_percent[1]*image_width[1]:
+        elif centroid>=image_width+areas_percent[0]*image_width and centroid<=image_width+areas_percent[1]*image_width:
             area=5 
+        #print("AREA",area)
         return area
 ###############################################################################################
 # Main Script
@@ -759,8 +766,10 @@ if __name__ == '__main__':
             msg.orientation = list(human.orientation_track[:,0])
             msg.area = list(human.area[:,0])
             msg.sensor = list(human.sensor[:,0])
+            msg.thermal_detection=human.thermal_detection
         else:
             msg.n_human = 0 #no human detected
+            msg.thermal_detection=human.thermal_detection
         pub.publish(msg)
         rate.sleep() #to keep fixed the publishing loop rate
         time_end=time.time()

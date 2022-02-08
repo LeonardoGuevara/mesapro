@@ -10,4 +10,4 @@ float64[] position_y
 float64[] centroid_x
 float64[] centroid_y
 float64[] distance
-
+bool thermal_detection

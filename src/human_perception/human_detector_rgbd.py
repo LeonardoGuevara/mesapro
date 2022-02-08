@@ -66,12 +66,14 @@ class human_class:
         self.features=np.zeros([self.n_human,n_features]) #distances and angles of each skeleton, from camera
         self.orientation=np.zeros([self.n_human,1]) # it can be "front" or "back" if the human is facing the robot or not , from camera
         self.distance=np.zeros([self.n_human,1])  # distance between the robot and the average of the skeleton joints distances taken from the depth image, from camera
-        self.image_width=[848,848] #initial condition of each camera
+        self.image_size=[848,400] #initial condition of each camera
         self.camera_id=np.zeros([self.n_human,1]) #to know which camera detected the human
-        self.image=np.zeros((848,400,3), np.uint8) #initial value
+        self.image_show=np.zeros((848,400,3), np.uint8) #image used for visualization, initial value
+        self.color_image=np.zeros((848,400,3), np.uint8) #rgb image
+        self.depth_array=np.zeros((848,400,1), np.uint8) #depth map
         
     def camera_callback(self,image_front, depth_front):
-        global performance, time_change
+        
         #print("DATA FROM CAMERA")
         #try:
         #Front camera info extraction
@@ -80,12 +82,12 @@ class human_class:
         depth_image_front = bridge.imgmsg_to_cv2(depth_front, "passthrough")
         #depth_image_front=cv2.resize(depth_image_front, (848,400))
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
-        self.image_width[0] = depth_array_front.shape[1]
+        self.image_size=depth_array_front.shape
+        
         ##################################################################################
         #Back camera info extraction
         color_image_back=color_image_front
         depth_array_back=depth_array_front
-        self.image_width[1]=self.image_width[0]
         #Here the images from two cameras has to be merged in a single image (front image left, back image back)
         color_image=np.append(color_image_front,color_image_back,axis=1) 
         depth_array=np.append(depth_array_front,depth_array_back,axis=1) 
@@ -94,6 +96,11 @@ class human_class:
         #######################################################################################
         #except CvBridgeError as e:
         #    rospy.logerr("CvBridge Error: {0}".format(e))
+        self.color_image=color_image
+        self.depth_array=depth_array
+        
+    def processing(self,color_image,depth_array):
+        global performance, time_change
         if time.time()-time_change>time_threshold: #only admit update if time_threshold is satisfied
             performance_past=performance
             if self.n_human>0:
@@ -133,7 +140,7 @@ class human_class:
         opWrapper.emplaceAndPop(op.VectorDatum([datum]))
         #Keypoints extraction using OpenPose
         keypoints=datum.poseKeypoints
-        self.image=datum.cvOutputData
+        self.image_show=datum.cvOutputData
             
         if keypoints is None: #if there is no human skeleton detected
             print('No human detected')
@@ -151,7 +158,7 @@ class human_class:
                 msg.distance = list(self.distance[:,0])
                 msg.orientation = [int(x) for x in list(self.orientation[:,0])] #to ensure publish int
                 msg.camera_id= [int(x) for x in list(self.camera_id[:,0])] #to ensure publish int
-                msg.image_width= self.image_width
+                msg.image_size= self.image_size
                 pub.publish(msg)
             #cv2.imshow("System outputs",datum.cvOutputData)
             #cv2.waitKey(5)
@@ -295,9 +302,9 @@ class human_class:
                     centroid[kk,0]=x_sum/n_joints_cent
                     centroid[kk,1]=y_sum/n_joints_cent
                     #Only continue if the human is not detected in between the two images merged
-                    if centroid[kk,0]<=self.image_width[0]-self.image_width[0]*0.1 or centroid[kk,0]>=self.image_width[0]+self.image_width[1]*0.1: 
+                    if centroid[kk,0]<=self.image_size[1]-self.image_size[1]*0.1 or centroid[kk,0]>=self.image_size[1]+self.image_size[1]*0.1: 
                         index_to_keep=index_to_keep+[kk]    
-                        if centroid[kk,0]<=self.image_width[0]: #camera front
+                        if centroid[kk,0]<=self.image_size[1]: #camera front
                             camera_id[kk]=0
                         else:#camera back
                             camera_id[kk]=1
@@ -327,7 +334,7 @@ if __name__ == '__main__':
     #Camara front
     image_front_sub = message_filters.Subscriber('camera/camera1/color/image_raw', Image)
     depth_front_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
-    ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01)
+    ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01) #1,0.01
     ts.registerCallback(human.camera_callback)
     if visualization==False:
         rospy.spin()
@@ -335,15 +342,16 @@ if __name__ == '__main__':
         #Rate setup
         rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
         while not rospy.is_shutdown():	
+            human.processing(human.color_image,human.depth_array)
             if visualization==True:
                 centroids_x=human.centroid[:,0]
                 centroids_y=human.centroid[:,1]
-                color_image=human.image 
+                color_image=human.image_show 
                 if human.n_human>0:
                     for k in range(0,len(centroids_x)):    
                         center_coordinates = (int(centroids_x[k]), int(centroids_y[k])) 
                         color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE           
     
-                cv2.imshow("Human detector",color_image  )
+                cv2.imshow("Human detector",color_image)
                 cv2.waitKey(10)  
             

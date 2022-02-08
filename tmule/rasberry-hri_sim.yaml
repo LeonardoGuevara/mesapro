@@ -211,6 +211,7 @@ init_cmd: |
   export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of config file
   export_default AUDIO_DIRECT "$(rospack find mesapro)/audio/" #directory of audio files
   export_default VISUAL_MODE 2 #"2" means only topological navigation info is displayed
+  export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
   ###########################################################################################
   # Home GUI
   export_default USE_HOME_GUI false
@@ -333,7 +334,7 @@ windows:
   - rosrun mesapro virtual_picker_simulation.py
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch audio_direct:=$AUDIO_DIRECT
+  - roslaunch mesapro hri_safety_system.launch audio_direct:=$AUDIO_DIRECT operation_mode:=$OPERATION_MODE
 
 - name: hri_visualization
   panes:

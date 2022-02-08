@@ -2,18 +2,20 @@
 <launch>
     <arg name="config_direct" default="/home/leo/rasberry_ws/src/mesapro/config/" /> 
     <arg name="visual_mode" default="1" />   
+    <arg name="thermal_info" default="True" />
     <arg name="openpose_python" default="/home/leo/rasberry_ws/src/openpose/build/python" />
     <arg name="openpose_models" default="/home/leo/rasberry_ws/src/openpose/models" />
     <arg name="posture_classifier_model" default="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib" />    
 
-    <include file="$(find mesapro)/launch/bags_data_rgbd_legs.launch"/>
+    <include file="$(find mesapro)/launch/bags_data_rgbd_thermal.launch"/>
 
     <node pkg="mesapro" type="human_safety_system.py" name="hri_safety_system"/>
 
-    <node pkg="mesapro" type="human_detector_camera.py" name="hri_camera_detector">
+    <node pkg="mesapro" type="human_detector_rgbd_thermal.py" name="hri_camera_detector">
         <param name="openpose_python" value="$(arg openpose_python)"/>
         <param name="openpose_models" value="$(arg openpose_models)"/>
         <param name="posture_classifier_model" value="$(arg posture_classifier_model)"/>
+        <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
     </node>
 
     <node pkg="mesapro" type="human_perception_system.py" name="hri_perception"/>   
