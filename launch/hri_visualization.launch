@@ -2,10 +2,14 @@
 <launch>
     <arg name="visual_mode" default="" />   
     <arg name="config_direct" default="" /> 
+    <arg name="image_rotation" default="" /> 
+    <arg name="thermal_info" default="" /> 
 
     <node pkg="mesapro" type="demo_graph_interf.py" name="hri_visualization"> 
 	<param name="visual_mode" type="int" value="$(arg visual_mode)"/>
         <param name="config_direct" value="$(arg config_direct)"/>
+        <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
+        <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
     </node>
 </launch>
 

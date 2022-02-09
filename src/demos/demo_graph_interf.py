@@ -1,28 +1,46 @@
 #! /usr/bin/python3
 
 #required packages
-import rospy #tf
+import rospy
+import message_filters #to sync the messages
 import geometry_msgs.msg
 from geometry_msgs.msg import Pose
 from sensor_msgs.msg import Image
 import numpy as np #to use matrix
-from cv_bridge import CvBridge, CvBridgeError
+from cv_bridge import CvBridge
 import cv2
 import yaml
 from mesapro.msg import human_msg, hri_msg, robot_msg
 ##########################################################################################
 
 #Importing global parameters from .yaml file
-config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
-#config_direct=rospy.get_param("/hri_visualization/config_direct") #you have to change /hri_visualization/ if the node is not named like this
+#config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+config_direct=rospy.get_param("/hri_visualization/config_direct") #you have to change /hri_visualization/ if the node is not named like this
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 ar_param=list(dict.items(parsed_yaml_file["action_recog_config"]))
 hs_param=list(dict.items(parsed_yaml_file["human_safety_config"]))
 r_param=list(dict.items(parsed_yaml_file["robot_config"]))
-
+#CAMERAS INFO
+##############################################################################################################################
+#VALUES TAKEN FROM human_detector_rgbd_thermal
+#################################################################################################################################
+thermal_info=rospy.get_param("/hri_visualization/thermal_info") #you have to change /hri_visualization/ if the node is not named like this
+#thermal_info=False
+image_rotation=rospy.get_param("/hri_visualization/image_rotation") #you have to change /hri_visualization/ if the node is not named like this
+#image_rotation=0 #it can be 0,90, 180, 270 measured clockwise     
+if image_rotation==270 or image_rotation==90:
+    resize_param=[150,115,300,400] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=270
+if image_rotation==90: #IT IS NOT WELL TUNNED YET
+    resize_param=[150,115,300,400] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=90
+elif image_rotation==0:
+    resize_param=[120,90,640,480] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=0
+elif image_rotation==180: #IT IS NOT WELL TUNNED YET
+    resize_param=[150,115,400,300] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=180
+#################################################################################################################################
 #Initializating cv_bridge
 bridge = CvBridge()
+#IMPORTING LABELS NAMES
 posture_labels=ar_param[2][1]
 motion_labels=ar_param[3][1]
 orientation_labels=ar_param[4][1]
@@ -34,10 +52,11 @@ action_label=r_param[0][1]
 main_counter=0
 pub_hz=0.01
 visual_mode = rospy.get_param("/hri_visualization/visual_mode") #you have to change /hri_visualization/ if the node is not named like this
-#visual_mode=1 means only perception, visual_mode=2 means simulated perception + simulated topo nav, visual_mode=3 means real robot
-no_detection=True  
-image_width=840
-#Areas
+#visual_mode=1 # visual_mode=1 means only perception, visual_mode=2 means simulated perception + simulated topo nav, visual_mode=3 means real robot
+#PLOT AREAS
+##############################################################################################################################
+#VALUES TAKEN FROM human_perception_system.py
+#################################################################################################################################
 max_dist=8 #in meters, the probabilities are fixed at prob_init from this distance 
 delta_prob_1_4=0.17 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
 delta_prob_2_3=0.12
@@ -49,6 +68,9 @@ prob_4_init=prob_3_init+delta_prob_2_3
 prob_0_init=0 #initial area pixel percentage
 prob_5_init=1 #last area pixel percentage
 #########################################################################################################################
+#PLOT HRI PARAMETERS
+black_image_size=[680,650] #size of the black background where the parameters are shown
+
 
 class human_class:
     def __init__(self): #It is done only the first iteration
@@ -62,7 +84,8 @@ class human_class:
         self.sensor=0 # it can be 0 if the data is from camera and Lidar, 1 if the data is  only from the LiDAR or 2 if the data is only from de camera
         self.motion=0 #from lidar + camara
         self.area=0 
-        self.image=np.zeros((680,650,3), np.uint8) #initial value
+        self.image=np.zeros((black_image_size[0],black_image_size[1],3), np.uint8) #initial value
+        self.image_size=[black_image_size[0],black_image_size[1]] #size of a single image, initial values
         self.n_human=0
         self.thermal_detection="inactive"
         
@@ -84,17 +107,107 @@ class human_class:
             self.orientation=human_info.orientation[hri.critical_index]
             self.area=human_info.area[hri.critical_index]
             
-    def camera_callback(self,ros_image):
-        global image_width
-        try:
-            self.image = bridge.imgmsg_to_cv2(ros_image, "bgr8")
-            size = np.array(self.image)
-            image_width = size.shape[1]
-        except CvBridgeError as e:
-            rospy.logerr("CvBridge Error: {0}".format(e))
-        color_image=self.image
-        visual_outputs(color_image)
+    def rgb_thermal_callback(self,rgb_front, therm_front):
+        #camera front
+        #color_image_front = bridge.imgmsg_to_cv2(front_image, "bgr8")
+        ##################################################################################33
+        #Front cameras info extraction
+        therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
+        if image_rotation==90:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_front=therm_image_front
+        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
+        
+        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        if image_rotation==90:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_front=color_image_front            
+        
+        img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #to match the thermal field of view
+        img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
+        
+        self.image_size = img_rgb_rz_front.shape
+        ##################################################################################
+        #Back cameras info extraction
+        therm_image_back=therm_image_front
+        #therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
+        if image_rotation==90:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_back=therm_image_back
+        img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
+        
+        color_image_back=color_image_front
+        #color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        if image_rotation==90:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_back=color_image_back            
+        img_rgb_rz_back=np.zeros((img_t_rot_back.shape[0],img_t_rot_back.shape[1],3),np.uint8)
+        img_rgb_rz_back=img_rgb_rot_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1],:]
+        
+        ##############################################################################################
+        #Here the images from two cameras has to be merged in a single image (front image left, back image back)
+        color_image=np.append(img_rgb_rz_front,img_rgb_rz_back,axis=1) 
+        therm_array=np.append(img_t_rot_front,img_t_rot_back,axis=1)
+        intensity_image=cv2.cvtColor(therm_array,cv2.COLOR_GRAY2RGB)
+        color_image = cv2.addWeighted(color_image,0.7,intensity_image,0.7,0)
+        
+        self.image=color_image
+        #visual_outputs(color_image)
 
+    def rgb_callback(self,rgb_front):
+        ##################################################################################33
+        #Front camera info extraction
+        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        if image_rotation==90:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_front=color_image_front            
+        
+        self.image_size = img_rgb_rot_front.shape
+        ##################################################################################
+        #Back camera info extraction
+        color_image_back=color_image_front
+        #color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        if image_rotation==90:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_back=color_image_back            
+
+        ##############################################################################################        
+        #Here the images from two cameras has to be merged in a single image (front image left, back image back)
+        color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
+        #######################################################################################
+        #self.processing(color_image,depth_array,therm_image)
+        self.image=color_image
+        
 class hri_class:
     def __init__(self): #It is done only the first iteration
         self.status=0
@@ -147,8 +260,10 @@ class robot_class:
 
 
 def visual_outputs(color_image):
-    if visual_mode!=2:
-        black_image=np.zeros((color_image.shape[0],650,3), np.uint8)
+    if visual_mode!=2: #only when images from camera are goint to be visualized
+        black_image=np.zeros((black_image_size[0],black_image_size[1],3), np.uint8)
+        proportion=black_image.shape[0]/color_image.shape[0] #proportion used to resize the image to match the high of the black_image
+        color_image=cv2.resize(color_image,(int(color_image.shape[1]*proportion),black_image.shape[0])) #to resize it proportionally
         color_image=np.append(black_image,color_image,axis=1) 
         extra=black_image.shape[1]
     if human.sensor==0:
@@ -217,7 +332,7 @@ def visual_outputs(color_image):
                 centroids_y=human.centroids_y
                 for k in range(0,len(centroids_x)):    
                     if centroids_x[k]+centroids_y[k]!=0:
-                        center_coordinates = (int(centroids_x[k])+extra, int(centroids_y[k])) 
+                        center_coordinates = (int(centroids_x[k]*proportion)+extra, int(centroids_y[k]*proportion)) 
                         #center_coordinates=(0,480)
                         if k==hri.critical_index:
                             color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 255), 20) #RED
@@ -225,12 +340,21 @@ def visual_outputs(color_image):
                             color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
                 x_lines=hri.area_inference_camera()
                 #x_lines=[0,0.3,0.4,0.6,0.7,1]
-    if visual_mode!=2:
-        color_image=cv2.line(color_image, (int(x_lines[1]*image_width)+extra, 0), (int(x_lines[1]*image_width)+extra, 600), (0, 255, 0), thickness=1)
-        color_image=cv2.line(color_image, (int(x_lines[2]*image_width)+extra, 0), (int(x_lines[2]*image_width)+extra, 600), (0, 255, 0), thickness=1)
-        color_image=cv2.line(color_image, (int(x_lines[3]*image_width)+extra, 0), (int(x_lines[3]*image_width)+extra, 600), (0, 255, 0), thickness=1)
-        color_image=cv2.line(color_image, (int(x_lines[4]*image_width)+extra, 0), (int(x_lines[4]*image_width)+extra, 600), (0, 255, 0), thickness=1)
- 
+    if visual_mode!=2: #To visualize areas in the image
+        width=int(human.image_size[1]*proportion)
+        #FRONT IMAGE
+        color_image=cv2.line(color_image, (int(x_lines[1]*width)+extra, 0), (int(x_lines[1]*width)+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[2]*width)+extra, 0), (int(x_lines[2]*width)+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[3]*width)+extra, 0), (int(x_lines[3]*width)+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[4]*width)+extra, 0), (int(x_lines[4]*width)+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        #BACK IMAGE
+        color_image=cv2.line(color_image, (int(x_lines[1]*width)+width+extra, 0), (int(x_lines[1]*width)+width+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[2]*width)+width+extra, 0), (int(x_lines[2]*width)+width+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[3]*width)+width+extra, 0), (int(x_lines[3]*width)+width+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[4]*width)+width+extra, 0), (int(x_lines[4]*width)+width+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        scaling=0.6
+        color_image=cv2.resize(color_image,(int(color_image.shape[1]*scaling),int(color_image.shape[0]*scaling))) #resizing it to fit the screen
+        
     cv2.imshow("System outputs",color_image)
     cv2.waitKey(5)
     
@@ -246,8 +370,14 @@ if __name__ == '__main__':
     # Setup and call subscription
     rospy.Subscriber('human_info',human_msg,human.human_callback)
     rospy.Subscriber('human_safety_info',hri_msg,hri.safety_callback)
-    if visual_mode==1 or visual_mode==3:
-        rospy.Subscriber('camera/camera1/color/image_raw', Image,human.camera_callback)  
+    if visual_mode==1 or visual_mode==3:    
+        if thermal_info==True:
+            thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #old topic name only for a single camera
+            image_front_sub = message_filters.Subscriber('/camera/color/image_raw', Image)    #old topic name only for a single camera
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 1, 0.01)
+            ts.registerCallback(human.rgb_thermal_callback)
+        else:
+            rospy.Subscriber('camera/camera1/color/image_raw', Image,human.rgb_callback) #old topic name before thermal info
     if visual_mode>=2:
         rospy.Subscriber('robot_info',robot_msg,robot.robot_callback_info)
         rospy.Subscriber('/robot_pose', Pose, robot.robot_callback_pos) 
@@ -257,12 +387,12 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():	
         main_counter=main_counter+1
         if visual_mode==2:  
-            color_image = np.zeros((680,650,3), np.uint8) 
-            visual_outputs(color_image)
+            color_image = np.zeros((black_image_size[0],black_image_size[1],3), np.uint8) 
+        else: #visual_mode=1 or 3
+            color_image=human.image
+        visual_outputs(color_image)
         print(main_counter)  
         print("MODE",visual_mode)
-        print("Distance",round(human.distance,2))
-        print("NO DETECTION",no_detection)
         rate.sleep() #to keep fixed the publishing loop rate
         
         
