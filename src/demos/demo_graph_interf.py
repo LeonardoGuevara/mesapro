@@ -372,8 +372,8 @@ if __name__ == '__main__':
     rospy.Subscriber('human_safety_info',hri_msg,hri.safety_callback)
     if visual_mode==1 or visual_mode==3:    
         if thermal_info==True:
-            thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #old topic name only for a single camera
-            image_front_sub = message_filters.Subscriber('/camera/color/image_raw', Image)    #old topic name only for a single camera
+            thermal_front_sub=message_filters.Subscriber('/flir_module_driver1/thermal/image_raw', Image) #old topic name only for a single camera
+            image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #old topic name only for a single camera
             ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 1, 0.01)
             ts.registerCallback(human.rgb_thermal_callback)
         else:

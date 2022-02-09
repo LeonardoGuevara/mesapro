@@ -53,8 +53,8 @@
   <arg name="allow_no_texture_points"  default="false"/>
   <arg name="ordered_pc"               default="false"/>
 
-  <arg name="enable_sync"         default="false"/>
-  <arg name="align_depth"         default="false"/>
+  <arg name="enable_sync"         default="true"/>
+  <arg name="align_depth"         default="true"/>
 
   <arg name="base_frame_id"             default="$(arg tf_prefix)_link"/>
   <arg name="depth_frame_id"            default="$(arg tf_prefix)_depth_frame"/>

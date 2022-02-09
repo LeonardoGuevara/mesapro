@@ -16,8 +16,10 @@ init_cmd: |
   # Source ROS
   ###########################################################################################
   #source "/opt/ros/$(rosversion -d)/setup.bash"
+  ###########################################################################################
 
   # Configure the development workspace (assuming we are in rasberry_bringup/tmule)
+  ###########################################################################################
   # export_default CATKIN_WORKSPACE "`readlink -f ../../../.. || echo $HOME/rasberry_ws`"
   # source "$CATKIN_WORKSPACE/devel/setup.bash"
   ###########################################################################################

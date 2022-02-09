@@ -509,9 +509,9 @@ if __name__ == '__main__':
     # Setup and call subscription
     #Camara front
     if thermal_info==True:
-        thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image)
-    image_front_sub = message_filters.Subscriber('/camera/color/image_raw', Image)
-    depth_front_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw', Image)
+        thermal_front_sub=message_filters.Subscriber('/flir_module_driver1/thermal/image_raw', Image) #old topic name only for a single camera
+    image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image) #old topic name only for a single camera
+    depth_front_sub = message_filters.Subscriber('/camera1/aligned_depth_to_color/image_raw', Image) #old topic name only for a single camera
     if thermal_info==True:
         ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub], 1, 0.01)
         ts.registerCallback(human.rgbd_thermal_callback)

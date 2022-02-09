@@ -12,19 +12,32 @@ init_cmd: |
     echo "  $0 -> $var_name=${!var_name}"
   }
 
+  #########################################################################################
+  # HUMAN-AWARE NAVIGATION
+  export_default CATKIN_WORKSPACE_MAIN "$HOME/rasberry_ws"
+  export_default CONDA_DIRECT "$HOME/anaconda3" # directory where conda or minicoda is installed 
+  export_default CONDA_ENV "mypython3" #name of the conda environment with python3 
+  #########################################################################################
+  
+
   # Set up ROS, robot and scenario configs, catkin_workspace, robot number:
   # Source ROS
+  #########################################################################################
   # source "/opt/ros/$(rosversion -d)/setup.bash"
+  #########################################################################################
 
   # Configure the development workspace (assuming we are in rasberry_bringup/tmule)
-  export_default CATKIN_WORKSPACE "`readlink -f ../../../.. || echo $HOME/rasberry_ws`"
-  source "$CATKIN_WORKSPACE/devel/setup.bash"
-  source ~/rasberry_ws/devel/setup.bash
-  #source ~/catkin_build_ws/install/setup.bash --extend
-  
+  #########################################################################################
+  #export_default CATKIN_WORKSPACE "`readlink -f ../../../.. || echo $HOME/rasberry_ws`"
+  #source "$CATKIN_WORKSPACE/devel/setup.bash"
+  source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
+  #########################################################################################
+
   # Search for VPN tun device
+  #########################################################################################
   #export_default VPN_BASE_ADDR "10.8.0.0"
   #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
+  #########################################################################################
   default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
   # Set ROS_MASTER to the correct IP
   export_default ROS_MASTER $default_ip
@@ -35,14 +48,16 @@ init_cmd: |
   export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
 
   
-################################################################################### Human perception & safety system - Using off-line data
+################################################################################### 
+### Human leg detector - Using off-line data
 windows:
 - name: bag_files
   panes:
   - roslaunch mesapro bags_data_rgbd_lidar.launch
+  check: "rostopic list" 
 - name: hri_dr_spaam_detector
   panes:
-  - source /home/thorvald/miniconda3/etc/profile.d/conda.sh ; conda activate mypython3 ; roslaunch dr_spaam_ros dr_spaam_ros.launch
+  - source $CONDA_DIRECT/etc/profile.d/conda.sh ; conda activate $CONDA_ENV ; roslaunch dr_spaam_ros dr_spaam_ros.launch
   check: "rostopic list | grep -q /dr_spaam_detections" 
 - name: hri_leg_tracking
   panes:

@@ -75,19 +75,11 @@ windows:
   panes:
   - if ! $USE_BAG ; then roslaunch mesapro flir_thermal_module.launch ; fi
   check: "rostopic list | grep -q /flir_module_driver1/thermal/image_raw || $USE_BAG"
-- name: hri_dr_spaam_detector
-  panes:
-  - if $USE_LEG_DETECTOR ; then source $CONDA_DIRECT/etc/profile.d/conda.sh ; fi ; if $USE_LEG_DETECTOR ; then conda activate $CONDA_ENV ; fi ; if $USE_LEG_DETECTOR ; then roslaunch dr_spaam_ros dr_spaam_ros.launch ; fi
-  check: "rostopic list | grep -q /dr_spaam_detections || ! $USE_LEG_DETECTOR" 
-- name: hri_lidar_perception
-  panes:
-  - if $USE_LEG_DETECTOR ; then roslaunch dr_spaam_ros leg_tracking.launch ; fi
-  check: "rostopic list | grep -q /people_tracker/pose_array || ! $USE_LEG_DETECTOR" 
 - name: hri_cameras_perception
   panes:
   - roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL thermal_info:=$THERMAL_INFO image_rotation:=$IMAGE_ROTATION
   - rosrun mesapro human_perception_system.py 
-  check: "rostopic list | grep -q /human_info" 
+  check: "rostopic list | grep -q /human_info_camera " 
 - name: hri_safety_system
   panes:
   - roslaunch mesapro hri_safety_system.launch audio_direct:=$AUDIO_DIRECT operation_mode:=$OPERATION_MODE

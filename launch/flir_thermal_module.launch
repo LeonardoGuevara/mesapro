@@ -15,7 +15,7 @@
     <param name="max_range_meas" type="int" value="30960" /> <!-- maximum measurement range for scaling to pixel value [0,255]-->
     <param name="ir_img_color" type="bool" value="false" /> <!-- set to true to publish ir temp-coded color image, false for grayscale -->
     <param name="auto_gain" type="bool" value="false" /> <!-- set to true to autoadjust the scale instead of using a fix measurement range -->
-    <param name="serial_number" type="string" value="000c0035-510f-3538-3530-333500000000" /> <!-- serial number of the device. On a console type: smesg | grep SerialNumber -->
+    <param name="serial_number" type="string" value="80060001-5113-3238-3233-393800000000" /> <!-- serial number of the device. On a console type: smesg | grep SerialNumber -->
   </node>
 
   <node pkg="flir_module_driver" type="flir_module_driver_node" name="flir_module_driver2" output="screen" respawn="false" if="$(eval arg('num_cam') == 2)">
@@ -23,7 +23,7 @@
     <param name="max_range_meas" type="int" value="30960" /> <!-- maximum measurement range for scaling to pixel value [0,255]-->
     <param name="ir_img_color" type="bool" value="false" /> <!-- set to true to publish ir temp-coded color image, false for grayscale -->
     <param name="auto_gain" type="bool" value="false" /> <!-- set to true to autoadjust the scale instead of using a fix measurement range -->
-    <param name="serial_number" type="string" value="80060001-5113-3238-3233-393800000000" /> <!-- serial number of the device. On a console type: smesg | grep SerialNumber -->
+    <param name="serial_number" type="string" value="000c0035-510f-3538-3530-333500000000" /> <!-- serial number of the device. On a console type: smesg | grep SerialNumber -->
   </node>
 
   <!-- VISUALIZATION -->
