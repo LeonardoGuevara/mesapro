@@ -12,8 +12,8 @@ from topological_navigation.route_search2 import TopologicalRouteSearch2
 #from topological_navigation.tmap_utils import *
 from mesapro.msg import human_msg, hri_msg, robot_msg
 ##########################################################################################
-#operation_mode=rospy.get_param("/hri_safety_system/operation_mode") #you have to change /hri_safety_system/ if the node is not named like this
-operation_mode="logistics" #UVC or logistics
+operation_mode=rospy.get_param("/hri_safety_system/operation_mode") #you have to change /hri_safety_system/ if the node is not named like this
+#operation_mode="logistics" #UVC or logistics
 #Setup ROS publiser
 pub_safety = rospy.Publisher('human_safety_info', hri_msg,queue_size=1)
 safety_msg = hri_msg()
@@ -26,7 +26,7 @@ class robot_class:
         self.pos_x=0 #X
         self.pos_y=0 #Y
         self.pos_theta=0 #orientation
-        self.action=0 #initial value
+        self.action=4 #initial value, "waiting for human command" as initial condition
         self.current_goal="Unknown"  #name of current robot goal
         self.current_goal_info="Unknown"   #initial condition
         self.polytunnel=False #to know if robot is moving inside the polytunnel or not
@@ -112,10 +112,10 @@ class map_class:
         
 class hri_class:
     def __init__(self): #It is done only the first iteration
-        self.status=0
-        self.audio_message=0
+        self.status=0 #initial condition 
+        self.audio_message=0 #initial condition 
         self.safety_action=5 #initial condition     
-        self.human_command=0
+        self.human_command=0 #initial condition 
         self.critical_index=0 #index of the human considered as critical during interaction (it is not neccesary the same than the closest human or the goal human)
         self.critical_dist=0 #distance of the critical human
         self.risk=False #it is true if the detected human is considered in risk, used to avoid unnecesary stops with human who is not occluding the robot path
@@ -370,6 +370,10 @@ class hri_class:
             elif action==4: #if robot is waiting for human order
                 self.safety_action=5 # no safety action / keep the previous robot action
                 self.audio_message=2 # message to ask the human for new order
+                self.new_goal=final_goal # the current goal is not changed
+            if current_goal=="Unknown" or final_goal=="Unknown": #if the robot doesn't start moving yet
+                self.safety_action=5 # no safety action 
+                self.audio_message=0 # no message
                 self.new_goal=final_goal # the current goal is not changed
         else: #UVC
             self.new_goal=final_goal # the current goal is not changed

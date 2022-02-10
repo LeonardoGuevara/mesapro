@@ -214,7 +214,7 @@ init_cmd: |
   export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
   export_default THERMAL_INFO False # "True" means use thermal information from FLIR camera
   export_default IMAGE_ROTATION 0 # cameras orientation, it can be "0", "90", "180" or "270"
-  
+  export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   ###########################################################################################
   # Home GUI
   export_default USE_HOME_GUI false
@@ -341,7 +341,7 @@ windows:
 
 - name: hri_visualization
   panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$THERMAL_INFO #############################################################################################
+  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$THERMAL_INFO n_cameras:=$N_CAMERAS #############################################################################################
 - name: localisation_prelims_aditional
   panes:
   - roslaunch rasberry_bringup corner_lasers_merger.launch

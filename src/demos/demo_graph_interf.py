@@ -38,8 +38,6 @@ elif image_rotation==0:
 elif image_rotation==180: #IT IS NOT WELL TUNNED YET
     resize_param=[150,115,400,300] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=180
 #################################################################################################################################
-#Initializating cv_bridge
-bridge = CvBridge()
 #IMPORTING LABELS NAMES
 posture_labels=ar_param[2][1]
 motion_labels=ar_param[3][1]
@@ -49,10 +47,6 @@ audio_message_label=hs_param[1][1]
 safety_action_label=hs_param[2][1]
 human_command_label=hs_param[3][1]
 action_label=r_param[0][1]
-main_counter=0
-pub_hz=0.01
-visual_mode = rospy.get_param("/hri_visualization/visual_mode") #you have to change /hri_visualization/ if the node is not named like this
-#visual_mode=1 # visual_mode=1 means only perception, visual_mode=2 means simulated perception + simulated topo nav, visual_mode=3 means real robot
 #PLOT AREAS
 ##############################################################################################################################
 #VALUES TAKEN FROM human_perception_system.py
@@ -70,6 +64,16 @@ prob_5_init=1 #last area pixel percentage
 #########################################################################################################################
 #PLOT HRI PARAMETERS
 black_image_size=[680,650] #size of the black background where the parameters are shown
+visual_mode = rospy.get_param("/hri_visualization/visual_mode") #you have to change /hri_visualization/ if the node is not named like this
+#visual_mode=1 # visual_mode=1 means only perception, visual_mode=2 means simulated perception + simulated topo nav, visual_mode=3 means real robot
+n_cameras=rospy.get_param("/hri_visualization/n_cameras") #you have to change /hri_visualization/ if the node is not named like this
+#n_cameras=1 # 1 means that the back camera is emulated by reproducing the front camera image
+
+#GENERAL PURPUSES VARIABLES
+main_counter=0
+pub_hz=0.01
+#Initializating cv_bridge
+bridge = CvBridge()
 
 
 class human_class:
@@ -107,9 +111,100 @@ class human_class:
             self.orientation=human_info.orientation[hri.critical_index]
             self.area=human_info.area[hri.critical_index]
             
-    def rgb_thermal_callback(self,rgb_front, therm_front):
-        #camera front
-        #color_image_front = bridge.imgmsg_to_cv2(front_image, "bgr8")
+    def rgb_thermal_1_callback(self,rgb_front, therm_front):
+        ##################################################################################33
+        #Front cameras info extraction
+        therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
+        if image_rotation==90:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_front=therm_image_front
+        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
+        
+        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        if image_rotation==90:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_front=color_image_front            
+        
+        img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #to match the thermal field of view
+        img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
+        
+        self.image_size = img_rgb_rz_front.shape
+        ##################################################################################
+        #Back cameras emulation
+        therm_image_back=therm_image_front
+        if image_rotation==90:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_back=therm_image_back
+        img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
+        
+        color_image_back=color_image_front
+        if image_rotation==90:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_back=color_image_back            
+        img_rgb_rz_back=np.zeros((img_t_rot_back.shape[0],img_t_rot_back.shape[1],3),np.uint8)
+        img_rgb_rz_back=img_rgb_rot_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1],:]
+        
+        ##############################################################################################
+        #Here the images from two cameras has to be merged in a single image (front image left, back image back)
+        color_image=np.append(img_rgb_rz_front,img_rgb_rz_back,axis=1) 
+        therm_array=np.append(img_t_rot_front,img_t_rot_back,axis=1)
+        intensity_image=cv2.cvtColor(therm_array,cv2.COLOR_GRAY2RGB)
+        color_image = cv2.addWeighted(color_image,0.7,intensity_image,0.7,0)      
+        self.image=color_image
+        
+    def rgb_1_callback(self,rgb_front):
+        ##################################################################################33
+        #Front camera info extraction
+        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        if image_rotation==90:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_front=color_image_front            
+        
+        self.image_size = img_rgb_rot_front.shape
+        ##################################################################################
+        #Back cameras emulation
+        color_image_back=color_image_front
+        if image_rotation==90:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
+        elif image_rotation==270:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_back=color_image_back            
+
+        ##############################################################################################        
+        #Here the images from two cameras has to be merged in a single image (front image left, back image back)
+        color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
+        #######################################################################################
+        self.image=color_image
+        
+    def rgb_thermal_2_callback(self,rgb_front, therm_front,rgb_back, therm_back):
         ##################################################################################33
         #Front cameras info extraction
         therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
@@ -139,8 +234,7 @@ class human_class:
         self.image_size = img_rgb_rz_front.shape
         ##################################################################################
         #Back cameras info extraction
-        therm_image_back=therm_image_front
-        #therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
+        therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
         if image_rotation==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==180:
@@ -151,8 +245,7 @@ class human_class:
             img_t_rot_back=therm_image_back
         img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
         
-        color_image_back=color_image_front
-        #color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==180:
@@ -169,12 +262,10 @@ class human_class:
         color_image=np.append(img_rgb_rz_front,img_rgb_rz_back,axis=1) 
         therm_array=np.append(img_t_rot_front,img_t_rot_back,axis=1)
         intensity_image=cv2.cvtColor(therm_array,cv2.COLOR_GRAY2RGB)
-        color_image = cv2.addWeighted(color_image,0.7,intensity_image,0.7,0)
-        
+        color_image = cv2.addWeighted(color_image,0.7,intensity_image,0.7,0)      
         self.image=color_image
-        #visual_outputs(color_image)
-
-    def rgb_callback(self,rgb_front):
+        
+    def rgb_2_callback(self,rgb_front,rgb_back):
         ##################################################################################33
         #Front camera info extraction
         color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
@@ -190,8 +281,7 @@ class human_class:
         self.image_size = img_rgb_rot_front.shape
         ##################################################################################
         #Back camera info extraction
-        color_image_back=color_image_front
-        #color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==180:
@@ -205,7 +295,6 @@ class human_class:
         #Here the images from two cameras has to be merged in a single image (front image left, back image back)
         color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
         #######################################################################################
-        #self.processing(color_image,depth_array,therm_image)
         self.image=color_image
         
 class hri_class:
@@ -370,14 +459,30 @@ if __name__ == '__main__':
     # Setup and call subscription
     rospy.Subscriber('human_info',human_msg,human.human_callback)
     rospy.Subscriber('human_safety_info',hri_msg,hri.safety_callback)
-    if visual_mode==1 or visual_mode==3:    
-        if thermal_info==True:
-            thermal_front_sub=message_filters.Subscriber('/flir_module_driver1/thermal/image_raw', Image) #old topic name only for a single camera
-            image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #old topic name only for a single camera
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 1, 0.01)
-            ts.registerCallback(human.rgb_thermal_callback)
-        else:
-            rospy.Subscriber('camera/camera1/color/image_raw', Image,human.rgb_callback) #old topic name before thermal info
+    if n_cameras==1:
+        if visual_mode==1 or visual_mode==3:    
+            if thermal_info==True:
+                thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #old topic name only for a single camera
+                image_front_sub = message_filters.Subscriber('/camera/color/image_raw', Image)    #old topic name only for a single camera
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 1, 0.01)
+                ts.registerCallback(human.rgb_thermal_1_callback)
+            else:
+                rospy.Subscriber('camera/camera1/color/image_raw', Image,human.rgb_1_callback) #really old topic name before thermal info
+    else: #n_cameras==2
+        if visual_mode==1 or visual_mode==3:    
+            if thermal_info==True:
+                thermal_front_sub=message_filters.Subscriber('/flir_module_driver1/thermal/image_raw', Image) #new topic names
+                image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #new topic names
+                thermal_back_sub=message_filters.Subscriber('/flir_module_driver2/thermal/image_raw', Image) #new topic names
+                image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image)    #new topic names
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub,image_back_sub, thermal_back_sub], 1, 0.01)
+                ts.registerCallback(human.rgb_thermal_2_callback)
+            else:
+                image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #new topic names
+                image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image)    #new topic names
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub,image_back_sub], 1, 0.01)
+                ts.registerCallback(human.rgb_2_callback)
+                
     if visual_mode>=2:
         rospy.Subscriber('robot_info',robot_msg,robot.robot_callback_info)
         rospy.Subscriber('/robot_pose', Pose, robot.robot_callback_pos) 

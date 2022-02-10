@@ -5,6 +5,9 @@
     <arg name="posture_classifier_model" default="" />  
     <arg name="thermal_info" default="" />
     <arg name="image_rotation" default="" />
+    <arg name="n_cameras" default="" />
+    <arg name="openpose_visual" default="" />    
+    
     
     <node pkg="mesapro" type="human_detector_rgbd_thermal.py" name="hri_camera_detector">
         <param name="openpose_python" value="$(arg openpose_python)"/>
@@ -12,6 +15,8 @@
         <param name="posture_classifier_model" value="$(arg posture_classifier_model)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
         <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
+        <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
+        <param name="openpose_visual" type="bool" value="$(arg openpose_visual)"/>
     </node>
 </launch>
 

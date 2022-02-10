@@ -18,14 +18,14 @@ from mesapro.msg import human_detector_msg
 ##########################################################################################
 
 ##Importing RF model for posture recognition
-#posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
-posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
+#posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
 model_rf = joblib.load(posture_classifier_model)   
 ##Openpose initialization 
-#openpose_python=rospy.get_param("/hri_camera_detector/openpose_python") #you have to change /hri_camera_detector/ if the node is not named like this
-#openpose_models=rospy.get_param("/hri_camera_detector/openpose_models") #you have to change /hri_camera_detector/ if the node is not named like this
-openpose_python='/home/leo/rasberry_ws/src/openpose/build/python'
-openpose_models="/home/leo/rasberry_ws/src/openpose/models"
+openpose_python=rospy.get_param("/hri_camera_detector/openpose_python") #you have to change /hri_camera_detector/ if the node is not named like this
+openpose_models=rospy.get_param("/hri_camera_detector/openpose_models") #you have to change /hri_camera_detector/ if the node is not named like this
+#openpose_python='/home/leo/rasberry_ws/src/openpose/build/python'
+#openpose_models="/home/leo/rasberry_ws/src/openpose/models"
 try:
     sys.path.append(openpose_python);
     from openpose import pyopenpose as op
@@ -332,8 +332,8 @@ if __name__ == '__main__':
     rospy.init_node('human_detector_camera',anonymous=True)
     # Setup and call subscription
     #Camara front
-    image_front_sub = message_filters.Subscriber('camera/camera1/color/image_raw', Image)
-    depth_front_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image)
+    image_front_sub = message_filters.Subscriber('camera/camera1/color/image_raw', Image) #old topic names
+    depth_front_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image) #old topic names
     ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01) #1,0.01
     ts.registerCallback(human.camera_callback)
     if visualization==False:

@@ -7,7 +7,8 @@
     <arg name="visual_mode" default="1" />   
     <arg name="image_rotation" default="0" />  
     <arg name="thermal_info" default="False" />
-    <arg name="operation_mode" default="logistics" />    
+    <arg name="operation_mode" default="logistics" />   
+    <arg name="n_cameras" default="1" />
 
     <include file="$(find mesapro)/launch/bags_data_rgbd_legs.launch"/>
 
@@ -28,6 +29,7 @@
         <param name="config_direct" value="$(arg config_direct)"/>
         <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
+        <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
     </node>
 </launch>
 

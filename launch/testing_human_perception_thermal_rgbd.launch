@@ -7,7 +7,9 @@
     <arg name="visual_mode" default="1" />   
     <arg name="thermal_info" default="True" />
     <arg name="image_rotation" default="270" />
-    <arg name="operation_mode" default="logistics" />    
+    <arg name="operation_mode" default="logistics" />  
+    <arg name="n_cameras" default="1" />
+    <arg name="openpose_visual" default="True" />    
     
     <include file="$(find mesapro)/launch/bags_data_rgbd_thermal.launch"/>
 
@@ -21,6 +23,8 @@
         <param name="posture_classifier_model" value="$(arg posture_classifier_model)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
         <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
+        <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
+        <param name="openpose_visual" type="bool" value="$(arg openpose_visual)"/>
     </node>
 
     <node pkg="mesapro" type="human_perception_system.py" name="hri_perception"/>   
@@ -30,6 +34,7 @@
         <param name="config_direct" value="$(arg config_direct)"/>
         <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
+        <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
     </node>
 </launch>
 

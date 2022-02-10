@@ -128,7 +128,7 @@ class inRowTravServer(object):
         #########################################################################################################
         self.hri_dist=100                       # distance to the critical human computed by the safety_system
         self.hri_safety_action=5                # new safety action determined by the safety_system
-        self.robot_action=4                     # current robot action, initially waiting for human command,
+        self.robot_action=4                     # current robot action, initially "waiting for human command",
         self.han_start_dist=3.6                 # Human to robot Distance at which the robot starts to slow down
         self.han_final_dist=1                   # Human to robot Distance at which the robot must stop
         ########################################################################################################### 
