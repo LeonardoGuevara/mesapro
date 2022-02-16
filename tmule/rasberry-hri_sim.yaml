@@ -152,9 +152,10 @@ init_cmd: |
     else export_default SENTOR_CONFIG "${DEFAULT_PATH}/sentor.yaml";
   fi
   export_default STARTUP_SLACKEROS false
-
-  export_default RVIZ_CONFIG $(rospack find rasberry_bringup)/resources/row_traversal_action.rviz
-
+  ################################################################################################# To show the pose of the simulated pickers
+  #export_default RVIZ_CONFIG $(rospack find rasberry_bringup)/resources/row_traversal_action.rviz
+  export_default RVIZ_CONFIG $(rospack find mesapro)/config/row_traversal_action_sim.rviz
+  #################################################################################################
   # Data Collection
   export_default DATA_COLLECTION false
   export default DATA_CAPTURE true
@@ -236,7 +237,7 @@ windows:
 ######################################################################## without teleoperation for human simulation purposes
 - name: robot
   panes:
-  - roslaunch rasberry_bringup robot_bringup.launch robot_model:=$(rospack find rasberry_bringup)/config/robots/robot_$ROBOT_NO.yaml model_extras:=$(rospack find rasberry_bringup)/urdf/robot_${ROBOT_NO}_extras.xacro datum_file:="$DATUM_FILE" ekf_publish_tf:="$EKF_PUBLISH_TF" simple_sim:=$USE_SIM with_teleoperation:=false teleop_controller_type:=$TELEOP_CONTROLLER teleop_controller:=$(rospack find thorvald_teleop)/config/$TELEOP_CONTROLLER.yaml joy_dev:=$JOY_DEV world:=$GAZEBO_WORLD_PATH with_gui:=$USE_GUI start_pose_x:=$ROBOT_POS_X start_pose_y:=$ROBOT_POS_Y start_pose_Y:=$ROBOT_POS_A include_plants:=$INCLUDE_PLANTS can_interface_type:=$CAN_INTERFACE_TYPE can_interface_name:=$CAN_INTERFACE_NAME
+  - roslaunch rasberry_bringup robot_bringup.launch robot_model:=$(rospack find rasberry_bringup)/config/robots/robot_$ROBOT_NO.yaml model_extras:=$(rospack find rasberry_bringup)/urdf/robot_${ROBOT_NO}_extras.xacro datum_file:="$DATUM_FILE" ekf_publish_tf:="$EKF_PUBLISH_TF" simple_sim:=$USE_SIM with_teleoperation:=false teleop_controller_type:=$TELEOP_CONTROLLER teleop_controller:=$(rospack find thorvald_teleop)/config/$TELEOP_CONTROLLER.yaml joy_dev:=$JOY_DEV world:=$GAZEBO_WORLD_PATH with_gui:=$USE_GUI start_pose_x:=$ROBOT_POS_X start_pose_y:=$ROBOT_POS_Y start_pose_Y:=$ROBOT_POS_A include_plants:=$INCLUDE_PLANTS can_interface_type:=$CAN_INTERFACE_TYPE can_interface_name:=$CAN_INTERFACE_NAME with_actors:=false
   check: "rostopic list | grep -q -e base_state"
   tags: [core, nav]
 ######################################################################## 
