@@ -14,6 +14,7 @@ import joblib
 #import pickle
 import time
 import cv2
+import yaml
 from mesapro.msg import human_detector_msg
 ##########################################################################################
 #Feature extraction variables
@@ -24,6 +25,7 @@ performance="normal" #OpenPose performance, initial condition
 time_threshold=3 #3 seconds as the minimum time between two consecute changes of openpose performance
 time_change=0 #initial counter value
 avoid_area=0.05 #percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
+search_area=0.1 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
 ##Importing RF model for posture recognition
 #posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
 posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
@@ -62,23 +64,34 @@ thermal_info=False
 temp_thresh=140 #threshold to determine if the temperature if a pixel is considered as higher as human temperature
 detection_thresh=0.1 #percentage of pixels in the thermal image which have to satisfy the temp_thresh in order to rise the thermal_detection flag
 #image_rotation=rospy.get_param("/hri_camera_detector/image_rotation") #you have to change /hri_camera_detector/ if the node is not named like this
-image_rotation=270 #it can be 0,90, 180, 270 measured clockwise        
-if image_rotation==270 or image_rotation==90:
-    resize_param=[150,115,300,400] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=270
-if image_rotation==90: #IT IS NOT WELL TUNNED YET
+image_rotation=0 #it can be 0,90,270 measured clockwise        
+if image_rotation==270:
+    resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 300/400 = 120/160
+elif image_rotation==90: #IT IS NOT WELL TUNNED YET
     resize_param=[150,115,300,400] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=90
-elif image_rotation==0: #IT IS NOT WELL TUNNED YET
-    resize_param=[120,90,400,300] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=0
-elif image_rotation==180: #IT IS NOT WELL TUNNED YET
-    resize_param=[150,115,400,300] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=180
+else: #image_rotation==0 
+    resize_param=[105,120,388,291] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=0
 #VISUALIZATION VARIABLES
 #n_cameras=rospy.get_param("/hri_camera_detector/n_cameras") #you have to change /hri_camera_detector/ if the node is not named like this
 n_cameras=1 # 1 means that the back camera is emulated by reproducing the front camera image
 #openpose_visual=rospy.get_param("/hri_camera_detector/openpose_visual") #you have to change /hri_camera_detector/ if the node is not named like this
 openpose_visual=True #to show or not a window with the human detection delivered by openpose
 #RGBD CAMERA INTRINSIC,DISTORTION PARAMETERS
-intr_param=[384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] #[fx cx fy cy]
-dist_param=[-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] #[k1 k2 t1 t2 k3]
+#posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
+posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+#config_direct=rospy.get_param("/hri_camera_detector/config_direct") #you have to change /hri_camera_detector/ if the node is not named like this
+config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+a_yaml_file = open(config_direct+"global_config.yaml")
+parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
+camera_param=list(dict.items(parsed_yaml_file["camera_config"]))
+intr_param=camera_param[0][1]
+dist_param=camera_param[1][1]
+#intr_param=[384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] #[fx cx fy cy]
+#dist_param=[-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] #[k1 k2 t1 t2 k3]
+mtx =  np.array([[intr_param[0], 0, intr_param[1]],
+                 [0, intr_param[2], intr_param[3]],
+                 [0, 0, 1]])
+dist=np.array(dist_param)
 #########################################################################################################################
 
 class human_class:
@@ -106,38 +119,34 @@ class human_class:
         therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_t_rot_front=therm_image_front
-        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
+        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
         
-        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
         
-        img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #to match the thermal field of view
+        img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) # crop to match the thermal field of view
         img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
-        depth_image_front = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_d_rot_front=depth_array_front            
-        img_d_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1]),np.uint8) #to match the thermal field of view
+        img_d_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1]),np.uint8) #crop to match the thermal field of view
         img_d_rz_front=img_d_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]     
         
         self.image_size = img_rgb_rz_front.shape
@@ -146,8 +155,6 @@ class human_class:
         therm_image_back=therm_image_front
         if image_rotation==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -157,8 +164,6 @@ class human_class:
         color_image_back=color_image_front
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -169,8 +174,6 @@ class human_class:
         depth_array_back=depth_array_front
         if image_rotation==90:
             img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -193,35 +196,31 @@ class human_class:
     def rgbd_1_callback(self,rgb_front, depth_front):
         ##################################################################################33
         #Front camera info extraction
-        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
         
-        depth_image_front = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
+        
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_d_rot_front=depth_array_front            
-        
         self.image_size = img_rgb_rot_front.shape
         ##################################################################################
         #Back cameras emulation
         color_image_back=color_image_front
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -230,23 +229,22 @@ class human_class:
         depth_array_back=depth_array_front
         if image_rotation==90:
             img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_d_rot_back=depth_array_back   
-                
+               
         ##############################################################################################        
         #Here the images from two cameras has to be merged in a single image (front image left, back image back)
         color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
         depth_array=np.append(img_d_rot_front,img_d_rot_back,axis=1) 
         therm_array=np.zeros((color_image.shape[0],color_image.shape[1]),np.uint8)
+
         self.color_image=color_image
         self.depth_array=depth_array
         self.therm_array=therm_array
         #######################################################################################
-    
+
     
     def rgbd_thermal_2_callback(self,rgb_front, depth_front, therm_front,rgb_back, depth_back, therm_back):
         ##################################################################################33
@@ -254,38 +252,35 @@ class human_class:
         therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_t_rot_front=therm_image_front
-        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
+        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
         
-        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
         
-        img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #to match the thermal field of view
+        img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #crop to match the thermal field of view
         img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
-        depth_image_front = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
+        
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_d_rot_front=depth_array_front            
-        img_d_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1]),np.uint8) #to match the thermal field of view
+        img_d_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1]),np.uint8) #crop to match the thermal field of view
         img_d_rz_front=img_d_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]     
         
         self.image_size = img_rgb_rz_front.shape
@@ -294,19 +289,17 @@ class human_class:
         therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
         if image_rotation==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_t_rot_back=therm_image_back
         img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
         
-        color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        color_image = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        color_image_back=cv2.undistort(color_image, mtx, dist) #undistort image 
+        
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -314,12 +307,12 @@ class human_class:
         img_rgb_rz_back=np.zeros((img_t_rot_back.shape[0],img_t_rot_back.shape[1],3),np.uint8)
         img_rgb_rz_back=img_rgb_rot_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1],:]
         
-        depth_image_back = bridge.imgmsg_to_cv2(depth_back, "passthrough")
+        depth_image = bridge.imgmsg_to_cv2(depth_back, "passthrough")
+        depth_image_back=cv2.undistort(depth_image, mtx, dist) #undistort image 
+        
         depth_array_back = np.array(depth_image_back, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -342,22 +335,22 @@ class human_class:
     def rgbd_2_callback(self,rgb_front, depth_front,rgb_back, depth_back):
         ##################################################################################33
         #Front camera info extraction
-        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
+        
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
         
-        depth_image_front = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
+        
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -366,22 +359,22 @@ class human_class:
         self.image_size = img_rgb_rot_front.shape
         ##################################################################################
         #Back camera info extraction
-        color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        color_image = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        color_image_back=cv2.undistort(color_image, mtx, dist) #undistort image 
+        
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_back=color_image_back            
 
-        depth_image_back = bridge.imgmsg_to_cv2(depth_back, "passthrough")
+        depth_image = bridge.imgmsg_to_cv2(depth_back, "passthrough")
+        depth_image_back=cv2.undistort(depth_image, mtx, dist) #undistort image 
+        
         depth_array_back = np.array(depth_image_back, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==180:
-            img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -430,7 +423,7 @@ class human_class:
                 time_change=time.time()
                 #datum = op.Datum()
 
-        print("PERFORMANCE",performance)
+        #print("PERFORMANCE",performance)
         #print("MIN DIS",min(self.distance))
         ####################################################################################################
         datum.cvInputData = color_image
@@ -440,7 +433,7 @@ class human_class:
         self.image_show=datum.cvOutputData #for visualization 
          
         if keypoints is None: #if there is no human skeleton detected
-            print('No human detected')
+            #print('No human detected')
             self.n_human=0
         else: #if there is at least 1 human skeleton detected
             #Feature extraction
@@ -460,7 +453,7 @@ class human_class:
                     self.thermal_detection=False   
         #Publish     
         if self.n_human>0:
-            print('Human detection')
+            #print('Human detection')
             msg.posture = [int(x) for x in list(self.posture[:,0])] #to ensure publish int
             msg.posture_prob = list(self.posture[:,1])
             msg.centroid_x =list(self.centroid[:,0])
@@ -473,7 +466,7 @@ class human_class:
             msg.intensity=[int(x) for x in list(self.intensity[:,0])] #to ensure publish int 
             pub.publish(msg)
         elif self.n_human==0 and self.thermal_detection==True:
-            print('Thermal detection')
+            #print('Thermal detection')
             msg.thermal_detection=self.thermal_detection
             pub.publish(msg)
     
@@ -532,14 +525,41 @@ class human_class:
             J_sum2=0
             valid=0
             temp_max=0
+            joint_temp_max=0
             for k in range(0,n_joints):  
                 J_sum2=joints_x_trans[k]**2+joints_y_trans[k]**2+joints_z_trans[k]**2+J_sum2  
                 if joints_x_trans[k]!=0 and joints_y_trans[k]!=0 and joints_z_trans[k]!=0:
                     valid=valid+1
                     if temp_max<joints_temp_init[k]:
-                        temp_max=joints_temp_init[k]
+                        temp_max=joints_temp_init[k] #updating the joint highest temp
+                        joint_temp_max=k #index of the joint with the highest temp
             Js=sqrt(J_sum2/(n_joints))
-             #only continue if there are enough joints detected on the skeleton and/or temp_max satisfy the threshold
+            #Find pixel with max temp around the joint with the highest temp of the skeleton
+            if thermal_info==True and temp_max>0:
+                #Defining the limits of the search
+                init_search_x=int(joints_x_init[joint_temp_max]-(self.image_size[1]*search_area))
+                if init_search_x<0:
+                    init_search_x=0
+                end_search_x=int(joints_x_init[joint_temp_max]+(self.image_size[1]*search_area))
+                if end_search_x>2*self.image_size[1]-2:
+                    end_search_x=2*self.image_size[1]-2
+                init_search_y=int(joints_y_init[joint_temp_max]-(self.image_size[0]*search_area))
+                if init_search_y<0:
+                    init_search_y=0
+                end_search_y=int(joints_y_init[joint_temp_max]+(self.image_size[0]*search_area))
+                if end_search_y>self.image_size[0]-1:
+                    end_search_y=self.image_size[0]-1
+                #Search
+                for i in range(init_search_x,end_search_x):
+                    if temp_max>=temp_thresh:
+                        break #no more search
+                    for j in range(init_search_y,end_search_y):
+                        pixel_temp=therm_array[j,i]
+                        if temp_max<pixel_temp:
+                            temp_max=pixel_temp
+                            if temp_max>=temp_thresh:
+                                break #no more search
+            #only continue if there are enough joints detected on the skeleton and/or temp_max satisfy the threshold
             if Js!=0 and valid>=joints_min and ((temp_max>=temp_thresh and thermal_info==True) or thermal_info==False):
                 intensity[kk,0]=temp_max
                 joints_x = joints_x_trans/Js      
@@ -626,14 +646,30 @@ class human_class:
                         #CAMERA ID
                         if centroid[kk,0]<=width: #camera front
                             camera_id[kk]=0
-                            #HUMAN XY POSITION IN 3D WORLD
-                            centroid_3d[kk,0] = distance[kk,0] #z-axis in camera 3d world is the x-axis of robot frame
-                            centroid_3d[kk,1] = (centroid[kk,0] - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the y-axis of the robot frame                       
+                            #HUMAN XY POSITION IN PIXELS INTO 3D WORLD
+                            centroid_3d[kk,0] = distance[kk,0] #z-axis in camera 3d world is the positive x-axis of robot frame
+                            #MAP CENTROID COORDINATES FROM THE CROPPED AND ROTATED IMAGE TO THE ORIGINAL IMAGE (UNDISTORTED)
+                            if thermal_info==True:
+                                orig_centroid_y=centroid[kk,0]+resize_param[1]
+                            else: #means that the original image was not cropped
+                                orig_centroid_y=centroid[kk,0]
+                            if image_rotation==270:
+                                centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame
+                            else: #rotation==0
+                                centroid_3d[kk,1] = -(orig_centroid_y - intr_param[1]) * distance[kk,0]  / intr_param[0] #y-axis in camera 3d world is the negative y-axis of the robot frame   
                         else:#camera back
                             camera_id[kk]=1
-                            #HUMAN XY POSITION IN 3D WORLD
-                            centroid_3d[kk,0] = distance[kk,0] #z-axis in camera 3d world is the x-axis of robot frame
-                            centroid_3d[kk,1] = (centroid[kk,0]-width - intr_param[3]) * distance[kk,0] / intr_param[2] #y-axis in camera 3d world is the y-axis of the robot frame                       
+                            #HUMAN XY POSITION IN PIXELS INTO 3D WORLD
+                            centroid_3d[kk,0] = -distance[kk,0] #z-axis in camera 3d world is the negative x-axis of robot frame
+                            #MAP CENTROID COORDINATES FROM THE CROPPED AND ROTATED IMAGE TO THE ORIGINAL IMAGE (UNDISTORTED)
+                            if thermal_info==True:
+                                orig_centroid_y=centroid[kk,0]-width+resize_param[1]
+                            else: #means that the original image was not cropped
+                                orig_centroid_y=centroid[kk,0]-width
+                            if image_rotation==270:
+                                centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * distance[kk,0] / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame    
+                            else: #rotation==0
+                                centroid_3d[kk,1] = (orig_centroid_y - intr_param[1]) * distance[kk,0] / intr_param[0] #y-axis in camera 3d world is the positive y-axis of the robot frame                       
                         
 
         #return features,posture,orientation,distance,centroid,camera_id
@@ -663,7 +699,7 @@ if __name__ == '__main__':
     if n_cameras==1:
         #Camara front
         if thermal_info==True:
-            thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #old topic name only for a single camera
+            thermal_front_sub=message_filters.Subscriber('/flir_module_driver2/thermal/image_raw', Image) #new topic name only for a single camera
         image_front_sub = message_filters.Subscriber('/camera/color/image_raw', Image) #old topic name only for a single camera
         depth_front_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw', Image) #old topic name only for a single camera
         if thermal_info==True:
@@ -693,6 +729,8 @@ if __name__ == '__main__':
         #Rate setup
         rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
         while not rospy.is_shutdown():
+            #cv2.imshow("Human detector",human.color_image )
+            #cv2.waitKey(10)  
             color_image=human.color_image
             depth_array=human.depth_array
             therm_array=human.therm_array
@@ -700,10 +738,12 @@ if __name__ == '__main__':
             image=human.image_show
             centroids_x=human.centroid[:,0]
             centroids_y=human.centroid[:,1]
-            print("X",human.centroid_3d[:,0])
-            print("Y",human.centroid_3d[:,1])
-            print("Dist",human.distance[:,:])
-            print("camera",human.camera_id[:,:])
+            for i in range(0,1):
+                if human.camera_id[i,0]==1:
+                    print("X",human.centroid_3d[i,0])
+                    print("Y",human.centroid_3d[i,1])
+                    print("Dist",human.distance[i,:])
+                    print("camera",human.camera_id[i,:])
             if openpose_visual==True:            
                 intensity_image=cv2.cvtColor(therm_array,cv2.COLOR_GRAY2RGB)
                 if thermal_info==True:

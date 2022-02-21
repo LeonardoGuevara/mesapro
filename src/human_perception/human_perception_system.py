@@ -181,8 +181,8 @@ class human_class:
         rob_speed=robot.speed
         ##############################################################################################################################################
         #TO MERGE NEW HUMAN DETECTION WITH TRACKED LIST, OR TO ADD NEW DETECTION TO THE TRACKING LIST, OR TO REMOVE OLD DETECTIONS OR FALSE POSITIVES FROM THE LIST
-        print("NEW",centroid_new[:,0])
-        print("TRACK",centroid[:,0])
+        #print("NEW",centroid_new[:,0])
+        #print("TRACK",centroid[:,0])
         
         #####New LiDAR info#####################################################################################        
         if new_data[0]==1:

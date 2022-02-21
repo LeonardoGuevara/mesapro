@@ -5,6 +5,10 @@ directories_config:
   training_set: '/home/leo/aa_data/new_data/training/'
   testing_set: '/home/leo/aa_data/new_data/testing/' 
 ###############################################  
+camera_config: #realsense D455
+  intr_param: [384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] #[fx cx fy cy]
+  dist_param: [-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] #[k1 k2 t1 t2 k3]
+##################################################
 action_recog_config:
   n_joints: 19       #19 body joints from openpose output (25 available)
   n_features: 36     #19 distances + 17 angles = 36 features
