@@ -3,6 +3,7 @@
     <arg name="openpose_python" default="" />
     <arg name="openpose_models" default="" />
     <arg name="posture_classifier_model" default="" />  
+    <arg name="config_direct" default="" /> 
     <arg name="thermal_info" default="" />
     <arg name="image_rotation" default="" />
     <arg name="n_cameras" default="" />
@@ -13,6 +14,7 @@
         <param name="openpose_python" value="$(arg openpose_python)"/>
         <param name="openpose_models" value="$(arg openpose_models)"/>
         <param name="posture_classifier_model" value="$(arg posture_classifier_model)"/>
+        <param name="config_direct" value="$(arg config_direct)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
         <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
         <param name="n_cameras" type="int" value="$(arg n_cameras)"/>

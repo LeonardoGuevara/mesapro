@@ -15,13 +15,24 @@ from mesapro.msg import human_msg, human_detector_msg
 pub = rospy.Publisher('human_info', human_msg,queue_size=1) #small queue means priority to new data
 msg = human_msg()
 pub_hz=0.01 #publising rate in seconds
-#Parameters for area inference
+#Parameters for camera area inference
+max_dist=8 #in meters, the probabilities are fixed at prob_init from this distance 
+delta_prob_1_4=0.17 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
+delta_prob_2_3=0.12
+offset=0.02 #in case camera is not perfectly aligned, can be positive or negative
+prob_2_init=0.45 #in pixels percent of area 2
+prob_3_init=(0.5-prob_2_init)+0.5+offset
+prob_1_init=prob_2_init-delta_prob_2_3
+prob_4_init=prob_3_init+delta_prob_2_3
+prob_0_init=0 #initial area pixel percentage
+prob_5_init=1 #last area pixel percentage
+#Parameters for lidar area inference
 row_width=1.3 #in meters
 angle_area=60 # in degrees mesuared from the local x-axis robot frame
 #Parameters for matching
 meter_threshold=[0.5,1] # error in meters within two human detections are considered the same human, different for lidar than for camera
 tracking_threshold=3 #times a data is received
-w_data=[0.2,0.8] #weights used for calculating a weighted average during matching old with new data
+w_distance=[0.2,0.8] #weights used for calculating a distance weighted average during matching old with new data
 #Parameters for Motion inference
 n_samples=8 #number of samples used for the motion inference
 n_samples_gest=2 #number of samples used for the gesture inference
@@ -47,13 +58,13 @@ class human_class:
     def __init__(self): #It is done only the first iteration
         #General purposes variables
         self.n_human=1 # considering up to 1 human to track initially
+        self.image_width=848 #initial value
         #Variables to store temporally the info of human detectection at each time instant
-        self.position_lidar=np.zeros([self.n_human,2]) #[x,y] from lidar local frame
+        self.position=np.zeros([self.n_human,2]) #[x,y] from lidar local frame
         self.posture=np.zeros([self.n_human,2]) #from camera [posture_label,posture_probability]
         self.centroid=np.zeros([self.n_human,2]) #x,y (pixels) of the human centroid, from camera
         self.orientation=np.zeros([self.n_human,1]) # it can be "front" or "back" if the human is facing the robot or not , from camera
-        self.distance=np.zeros([self.n_human,1])  # distance between the robot and the average of the skeleton joints distances taken from the depth image (from camera local frame)
-        self.position_cam=np.zeros([self.n_human,2]) #[x,y] from camera local frame
+        self.distance=np.zeros([self.n_human,1])  # distance between the robot and the average of the skeleton joints distances taken from the depth image, from camera
         
         #Variables to store the info of relevant humans tracked along the time
         self.position_track=np.zeros([self.n_human,2])
@@ -82,7 +93,7 @@ class human_class:
             #    print('No human detected from lidar')
             if legs.poses is not None: #only if there are legs detected           
                 k=0
-                pos=self.position_lidar
+                pos=self.position
                 for pose in legs.poses:
                     if k<len(pos):
                         ##########################################################################################################
@@ -96,7 +107,7 @@ class human_class:
                     k=k+1
                 if k<len(pos): #if there are less human detected than before
                     pos=pos[0:k,:]    
-                self.position_lidar=pos
+                self.position=pos
                 new_data[0]=1 # update flag for new data
                 time_diff[0]=time.time()-time_init-time_data[0]
                 time_data[0]=time.time()-time_init # update time when the last data was received
@@ -109,7 +120,6 @@ class human_class:
             orientation=self.orientation
             distance=self.distance
             centroid=self.centroid
-            position_cam=self.position_cam
             for i in range(0,len(data.posture)):
                 if i<len(posture):
                     posture[k,0]=data.posture[i]
@@ -118,34 +128,26 @@ class human_class:
                     distance[k,0]=data.distance[i]
                     centroid[k,0]=data.centroid_x[i]
                     centroid[k,1]=data.centroid_y[i]
-                    position_cam[k,0]=data.position_x[i]
-                    position_cam[k,1]=data.position_y[i]
                 else: #if there are more human detected than before
                     posture_new=np.array([data.posture[i],data.posture_prob[i]])
                     orientation_new=np.array([data.orientation[i]])
                     distance_new=np.array([data.distance[i]])
                     centroid_new=np.array([data.centroid_x[i],data.centroid_y[i]])
-                    position_new=np.array([data.position_x[i],data.position_y[i]])
-                    
                     posture=np.append(posture,[posture_new],axis=0)
                     orientation=np.append(orientation,[orientation_new],axis=0)
                     distance=np.append(distance,[distance_new],axis=0)
                     centroid=np.append(centroid,[centroid_new],axis=0)
-                    position_cam=np.append(position_cam,[position_new],axis=0)
-                    
                 k=k+1
             if k<len(posture): #if there are less human detected than before
                 posture=posture[0:k,:]
                 orientation=orientation[0:k,:]
                 distance=distance[0:k,:]
                 centroid=centroid[0:k,:]
-                position_cam=position_cam[0:k,:]
             self.posture=posture
             self.orientation=orientation
             self.distance=distance
             self.centroid=centroid
-            self.position_cam=position_cam
-            
+            self.image_width=data.image_size[1]
         
             new_data[1]=1 # update flag for new data
             time_diff[1]=time.time()-time_init-time_data[1] 
@@ -168,41 +170,43 @@ class human_class:
         centroid=self.centroid_track
         orientation=self.orientation_track
         distance=self.distance_track
-        position_cam_new=self.position_cam
         area=self.area
         counter_old=self.counter_old
-        position_lidar_new=self.position_lidar
+        position_new=self.position
         posture_new=self.posture
         centroid_new=self.centroid
         orientation_new=self.orientation
         distance_new=self.distance
+        image_width=self.image_width
         rob_speed=robot.speed
         ##############################################################################################################################################
         #TO MERGE NEW HUMAN DETECTION WITH TRACKED LIST, OR TO ADD NEW DETECTION TO THE TRACKING LIST, OR TO REMOVE OLD DETECTIONS OR FALSE POSITIVES FROM THE LIST
+        #print("NEW",centroid_new[:,0])
+        #print("TRACK",centroid[:,0])
         
         #####New LiDAR info#####################################################################################        
         if new_data[0]==1:
             #print("NEW DATA LIDAR")
-            diff=np.zeros([n_human,len(position_lidar_new[:,0])]) #vector with the error between distances
-            area_new=np.zeros([len(position_lidar_new[:,0]),1]) #vector with the area of the image where the new human is detected
-            new_human_flag=np.zeros([len(position_lidar_new[:,0]),1]) #assuming all are new humans
+            diff=np.zeros([n_human,len(position_new[:,0])]) #vector with the error between distances
+            area_new=np.zeros([len(position_new[:,0]),1]) #vector with the area of the image where the new human is detected
+            new_human_flag=np.zeros([len(position_new[:,0]),1]) #assuming all are new humans
             for k in range(0,n_human): 
-                for kk in range(0,len(position_lidar_new[:,0])):
-                    distance_lidar=sqrt((position_lidar_new[kk,0])**2+(position_lidar_new[kk,1])**2) 
+                for kk in range(0,len(position_new[:,0])):
+                    distance_lidar=sqrt((position_new[kk,0])**2+(position_new[kk,1])**2) 
                     diff[k,kk]=abs(distance[k,:]-distance_lidar)        
                 counter_no_new_data=0 # counter to know if the k-th human tracked is not longer detected
-                for kk in range(0,len(position_lidar_new[:,0])):
+                for kk in range(0,len(position_new[:,0])):
                     if new_human_flag[kk]==0: # Consider the kk-th new human only if it was not matched with another tracked human before
                         #Determining the area where the new human is detected
                         ##############################################################################################################################
                         #It depends how to interpret the X-Y frame used by the human leg detector
-                        angle=atan2(position_lidar_new[kk,1],position_lidar_new[kk,0])# if local x-axis is aligned to the robot orientation
+                        angle=atan2(position_new[kk,1],position_new[kk,0])# if local x-axis is aligned to the robot orientation
                         #############################################################################################################################
                         if angle>pi: #  to keep the angle between [-180,+180]
                             angle=angle-2*pi
                         if angle<-pi:
                             angle=angle+2*pi
-                        area_new[kk,0]=self.area_inference_lidar(angle,position_lidar_new[kk,1],position_lidar_new[kk,0])                     
+                        area_new[kk,0]=self.area_inference_lidar(angle,position_new[kk,1],position_new[kk,0])                     
                         ###############################################################################################################################
                         #Determine if a new data match with the k-th human tracked
                         if sensor[k]==2: #if previous data is from camera
@@ -212,11 +216,10 @@ class human_class:
                         if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]:# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk                           
                             #Updating speed,motion and time_track
-                            dist_lidar=sqrt(position_lidar_new[new_index,0]**2+position_lidar_new[new_index,1]**2)
+                            dist_lidar=sqrt(position_new[new_index,0]**2+position_new[new_index,1]**2)
                             motion_diff=distance[k,:]-dist_lidar
                             speed[k,:]=abs(motion_diff/time_diff[0])-rob_speed
                             time_track[k,0]=time_data[0]
-                            #GIVING PRIORITY TO LIDAR DATA FOR MOTION ESTIMATION
                             if sensor[k]==2: # if human was previosly tracked by a camera, then remove the speed_buffer info to only consider newer lidar info
                                 counter_motion[k]=0
                             if counter_motion[k]<n_samples: #while the recorded data is less than n_points                
@@ -228,12 +231,11 @@ class human_class:
                                 speed_buffer[k,n_samples-1]=speed[k,:]
                                 motion[k]=self.human_motion_inference(speed_buffer[k,:])
                             #Updating position, area, counter_old and distance
-                            position[k,0]=w_data[0]*position[k,0]+w_data[1]*position_lidar_new[new_index,0]
-                            position[k,1]=w_data[0]*position[k,1]+w_data[1]*position_lidar_new[new_index,1]
+                            position[k,:]=position_new[new_index,:]
                             area[k,0]=area_new[new_index,0]
                             counter_old[k,0]=counter_old[k,0]-1
                             new_human_flag[new_index]=1 #it is not a new human
-                            distance[k,:]=w_data[0]*distance[k,:]+w_data[1]*dist_lidar
+                            distance[k,:]=w_distance[0]*distance[k,:]+w_distance[1]*dist_lidar
                             #Updating sensor    
                             if sensor[k]==2: #if before it was only from camera
                                 sensor[k,:]=0 #now is from both
@@ -242,7 +244,7 @@ class human_class:
                             counter_no_new_data=counter_no_new_data+1 #counter to know if the k-th human tracked does not have a new data
                     else:
                         counter_no_new_data=counter_no_new_data+1 #counter to know if the k-th human tracked does not have a new data
-                if counter_no_new_data==len(position_lidar_new[:,0]): #If there is no a new detection of the k-th human
+                if counter_no_new_data==len(position_new[:,0]): #If there is no a new detection of the k-th human
                     if sensor[k,:]!=2: # consider only if the data was not originally taken from the lidar or lidar+camera
                         if counter_old[k,0]<0: #if is not detected for one instant, then reset it to 0
                             counter_old[k,0]=0    
@@ -309,12 +311,12 @@ class human_class:
                     #print('New human tracked from the lidar')
                     n_human=n_human+1
                     #Human perception
-                    position=np.append(position,[position_lidar_new[k,:]],axis=0)
+                    position=np.append(position,[position_new[k,:]],axis=0)
                     posture=np.append(posture,np.zeros([1,2]),axis=0)
                     centroid=np.append(centroid,np.zeros([1,2]),axis=0)
                     orientation=np.append(orientation,np.zeros([1,1]),axis=0)
                     distance=np.append(distance,np.zeros([1,1]),axis=0)
-                    distance[-1,0]=sqrt((position_lidar_new[k,0])**2+(position_lidar_new[k,1])**2) 
+                    distance[-1,0]=sqrt((position_new[k,0])**2+(position_new[k,1])**2) 
                     sensor=np.append(sensor,np.ones([1,1]),axis=0) #1 because it is a lidar type data
                     #Posture and Motion inference
                     motion=np.append(motion,np.zeros([1,1]),axis=0) #new human detection starts with motion label 0 = "not_defined"
@@ -331,7 +333,6 @@ class human_class:
                     #Human Tracking
                     counter_old=np.append(counter_old,np.ones([1,2]),axis=0) #it begins in 1 to be sure it is not a false positive
                     area=np.append(area,[area_new[k]],axis=0)
-        
         #####New camera info###########################################################################################################
         if new_data[1]==1: 
             #print("NEW DATA CAMERA")
@@ -344,16 +345,10 @@ class human_class:
                     diff[k,kk]=abs(distance[k,:]-distance_new[kk,:])
                 counter_no_new_data=0 # counter to know if the k-th human tracked is not longer detected
                 for kk in range(0,len(centroid_new[:,0])):
-                    if new_human_flag[kk]==0: # Consider the kk-th new human only if it was not matched with another tracked human before                     
-                        ##############################################################################################################################
-                        angle=atan2(position_cam_new[kk,1],position_cam_new[kk,0])# if local x-axis is aligned to the robot orientation
-                        #############################################################################################################################
-                        if angle>pi: #  to keep the angle between [-180,+180]
-                            angle=angle-2*pi
-                        if angle<-pi:
-                            angle=angle+2*pi
-                        area_new[kk,0]=self.area_inference(angle,position_cam_new[kk,1],position_cam_new[kk,0])                     
-                        
+                    if new_human_flag[kk]==0: # Consider the kk-th new human only if it was not matched with another tracked human before
+                        #Determining the area where the new human is detected by each camera
+                        area_new[kk,0]=self.area_inference_camera(centroid_new[kk,0],distance_new[kk,0],image_width)
+                            
                         if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]: #and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk
                             #Updating posture
@@ -374,7 +369,7 @@ class human_class:
                             orientation[k,:]=orientation_new[new_index,:]
                             #Updating time_track
                             time_track[k,1]=time_data[1]                   
-                            #GIVING PRIORITY TO LIDAR DATA FOR MOTION ESTIMATION
+                            #Updating distance, motion, and area
                             if sensor[k]==2: #only update with camera info if no lidar info is available                          
                                 #Updating speed, motion
                                 motion_diff=distance[k,:]-distance_new[new_index,:]
@@ -387,11 +382,9 @@ class human_class:
                                     speed_buffer[k,0:n_samples-1]=speed_buffer[k,1:n_samples]
                                     speed_buffer[k,n_samples-1]=speed[k,:]
                                     motion[k]=self.human_motion_inference(speed_buffer[k,:])
-                            #Updating position, distance and area
-                            position[k,0]=w_data[0]*position[k,0]+w_data[1]*position_cam_new[new_index,0]
-                            position[k,1]=w_data[0]*position[k,1]+w_data[1]*position_cam_new[new_index,1]
-                            distance[k,:]=w_data[0]*distance[k,:]+w_data[1]*distance_new[new_index,:]
-                            area[k,0]=area_new[new_index,0]                           
+                                #Updating distance and area
+                                distance[k,:]=w_distance[0]*distance[k,:]+w_distance[1]*distance_new[new_index,:]
+                                area[k,0]=area_new[new_index,0]                           
                             #Updating counter_old    
                             counter_old[k,1]=counter_old[k,1]-1                          
                             new_human_flag[new_index]=1 #it is not a new human
@@ -466,13 +459,15 @@ class human_class:
                 sensor=np.zeros([n_human,1])
                 area=np.zeros([n_human,1])
             #To include a new human to be tracked
+            print("FLAG",new_human_flag)
+            print("PROB",posture_new[:,1])
             for k in range(0,len(new_human_flag)):
                 if new_human_flag[k]==0 and posture_new[k,1]>=posture_threshold: # only if the gesture estimation probability is reliable 
                     #print('New human tracked from the camera')
                     print("ADDED",centroid_new[k,0])
                     n_human=n_human+1
                     #Human perception
-                    position=np.append(position,[position_cam_new[k,:]],axis=0)
+                    position=np.append(position,np.zeros([1,2]),axis=0)
                     posture=np.append(posture,[posture_new[k,:]],axis=0)
                     centroid=np.append(centroid,[centroid_new[k,:]],axis=0)
                     orientation=np.append(orientation,[orientation_new[k,:]],axis=0)
@@ -493,7 +488,6 @@ class human_class:
                     #Human tracking
                     counter_old=np.append(counter_old,np.ones([1,2]),axis=0) #it begins in 1 to be sure it is not a false positive       
                     area=np.append(area,[area_new[k]],axis=0)
-        
         ############################################################################################################################
         #TO ENSURE THAT THERE ARE NOT REPEATED HUMANS TO BE TRACKED  
         if new_data[0]==1 or new_data[1]==1:
@@ -669,7 +663,7 @@ class human_class:
         result[0,1]=prob
         return result
 
-    def area_inference(self,angle,pos_y,pos_x):
+    def area_inference_lidar(self,angle,pos_y,pos_x):
         #Front
         if (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or (pos_y>(3/2)*row_width and pos_x>0): #if belongs to 0
             area=0
@@ -695,6 +689,44 @@ class human_class:
         
         return area
     
+    def area_inference_camera(self,centroid,dist,image_width):
+        #Assuming camera is perfectly aligned with the local x-frame
+        #Update area according to the distance
+        if dist>=max_dist:
+            areas_percent=[prob_0_init,prob_1_init,prob_2_init,prob_3_init,prob_4_init,prob_5_init]
+        else:
+            prob_2=(delta_prob_2_3/max_dist)*dist+prob_2_init-delta_prob_2_3
+            prob_3=(0.5-prob_2)+0.5+offset
+            prob_1=(delta_prob_1_4/max_dist)*dist+prob_1_init-delta_prob_1_4
+            prob_4=(0.5-prob_1)+0.5+offset
+            areas_percent=[prob_0_init,prob_1,prob_2,prob_3,prob_4,prob_5_init]
+
+        #Front camera
+        #print("CENTROID",centroid)
+        #print("WIDTH",image_width)
+        if centroid>=areas_percent[4]*image_width and centroid<=areas_percent[5]*image_width:
+            area=4
+        elif centroid>=areas_percent[3]*image_width and centroid<=areas_percent[4]*image_width:
+            area=3
+        elif centroid>=areas_percent[2]*image_width and centroid<=areas_percent[3]*image_width:
+            area=2
+        elif centroid>=areas_percent[1]*image_width and centroid<=areas_percent[2]*image_width:
+            area=1
+        elif centroid>=areas_percent[0]*image_width and centroid<=areas_percent[1]*image_width:
+            area=0    
+        #Back camera
+        elif centroid>=image_width+areas_percent[4]*image_width and centroid<=image_width+areas_percent[5]*image_width:
+            area=9
+        elif centroid>=image_width+areas_percent[3]*image_width and centroid<=image_width+areas_percent[4]*image_width:
+            area=8
+        elif centroid>=image_width+areas_percent[2]*image_width and centroid<=image_width+areas_percent[3]*image_width:
+            area=7
+        elif centroid>=image_width+areas_percent[1]*image_width and centroid<=image_width+areas_percent[2]*image_width:
+            area=6
+        elif centroid>=image_width+areas_percent[0]*image_width and centroid<=image_width+areas_percent[1]*image_width:
+            area=5 
+        #print("AREA",area)
+        return area
 ###############################################################################################
 # Main Script
 

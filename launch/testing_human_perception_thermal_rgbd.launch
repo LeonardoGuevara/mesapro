@@ -21,6 +21,7 @@
         <param name="openpose_python" value="$(arg openpose_python)"/>
         <param name="openpose_models" value="$(arg openpose_models)"/>
         <param name="posture_classifier_model" value="$(arg posture_classifier_model)"/>
+        <param name="config_direct" value="$(arg config_direct)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
         <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
         <param name="n_cameras" type="int" value="$(arg n_cameras)"/>

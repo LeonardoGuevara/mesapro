@@ -87,7 +87,7 @@ windows:
   check: "rostopic list | grep -q /people_tracker/pose_array || ! $USE_LEG_DETECTOR" 
 - name: hri_cameras_perception
   panes:
-  - roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL thermal_info:=$THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL
+  - roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL config_direct:=$CONFIG_DIRECT thermal_info:=$THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL
   - rosrun mesapro human_perception_system.py 
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system

@@ -23,18 +23,20 @@ hs_param=list(dict.items(parsed_yaml_file["human_safety_config"]))
 r_param=list(dict.items(parsed_yaml_file["robot_config"]))
 #CAMERAS INFO
 ##############################################################################################################################
-#VALUES TAKEN FROM human_detector_rgbd_thermal.py
+#VALUES TAKEN FROM human_detector_rgbd_thermal
 #################################################################################################################################
 thermal_info=rospy.get_param("/hri_visualization/thermal_info") #you have to change /hri_visualization/ if the node is not named like this
 #thermal_info=False
 image_rotation=rospy.get_param("/hri_visualization/image_rotation") #you have to change /hri_visualization/ if the node is not named like this
 #image_rotation=0 #it can be 0,90, 180, 270 measured clockwise     
-if image_rotation==270:
-    resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
-elif image_rotation==90: #IT IS NOT WELL TUNNED YET
-    resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=90
-else: #image_rotation==0 
-    resize_param=[105,120,388,291] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=0
+if image_rotation==270 or image_rotation==90:
+    resize_param=[150,115,300,400] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=270
+if image_rotation==90: #IT IS NOT WELL TUNNED YET
+    resize_param=[150,115,300,400] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=90
+elif image_rotation==0:
+    resize_param=[120,90,640,480] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=0
+elif image_rotation==180: #IT IS NOT WELL TUNNED YET
+    resize_param=[150,115,400,300] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=180
 #################################################################################################################################
 #IMPORTING LABELS NAMES
 posture_labels=ar_param[2][1]
@@ -45,6 +47,20 @@ audio_message_label=hs_param[1][1]
 safety_action_label=hs_param[2][1]
 human_command_label=hs_param[3][1]
 action_label=r_param[0][1]
+#PLOT AREAS
+##############################################################################################################################
+#VALUES TAKEN FROM human_perception_system.py
+#################################################################################################################################
+max_dist=8 #in meters, the probabilities are fixed at prob_init from this distance 
+delta_prob_1_4=0.17 #percentage of variation of areas from initial probability at max_dist to final probability at 0 m.
+delta_prob_2_3=0.12
+offset=0.02 #in case camera is not perfectly aligned, can be positive or negative
+prob_2_init=0.45 #in pixels percent of area 2
+prob_3_init=(0.5-prob_2_init)+0.5+offset
+prob_1_init=prob_2_init-delta_prob_2_3
+prob_4_init=prob_3_init+delta_prob_2_3
+prob_0_init=0 #initial area pixel percentage
+prob_5_init=1 #last area pixel percentage
 #########################################################################################################################
 #PLOT HRI PARAMETERS
 black_image_size=[680,650] #size of the black background where the parameters are shown
@@ -101,6 +117,8 @@ class human_class:
         therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -110,6 +128,8 @@ class human_class:
         color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -124,6 +144,8 @@ class human_class:
         therm_image_back=therm_image_front
         if image_rotation==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -133,6 +155,8 @@ class human_class:
         color_image_back=color_image_front
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -154,6 +178,8 @@ class human_class:
         color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -165,6 +191,8 @@ class human_class:
         color_image_back=color_image_front
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -182,6 +210,8 @@ class human_class:
         therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -191,6 +221,8 @@ class human_class:
         color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -205,6 +237,8 @@ class human_class:
         therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
         if image_rotation==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -214,6 +248,8 @@ class human_class:
         color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -235,6 +271,8 @@ class human_class:
         color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -246,6 +284,8 @@ class human_class:
         color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==180:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_180)
         elif image_rotation==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
@@ -272,6 +312,19 @@ class hri_class:
         self.human_command=safety_info.human_command
         self.critical_index=safety_info.critical_index   
     
+    def area_inference_camera(self):
+        #Update area according to the distance
+        dist=human.distance
+        if dist>=max_dist:
+            areas_percent=[prob_0_init,prob_1_init,prob_2_init,prob_3_init,prob_4_init,prob_5_init]
+        else:
+            prob_2=(delta_prob_2_3/max_dist)*dist+prob_2_init-delta_prob_2_3
+            prob_3=(0.5-prob_2)+0.5+offset
+            prob_1=(delta_prob_1_4/max_dist)*dist+prob_1_init-delta_prob_1_4
+            prob_4=(0.5-prob_1)+0.5+offset
+            areas_percent=[prob_0_init,prob_1,prob_2,prob_3,prob_4,prob_5_init]
+        return areas_percent
+
 class robot_class:
     def __init__(self): #It is done only the first iteration
         self.pos_x=0 #[x,y,theta]
@@ -311,6 +364,7 @@ def visual_outputs(color_image):
     
     
     font = cv2.FONT_HERSHEY_SIMPLEX
+    x_lines=[prob_0_init,prob_1_init,prob_2_init,prob_3_init,prob_4_init,prob_5_init] #by default
     if visual_mode>=2:
         #Print SAFETY SYMTEM INFO    
         color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 330) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
@@ -352,10 +406,16 @@ def visual_outputs(color_image):
             color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 120) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"orientation:  "+orientation_labels[int(human.orientation)],(50, 150) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"posture:     "+posture_labels[int(human.posture)],(50, 180) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 210) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 240), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 270) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"area:        "+str(human.area),(50, 300) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            
+    
+            if sensor=="camera":
+                color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 210) , font, 0.7,(0, 0, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"area:           "+str(human.area),(50, 240) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            if sensor=="camera+lidar":
+                color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 210) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 240), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 270) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+                color_image = cv2.putText(color_image,"area:        "+str(human.area),(50, 300) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             if visual_mode!=2 : #visual_mode==1 or visual_mode==3
                 centroids_x=human.centroids_x
                 centroids_y=human.centroids_y
@@ -367,7 +427,20 @@ def visual_outputs(color_image):
                             color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 255), 20) #RED
                         else:
                             color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
-    if visual_mode!=2: #To resize the window with images and text
+                x_lines=hri.area_inference_camera()
+                #x_lines=[0,0.3,0.4,0.6,0.7,1]
+    if visual_mode!=2: #To visualize areas in the image
+        width=int(human.image_size[1]*proportion)
+        #FRONT IMAGE
+        color_image=cv2.line(color_image, (int(x_lines[1]*width)+extra, 0), (int(x_lines[1]*width)+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[2]*width)+extra, 0), (int(x_lines[2]*width)+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[3]*width)+extra, 0), (int(x_lines[3]*width)+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[4]*width)+extra, 0), (int(x_lines[4]*width)+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        #BACK IMAGE
+        color_image=cv2.line(color_image, (int(x_lines[1]*width)+width+extra, 0), (int(x_lines[1]*width)+width+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[2]*width)+width+extra, 0), (int(x_lines[2]*width)+width+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[3]*width)+width+extra, 0), (int(x_lines[3]*width)+width+extra, black_image_size[0]), (0, 255, 0), thickness=1)
+        color_image=cv2.line(color_image, (int(x_lines[4]*width)+width+extra, 0), (int(x_lines[4]*width)+width+extra, black_image_size[0]), (0, 255, 0), thickness=1)
         scaling=0.6
         color_image=cv2.resize(color_image,(int(color_image.shape[1]*scaling),int(color_image.shape[0]*scaling))) #resizing it to fit the screen
         

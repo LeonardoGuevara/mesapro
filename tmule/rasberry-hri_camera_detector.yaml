@@ -80,7 +80,7 @@ windows:
   check: "rostopic list | grep -q /flir_module_driver1/thermal/image_raw || $USE_BAG"
 - name: hri_cameras_perception
   panes:
-  - roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL thermal_info:=$THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL
+  - roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL config_direct:=$CONFIG_DIRECT thermal_info:=$THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL
   - rosrun mesapro human_perception_system.py 
   check: "rostopic list | grep -q /human_info_camera " 
 - name: hri_safety_system

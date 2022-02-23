@@ -66,9 +66,9 @@ detection_thresh=0.1 #percentage of pixels in the thermal image which have to sa
 #image_rotation=rospy.get_param("/hri_camera_detector/image_rotation") #you have to change /hri_camera_detector/ if the node is not named like this
 image_rotation=0 #it can be 0,90,270 measured clockwise        
 if image_rotation==270:
-    resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 300/400 = 120/160
+    resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
 elif image_rotation==90: #IT IS NOT WELL TUNNED YET
-    resize_param=[150,115,300,400] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=90
+    resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=90
 else: #image_rotation==0 
     resize_param=[105,120,388,291] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=0
 #VISUALIZATION VARIABLES
@@ -458,6 +458,8 @@ class human_class:
             msg.posture_prob = list(self.posture[:,1])
             msg.centroid_x =list(self.centroid[:,0])
             msg.centroid_y =list(self.centroid[:,1])
+            msg.position_x =list(self.centroid_3d[:,0])
+            msg.position_y =list(self.centroid_3d[:,1])
             msg.distance = list(self.distance[:,0])
             msg.orientation = [int(x) for x in list(self.orientation[:,0])] #to ensure publish int
             msg.camera_id= [int(x) for x in list(self.camera_id[:,0])] #to ensure publish int
