@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="operation_mode" default="" /> 
+    
+    <node pkg="mesapro" type="human_safety_system.py" name="hri_safety_system"> 
+	<param name="operation_mode" value="$(arg operation_mode)"/>
+    </node>
+    
+</launch>
+
+

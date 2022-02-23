@@ -31,6 +31,7 @@ from threading import Lock
 from mesapro.msg import hri_msg, robot_msg
 #from topological_navigation_msgs.msg import NavRoute
 from math import * #to avoid prefix math.
+import threading # Needed for Timer
 ##########################################################################################################
 ##########################################################################################################
 # A list of parameters topo nav is allowed to change and their mapping from dwa speak.
@@ -165,6 +166,9 @@ class TopologicalNavServer(object):
         self.op_mode="logistics"              # assuming logistics as operation mode, it can also be "UV-C" mode
         self.current_target="Unknown"        # current closest node in the route plan, initial condition "Unknown"
         rospy.Subscriber('human_safety_info',hri_msg,self.safety_callback)  
+        self.time_without_msg=5                 # Maximum time without receiving safety messages
+        self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
+        self.timer_safety.start()
         ##########################################################################################################
         #########################################################################################################
         
@@ -1045,6 +1049,11 @@ class TopologicalNavServer(object):
         rob_msg.goal_node=self.goal #final goal in the route
         pub_robot.publish(rob_msg)
         
+        print("Safety message received")
+        self.timer_safety.cancel()
+        self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
+        self.timer_safety.start()
+        
     def robot_update_action(self):               
         if (self.robot_action==3 or self.robot_action==4):# to make the robot stop / without updating the goal
             if self.past_action!=3 and self.past_action!=4: #to ensure that it is executed only once
@@ -1080,7 +1089,23 @@ class TopologicalNavServer(object):
                     self._as.set_aborted()
                 self.navigation_activated = False
             
-    
+    def safety_timeout(self):
+        print("No safety message received in a long time")
+        self.robot_action=3 #pause the current robot action
+        self.preemptCallback() #to stop current navigation_action
+        #Publish current robot operation
+        pub_robot = rospy.Publisher('robot_info',robot_msg,queue_size=1)#small queue means priority to new data
+        rob_msg = robot_msg()
+        if self.current_node != "none": # if robot is located at a node
+            parent=self.current_node
+        elif self.current_target != "none" or self.current_target != "Unknown": #to find the closest node when robot is moving between nodes
+            parent=self.current_target
+        else:
+            parent="Unknown"
+        rob_msg.current_node=parent #current goal in the route
+        rob_msg.action=self.robot_action
+        rob_msg.goal_node=self.goal #final goal in the route
+        pub_robot.publish(rob_msg)
     ###########################################################################################################  
     ###########################################################################################################  
 

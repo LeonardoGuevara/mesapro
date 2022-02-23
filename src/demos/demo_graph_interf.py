@@ -10,6 +10,7 @@ import numpy as np #to use matrix
 from cv_bridge import CvBridge
 import cv2
 import yaml
+import threading # Needed for Timer
 from mesapro.msg import human_msg, hri_msg, robot_msg
 ##########################################################################################
 
@@ -264,6 +265,9 @@ class hri_class:
         self.safety_action=5 #no safety action  
         self.human_command=0
         self.critical_index=0 #index of the human considered as critical during interaction (it is not neccesary the same than the closest human or the goal human)
+        self.time_without_msg=5                 # Maximum time without receiving safety messages
+        self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
+        self.timer_safety.start()
                  
     def safety_callback(self,safety_info):
         self.status=safety_info.hri_status
@@ -271,7 +275,15 @@ class hri_class:
         self.safety_action=safety_info.safety_action
         self.human_command=safety_info.human_command
         self.critical_index=safety_info.critical_index   
+        print("Safety message received")
+        self.timer_safety.cancel()
+        self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
+        self.timer_safety.start()
     
+    def safety_timeout(self):
+        print("No safety message received in a long time")
+        self.audio_message=7 #to alert that safety system is not publishing 
+        
 class robot_class:
     def __init__(self): #It is done only the first iteration
         self.pos_x=0 #[x,y,theta]
@@ -314,11 +326,12 @@ def visual_outputs(color_image):
     if visual_mode>=2:
         #Print SAFETY SYMTEM INFO    
         color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 330) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"hri status:           "+hri_status_label[int(hri.status)],(50, 360) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"audio message:     "+audio_message_label[int(hri.audio_message)],(50, 390) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"human command:   "+human_command_label[int(hri.human_command)],(50, 420) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"safety action:        "+safety_action_label[int(hri.safety_action)],(50, 450) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-                       
+        if hri.audio_message!=7:
+            color_image = cv2.putText(color_image,"hri status:           "+hri_status_label[int(hri.status)],(50, 360) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"audio message:     "+audio_message_label[int(hri.audio_message)],(50, 390) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"human command:   "+human_command_label[int(hri.human_command)],(50, 420) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"safety action:        "+safety_action_label[int(hri.safety_action)],(50, 450) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            
         #Print ROBOT ACTION INFO
         color_image = cv2.putText(color_image,"***ROBOT ACTION***",(50, 480) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
         color_image = cv2.putText(color_image,"action:   "+action_label[int(robot.action)],(50, 510) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)

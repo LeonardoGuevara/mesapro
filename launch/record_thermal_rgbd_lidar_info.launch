@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="bag_file" default="/home/thorvald/Documents/mesapro/bags/thermal_rgbd_lidar_test" />
+    
+    <node pkg="rosbag" type="record" name="rosbag_record_raw_data"
+        args="record -o $(arg bag_file) /flir_module_driver1/thermal/image_raw /flir_module_driver1/thermal/temp_meas_range /flir_module_driver2/thermal/image_raw /flir_module_driver2/thermal/temp_meas_range /camera1/color/image_raw /camera1/aligned_depth_to_color/image_raw /camera1/depth/image_rect_raw /camera1/depth/camera_info /camera1/color/camera_info /camera1/aligned_depth_to_color/camera_info /camera2/color/image_raw /camera2/aligned_depth_to_color/image_raw /camera2/depth/image_rect_raw /camera2/depth/camera_info /camera2/color/camera_info /camera2/aligned_depth_to_color/camera_info /scan /tf /tf_static /no_go_map /map /topological_map_2 /robot_pose /nav_vel"/>   
+</launch>

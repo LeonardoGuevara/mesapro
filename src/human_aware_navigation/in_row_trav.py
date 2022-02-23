@@ -48,6 +48,7 @@ from topological_navigation_msgs.msg import ClosestEdges
 #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
 #########################################################################################################
 from mesapro.msg import hri_msg , robot_msg
+import threading # Needed for Timer
 #########################################################################################################
 #########################################################################################################
 
@@ -131,6 +132,10 @@ class inRowTravServer(object):
         self.robot_action=4                     # current robot action, initially "waiting for human command",
         self.han_start_dist=3.6                 # Human to robot Distance at which the robot starts to slow down
         self.han_final_dist=1                   # Human to robot Distance at which the robot must stop
+        self.time_without_msg=5                 # Maximum time without receiving safety messages
+        self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
+        self.timer_safety.start()
+
         ########################################################################################################### 
         ###########################################################################################################
         # Useful variables
@@ -1603,6 +1608,15 @@ class inRowTravServer(object):
         elif safety_info.safety_action==5: #if no safety action is required
             self.hri_safety_action=self.robot_action          
         self.hri_dist=safety_info.critical_dist   
+        print("Safety message received")
+        self.timer_safety.cancel()
+        self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
+        self.timer_safety.start()
+        
+    def safety_timeout(self):
+        print("No safety message received in a long time")
+        self.hri_safety_action=4 # to stop the robot
+        
     ########################################################################################################
     ########################################################################################################
 def load_data_from_yaml(filename):
