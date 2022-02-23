@@ -216,6 +216,7 @@ init_cmd: |
   export_default THERMAL_INFO False # "True" means use thermal information from FLIR camera
   export_default IMAGE_ROTATION 0 # cameras orientation, it can be "0", "90", "180" or "270"
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
+  export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected 
   ###########################################################################################
   # Home GUI
   export_default USE_HOME_GUI false
@@ -338,7 +339,8 @@ windows:
   - rosrun mesapro virtual_picker_simulation.py
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch audio_direct:=$AUDIO_DIRECT operation_mode:=$OPERATION_MODE
+  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE
+  - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT
 
 - name: hri_visualization
   panes:
