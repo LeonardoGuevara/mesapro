@@ -153,7 +153,7 @@ if __name__ == '__main__':
     thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image)
     rgb_front_sub = message_filters.Subscriber('camera/color/image_raw', Image)
     depth_front_sub = message_filters.Subscriber('camera/aligned_depth_to_color/image_raw', Image)
-    ts = message_filters.ApproximateTimeSynchronizer([thermal_front_sub,rgb_front_sub, depth_front_sub], 1, 0.01)
+    ts = message_filters.ApproximateTimeSynchronizer([thermal_front_sub,rgb_front_sub, depth_front_sub], 1, 1)
     ts.registerCallback(human.image_callback)
     
     #rospy.Subscriber('/flir_module_driver/thermal/temp_meas_range', TempMeasRange,human.param_callback)

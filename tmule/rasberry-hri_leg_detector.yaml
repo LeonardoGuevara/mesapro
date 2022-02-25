@@ -13,39 +13,26 @@ init_cmd: |
   }
 
   #########################################################################################
-  # HUMAN-AWARE NAVIGATION
+  # HUMAN-AWARE NAVIGATION PARAMETERS
   export_default CATKIN_WORKSPACE_MAIN "$HOME/rasberry_ws"
+  export_default CATKIN_WORKSPACE_AUX "$HOME/catkin_build_ws"	
   export_default CONDA_DIRECT "$HOME/anaconda3" # directory where conda or minicoda is installed 
   export_default CONDA_ENV "mypython3" #name of the conda environment with python3 
   #########################################################################################
-  
-
-  # Set up ROS, robot and scenario configs, catkin_workspace, robot number:
   # Source ROS
-  #########################################################################################
   # source "/opt/ros/$(rosversion -d)/setup.bash"
+  # source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
   #########################################################################################
-
-  # Configure the development workspace (assuming we are in rasberry_bringup/tmule)
-  #########################################################################################
-  #export_default CATKIN_WORKSPACE "`readlink -f ../../../.. || echo $HOME/rasberry_ws`"
-  #source "$CATKIN_WORKSPACE/devel/setup.bash"
-  source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
-  #########################################################################################
-
-  # Search for VPN tun device
-  #########################################################################################
+  #Set up ROS MASTER AND ROS IP
+  export_default ROS_IP "192.168.0.224" #Zotac IP address
+  export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
+  export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  export ROS_IP=$ROS_IP  
   #export_default VPN_BASE_ADDR "10.8.0.0"
   #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
-  #########################################################################################
-  default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
-  # Set ROS_MASTER to the correct IP
-  export_default ROS_MASTER $default_ip
-  # Set ROS_IP not to the IP that we will connect to remotely
-  export_default ROS_IP `ip route get $ROS_MASTER | grep "src" | sed 's/.*src \([0-9\.]*\).*/\1/' || echo $ROS_MASTER`
-  # Set ROS_HOSTNAME to the ROS_IP to avoid configuring /etc/hosts for anyone who connects
-  export_default ROS_HOSTNAME "$ROS_IP"
-  export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  #default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
+  #export_default ROS_MASTER $default_ip
+  #############################################################################################
 
   
 ################################################################################### 

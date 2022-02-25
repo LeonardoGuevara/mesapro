@@ -25,7 +25,7 @@ performance="normal" #OpenPose performance, initial condition
 time_threshold=3 #3 seconds as the minimum time between two consecute changes of openpose performance
 time_change=0 #initial counter value
 avoid_area=0.05 #percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
-search_area=0.1 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
+search_area=0.3 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
 ##Importing RF model for posture recognition
 #posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
 posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
@@ -59,14 +59,14 @@ pub = rospy.Publisher('human_info_camera', human_detector_msg,queue_size=1) #sma
 msg = human_detector_msg()
 #THERMAL INFORMATION
 #thermal_info=rospy.get_param("/hri_camera_detector/thermal_info") #you have to change /hri_camera_detector/ if the node is not named like this
-thermal_info=False
+thermal_info=True
 #Parameters to resize rgbd images from 640x480 size to 160x120 and reoriented them 
-temp_thresh=140 #threshold to determine if the temperature if a pixel is considered as higher as human temperature
+temp_thresh=70 #threshold to determine if the temperature if a pixel is considered as higher as human temperature
 detection_thresh=0.1 #percentage of pixels in the thermal image which have to satisfy the temp_thresh in order to rise the thermal_detection flag
 #image_rotation=rospy.get_param("/hri_camera_detector/image_rotation") #you have to change /hri_camera_detector/ if the node is not named like this
-image_rotation=0 #it can be 0,90,270 measured clockwise        
+image_rotation=270 #it can be 0,90,270 measured clockwise        
 if image_rotation==270:
-    resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
+    resize_param=[120,130,285,380] #[y_init_up,x_init_left,n_pixels_x,n_pixels_y,theta_degrees] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
 elif image_rotation==90: #IT IS NOT WELL TUNNED YET
     resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=90
 else: #image_rotation==0 
@@ -125,6 +125,10 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
         
+        mat = get_M(0*(np.pi/180), 0*(np.pi/180), 0, 0, 0, 0,resize_param[2],resize_param[3])
+        img_t_rot_front= cv2.warpPerspective(img_t_rot_front, mat, (resize_param[2],resize_param[3]))
+
+        
         color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
         if image_rotation==90:
@@ -159,7 +163,11 @@ class human_class:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_t_rot_back=therm_image_back
-        img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
+        img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))  
+        
+        #mat = get_M(0, 0, 0, 0, 0, 0,resize_param[2],resize_param[3])
+        #img_t_rot_back= cv2.warpPerspective(img_t_rot_back, mat, (resize_param[2],resize_param[3]))
+
         
         color_image_back=color_image_front
         if image_rotation==90:
@@ -539,16 +547,16 @@ class human_class:
             #Find pixel with max temp around the joint with the highest temp of the skeleton
             if thermal_info==True and temp_max>0:
                 #Defining the limits of the search
-                init_search_x=int(joints_x_init[joint_temp_max]-(self.image_size[1]*search_area))
+                init_search_x=int(joints_x_init[joint_temp_max]-(self.image_size[1]*search_area/2))
                 if init_search_x<0:
                     init_search_x=0
-                end_search_x=int(joints_x_init[joint_temp_max]+(self.image_size[1]*search_area))
+                end_search_x=int(joints_x_init[joint_temp_max]+(self.image_size[1]*search_area/2))
                 if end_search_x>2*self.image_size[1]-2:
                     end_search_x=2*self.image_size[1]-2
-                init_search_y=int(joints_y_init[joint_temp_max]-(self.image_size[0]*search_area))
+                init_search_y=int(joints_y_init[joint_temp_max]-(self.image_size[0]*search_area/2))
                 if init_search_y<0:
                     init_search_y=0
-                end_search_y=int(joints_y_init[joint_temp_max]+(self.image_size[0]*search_area))
+                end_search_y=int(joints_y_init[joint_temp_max]+(self.image_size[0]*search_area/2))
                 if end_search_y>self.image_size[0]-1:
                     end_search_y=self.image_size[0]-1
                 #Search
@@ -637,10 +645,15 @@ class human_class:
                             x_sum=x_sum+joints_x_init[k]
                             y_sum=y_sum+joints_y_init[k]
                             n_joints_cent=n_joints_cent+1
+                #Only continue if there is at least 1 joint with x*y*z!=0 in the center of the body
                 if n_joints_cent!=0:
                     distance[kk,:]=dist_sum/n_joints_cent
-                    centroid[kk,0]=x_sum/n_joints_cent
-                    centroid[kk,1]=y_sum/n_joints_cent
+                    if joints_x_init[1]!=0 and joints_y_init[1]!=0 and joints_z_init[1]!=0: #If neck joint exists, then this is choosen as centroid
+                        centroid[kk,0]=joints_x_init[1]
+                        centroid[kk,1]=joints_y_init[1]
+                    else: #the centroid is an average
+                        centroid[kk,0]=x_sum/n_joints_cent
+                        centroid[kk,1]=y_sum/n_joints_cent
                     #Only continue if the human is not detected in between the two images merged
                     width=self.image_size[1]                       
                     if centroid[kk,0]<=width-width*avoid_area or centroid[kk,0]>=width+width*avoid_area: 
@@ -688,6 +701,53 @@ class human_class:
         else:
             self.n_human=0
 
+""" Get Perspective Projection Matrix """
+def get_M(theta, phi, gamma, dx, dy, dz,width, height):
+    
+    w = width
+    h = height
+    d = np.sqrt(height**2 + width**2)
+    f = d / (2 * np.sin(gamma) if np.sin(gamma) != 0 else 1)
+    #f = d /1.8
+    dz=f
+    # Projection 2D -> 3D matrix
+    A1 = np.array([ [1, 0, -w/0.3], #originally -w/2
+                    [0, 1, -h/3], #originally -h/2
+                    [0, 0, 1],
+                    [0, 0, 1]])
+    
+    # Rotation matrices around the X, Y, and Z axis
+    RX = np.array([ [1, 0, 0, 0],
+                    [0, np.cos(theta), -np.sin(theta), 0],
+                    [0, np.sin(theta), np.cos(theta), 0],
+                    [0, 0, 0, 1]])
+    
+    RY = np.array([ [np.cos(phi), 0, -np.sin(phi), 0],
+                    [0, 1, 0, 0],
+                    [np.sin(phi), 0, np.cos(phi), 0],
+                    [0, 0, 0, 1]])
+    
+    RZ = np.array([ [np.cos(gamma), -np.sin(gamma), 0, 0],
+                    [np.sin(gamma), np.cos(gamma), 0, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1]])
+
+    # Composed rotation matrix with (RX, RY, RZ)
+    R = np.dot(np.dot(RX, RY), RZ)
+
+    # Translation matrix
+    T = np.array([  [1, 0, 0, dx],
+                    [0, 1, 0, dy],
+                    [0, 0, 1, dz],
+                    [0, 0, 0, 1]])
+
+    # Projection 3D -> 2D matrix
+    A2 = np.array([ [f, 0, w/0.3, 0],
+                    [0, f, h/3, 0],
+                    [0, 0, 1, 0]])
+
+    # Final transformation matrix
+    return np.dot(A2, np.dot(T, np.dot(R, A1)))
         
 ###############################################################################################
 # Main Script
@@ -701,14 +761,14 @@ if __name__ == '__main__':
     if n_cameras==1:
         #Camara front
         if thermal_info==True:
-            thermal_front_sub=message_filters.Subscriber('/flir_module_driver2/thermal/image_raw', Image) #new topic name only for a single camera
+            thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #old topic name only for a single camera
         image_front_sub = message_filters.Subscriber('/camera/color/image_raw', Image) #old topic name only for a single camera
         depth_front_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw', Image) #old topic name only for a single camera
         if thermal_info==True:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub], 1, 0.01)
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub], 1, 1)
             ts.registerCallback(human.rgbd_thermal_1_callback)
         else:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01)    
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 1)    
             ts.registerCallback(human.rgbd_1_callback)
     else: #n_camaras==2
         #Camara front and back
@@ -720,10 +780,10 @@ if __name__ == '__main__':
         image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image) #new topic names
         depth_back_sub = message_filters.Subscriber('/camera2/aligned_depth_to_color/image_raw', Image) #new topic names
         if thermal_info==True:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub,image_back_sub, depth_back_sub, thermal_back_sub], 1, 0.01)
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub,image_back_sub, depth_back_sub, thermal_back_sub], 1, 1)
             ts.registerCallback(human.rgbd_thermal_2_callback)
         else:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub,image_back_sub, depth_back_sub], 1, 0.01)    
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub,image_back_sub, depth_back_sub], 1, 1)    
             ts.registerCallback(human.rgbd_2_callback)
     if openpose_visual==False:
         rospy.spin()
@@ -756,6 +816,7 @@ if __name__ == '__main__':
                     for k in range(0,len(centroids_x)):    
                         center_coordinates = (int(centroids_x[k]), int(centroids_y[k])) 
                         image = cv2.circle(image, center_coordinates, 5, (255, 0, 0), 20) #BLUE           
+                image=cv2.resize(image,(int(image.shape[1]*2.5),int(image.shape[0]*2.5)))
                 cv2.imshow("Human detector",image  )
                 cv2.waitKey(10)  
             

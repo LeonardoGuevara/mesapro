@@ -654,10 +654,10 @@ if __name__ == '__main__':
         image_front_sub = message_filters.Subscriber('/camera/color/image_raw', Image) #old topic name only for a single camera
         depth_front_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw', Image) #old topic name only for a single camera
         if thermal_info==True:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub], 1, 0.01)
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub], 1, 1)
             ts.registerCallback(human.rgbd_thermal_1_callback)
         else:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 0.01)    
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 1)    
             ts.registerCallback(human.rgbd_1_callback)
     else: #n_camaras==2
         #Camara front and back
@@ -669,10 +669,10 @@ if __name__ == '__main__':
         image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image) #new topic names
         depth_back_sub = message_filters.Subscriber('/camera2/aligned_depth_to_color/image_raw', Image) #new topic names
         if thermal_info==True:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub,image_back_sub, depth_back_sub, thermal_back_sub], 1, 0.01)
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub,image_back_sub, depth_back_sub, thermal_back_sub], 1, 1)
             ts.registerCallback(human.rgbd_thermal_2_callback)
         else:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub,image_back_sub, depth_back_sub], 1, 0.01)    
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub,image_back_sub, depth_back_sub], 1, 1)    
             ts.registerCallback(human.rgbd_2_callback)
     if openpose_visual==False:
         rospy.spin()

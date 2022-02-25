@@ -404,7 +404,7 @@ if __name__ == '__main__':
             if thermal_info==True:
                 thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #old topic name only for a single camera
                 image_front_sub = message_filters.Subscriber('/camera/color/image_raw', Image)    #old topic name only for a single camera
-                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 1, 0.01)
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 1, 1)
                 ts.registerCallback(human.rgb_thermal_1_callback)
             else:
                 rospy.Subscriber('camera/camera1/color/image_raw', Image,human.rgb_1_callback) #really old topic name before thermal info
@@ -415,12 +415,12 @@ if __name__ == '__main__':
                 image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #new topic names
                 thermal_back_sub=message_filters.Subscriber('/flir_module_driver2/thermal/image_raw', Image) #new topic names
                 image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image)    #new topic names
-                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub,image_back_sub, thermal_back_sub], 1, 0.01)
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub,image_back_sub, thermal_back_sub], 1, 1)
                 ts.registerCallback(human.rgb_thermal_2_callback)
             else:
                 image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #new topic names
                 image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image)    #new topic names
-                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub,image_back_sub], 1, 0.01)
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub,image_back_sub], 1, 1)
                 ts.registerCallback(human.rgb_2_callback)
                 
     if visual_mode>=2:

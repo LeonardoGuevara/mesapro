@@ -14,12 +14,9 @@ init_cmd: |
 
   # Set up ROS, robot and scenario configs, catkin_workspace, robot number:
   # Source ROS
-  ###########################################################################################
+  ########################################################################################### NOT NECCESARY
   #source "/opt/ros/$(rosversion -d)/setup.bash"
-  ###########################################################################################
-
   # Configure the development workspace (assuming we are in rasberry_bringup/tmule)
-  ###########################################################################################
   # export_default CATKIN_WORKSPACE "`readlink -f ../../../.. || echo $HOME/rasberry_ws`"
   # source "$CATKIN_WORKSPACE/devel/setup.bash"
   ###########################################################################################
@@ -29,28 +26,35 @@ init_cmd: |
   if [ -r "$HOME/.treatmentrc" ]; then echo "*** loading $HOME/.treatmentrc" ; source "$HOME/.treatmentrc"; fi
   
    # Load env variables for robots and scenario 
-  export_default BASE_CONFIG_DIR `readlink -f . || echo .`
+  ############################################################################################### To launch tmule file outside /rasberry_bringup/tmule
+  #export_default BASE_CONFIG_DIR `readlink -f . || echo .`
+  export_default BASE_CONFIG_DIR "$(rospack find rasberry_bringup)/tmule"
+  ##################################################################################################
   export_default ROBOT_NAME `hostname | tr "-" "_" | tr "." "_"`
   export_default SCENARIO_NAME "default"
   # Load robot-specific config file
   if [ -r "$BASE_CONFIG_DIR/robots/$ROBOT_NAME.sh" ]; then echo "*** loading $BASE_CONFIG_DIR/robots/$ROBOT_NAME.sh" ; source "$BASE_CONFIG_DIR/robots/$ROBOT_NAME.sh"; fi
   # Load scenario-specific config file
   if [ -r "$BASE_CONFIG_DIR/scenarios/$SCENARIO_NAME.sh" ]; then echo "*** loading $BASE_CONFIG_DIR/scenarios/$SCENARIO_NAME.sh" ; source "$BASE_CONFIG_DIR/scenarios/$SCENARIO_NAME.sh"; fi  
-
+  
+  ################################################################################################ CHANGING ROS_MASTER AND ROS_IP
   # Search for VPN tun device
-  ###############################################################################################
   #export_default VPN_BASE_ADDR "10.8.0.0"
   #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
-  ################################################################################################
-  default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
+  #default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
   # Set ROS_MASTER to the correct IP
-  export_default ROS_MASTER $default_ip
+  #export_default ROS_MASTER $default_ip
   # Set ROS_IP not to the IP that we will connect to remotely
-  export_default ROS_IP `ip route get $ROS_MASTER | grep "src" | sed 's/.*src \([0-9\.]*\).*/\1/' || echo $ROS_MASTER`
+  #export_default ROS_IP `ip route get $ROS_MASTER | grep "src" | sed 's/.*src \([0-9\.]*\).*/\1/' || echo $ROS_MASTER`
   # Set ROS_HOSTNAME to the ROS_IP to avoid configuring /etc/hosts for anyone who connects
-  export_default ROS_HOSTNAME "$ROS_IP"
+  #export_default ROS_HOSTNAME "$ROS_IP"
+  #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  export_default ROS_IP "192.168.0.101" #NUC IP address
+  export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
   export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
-
+  export ROS_IP=$ROS_IP  
+  ################################################################################################
+  
   # Figure out the robot number from the hostname, assuming it is like `thorvald-XXX`
   export_default ROBOT_NO `hostname | cut -f2 -d"-"`
 
@@ -160,56 +164,6 @@ init_cmd: |
 
   export_default RVIZ_CONFIG $(rospack find rasberry_bringup)/resources/row_traversal_action.rviz
 
-  # Data Collection
-  export_default DATA_COLLECTION false
-  export default DATA_CAPTURE true
-  export_default DATA_SCENARIO "$(rospack find rasberry_data_collection)/scenarios/framos_cameras.yaml"
-  export_default DATA_COLLECTION_CLIENT_CONFIG "$(rospack find rasberry_data_collection)/config/ff_data_collection_config.yaml"
-  export_default COMPRESSED_CAMERA_COLOR_NS "/camera/camera1/color/image_raw"
-  export_default COMPRESSED_CAMERA_DEPTH_NS "/camera/camera1/aligned_depth_to_color/image_raw"
-
-  # ARGS BELOW ARE PARTICULAR FOR STRAWBERRY HARVESTING
-  export_default GRASPBERRY_ROBOT false
-
-  # Arm configuration
-  export_default ARM_COUNT "2"
-  export_default ARM1 "left_front_arm"
-  export_default ARM2 "right_front_arm"
-  export_default ARM3 "left_back_arm"
-  export_default ARM4 "right_back_arm"
-  export_default ARM_TYPE "scara_arm"
-  export_default GRIPPER_TYPE "noronn_gripper"
-  export_default LOAD_GRIPPER true
-  export_default MOUNT_TYPE "slim"
-  export_default CONTROL_TYPE "position"
-  export_default CONTROLLER_TYPE "trajectory"
-  export_default MOTOR_CONTROLLER_TYPE "JMC"
-
-  # Planning
-  export_default PLANNING_DEBUG true
-  export_default TOPIC_INTERFACE true
-
-  # MOVEIT!
-  export_default HARDWARE_INTERFACE "VelocityJointInterface"
-  export_default LOAD_ROBOT_DESCRIPTION false
-  export_default POLE_HEIGHT 1.4
-  export_default POLE_RADIUS 0.03
-  export_default TRAY_WIDTH  0.2
-  export_default TRAY_HEIGHT 0.2
-
-
-  # Camera
-  # export_default FRAMOS_CONFIG_FILE "`readlink -f ../config/robots/robot_${ROBOT_NO}_camera.yaml`"
-  export_default FRAMOS_CONFIG_FILE ""
-
-  # Perception
-  export_default DETECTION_BACKEND "fruitcast"
-  export_default DETECTION_BACKEND_CONFIG "password:='NOT_YET_PUBLIC'"
-  export_default DETECTION_IMAGE_NS "/d435e_camera_right_front_arm/camera/color"
-  export_default DETECTION_DEPTH_NS "/d435e_camera_right_front_arm/camera/depth_registered"
-  export_default DETECTION_SCORE "0.5"
-  export_default DETECTION_RESULTS "/rasberry_perception/results"
-  export_default DETECTION_POSES "/rasberry_perception/poses/all"
   
   # Home GUI
   export_default USE_HOME_GUI false
@@ -230,13 +184,9 @@ windows:
   tags: [core, nav]
 - name: robot
   panes:
-  - roslaunch rasberry_bringup robot_bringup.launch robot_model:=$(rospack find rasberry_bringup)/config/robots/robot_$ROBOT_NO.yaml model_extras:=$(rospack find rasberry_bringup)/urdf/robot_${ROBOT_NO}_extras.xacro datum_file:="$DATUM_FILE" ekf_publish_tf:="$EKF_PUBLISH_TF" simple_sim:=$USE_SIM with_teleoperation:=True teleop_controller_type:=$TELEOP_CONTROLLER teleop_controller:=$(rospack find thorvald_teleop)/config/$TELEOP_CONTROLLER.yaml joy_dev:=$JOY_DEV world:=$GAZEBO_WORLD_PATH with_gui:=$USE_GUI start_pose_x:=$ROBOT_POS_X start_pose_y:=$ROBOT_POS_Y start_pose_Y:=$ROBOT_POS_A include_plants:=$INCLUDE_PLANTS can_interface_type:=$CAN_INTERFACE_TYPE can_interface_name:=$CAN_INTERFACE_NAME
+  - roslaunch rasberry_bringup robot_bringup.launch robot_model:=$(rospack find rasberry_bringup)/config/robots/robot_$ROBOT_NO.yaml model_extras:=$(rospack find rasberry_bringup)/urdf/robot_${ROBOT_NO}_sensors.xacro datum_file:="$DATUM_FILE" ekf_publish_tf:="$EKF_PUBLISH_TF" simple_sim:=$USE_SIM with_teleoperation:=True teleop_controller_type:=$TELEOP_CONTROLLER teleop_controller:=$(rospack find thorvald_teleop)/config/$TELEOP_CONTROLLER.yaml joy_dev:=$JOY_DEV world:=$GAZEBO_WORLD_PATH with_gui:=$USE_GUI start_pose_x:=$ROBOT_POS_X start_pose_y:=$ROBOT_POS_Y start_pose_Y:=$ROBOT_POS_A include_plants:=$INCLUDE_PLANTS can_interface_type:=$CAN_INTERFACE_TYPE can_interface_name:=$CAN_INTERFACE_NAME
   check: "rostopic list | grep -q -e base_state"
   tags: [core, nav]
-- name: arm
-  panes:
-  - if $GRASPBERRY_ROBOT; then roslaunch graspberry_robot arm_bringup.launch arm_count:=$ARM_COUNT arm1:=$ARM1 arm2:=$ARM2 arm3:=$ARM3 arm4:=$ARM4 arm_type:=$ARM_TYPE gripper_type:=$GRIPPER_TYPE load_gripper:=$LOAD_GRIPPER mount_type:=$MOUNT_TYPE control_type:=$CONTROL_TYPE controller_type:=$CONTROLLER_TYPE motor_controller_type:=$MOTOR_CONTROLLER_TYPE use_sim:=$USE_SIM; fi
-  tags: [graspberry]
 - name: lidars_bringup
   panes:
   - if ! $USE_SIM; then roslaunch rasberry_bringup rasberry_lidar.launch lidar_type:="$LIDAR_TYPE_FRONT" position:="front" ip_address:="192.168.0.11"; fi
@@ -252,12 +202,6 @@ windows:
   - if ! $USE_SIM && $USE_RTK; then roslaunch rasberry_bringup rasberry_gnss.launch rtk_ip:="$RTK_IP" rtk_port:="$RTK_PORT" gnss_type:="$GNSS_TYPE" ins_activated:=$GNSS_INS_ACTIVATED; fi
 #  check: if ! $USE_SIM; then "rostopic list | grep -q -e gps/fix"; fi
   tags: [core, nav]
-- name: cameras
-  panes:
-  - if ! $USE_SIM && [ ! -z ${FRAMOS_CONFIG_FILE} ] ; then if [[ "$(docker images -q framos/ros 2> /dev/null)" == "" ]]; then roslaunch rasberry_bringup framos_multiple_devices.launch multicam_config_file:="$FRAMOS_CONFIG_FILE"; else bash ~/framos_docker/ros/docker_compose_up.sh; fi; fi
-  - if ! $USE_SIM; then rosrun usb_cam usb_cam_node; fi
-#  check: "rostopic list | grep -q image_raw"
-  tags: [graspberry_perception, cameras, site]
 - name: localisation_prelims
   panes:
   - roslaunch rasberry_navigation map_server.launch map:="$METRIC_MAP" use_no_go_map:=true no_go_map:=$NOGO_MAP
@@ -285,41 +229,12 @@ windows:
 - name: nav_actions
   panes:
   - if ! $USE_TEB_PLANNER; then roslaunch rasberry_move_base move_base_dwa.launch use_carrot_planner:=$USE_CARROT use_omni:="$USE_OMNI" robot_no:=$ROBOT_NO robot_footprint:=$ROBOT_FOOTPRINT; else roslaunch rasberry_move_base move_base_teb.launch use_carrot_planner:=$USE_CARROT use_omni:="$USE_OMNI" robot_no:=$ROBOT_NO; fi
-  - roslaunch mesapro row_traversal.launch use_gps_only:="$USE_GPS_ONLY" detector_config_common:="$ROW_DETECTOR_CONFIG_COMMON" detector_config_ellipse:="$ROW_DETECTOR_CONFIG_ELLIPSE" traversal_config:="$ROW_TRAVERSAL_CONFIG" pole_positions:=$POLE_POSITIONS pole_likelihood_field:=$POLE_LIKELIHOOD_FIELD use_restrictions:=$USE_RESTRICTIONS site_path:=$SITE_PATH robot_type:=$RES_ROBOT_TYPE task:=$APPLICATION
+  - roslaunch mesapro row_traversal_thorvald_014.launch use_gps_only:="$USE_GPS_ONLY" detector_config_common:="$ROW_DETECTOR_CONFIG_COMMON" detector_config_ellipse:="$ROW_DETECTOR_CONFIG_ELLIPSE" traversal_config:="$ROW_TRAVERSAL_CONFIG" pole_positions:=$POLE_POSITIONS pole_likelihood_field:=$POLE_LIKELIHOOD_FIELD use_restrictions:=$USE_RESTRICTIONS site_path:=$SITE_PATH robot_type:=$RES_ROBOT_TYPE task:=$APPLICATION
   - if $USE_ROW_CHANGE_ACTION; then roslaunch rasberry_navigation row_change.launch pole_positions:=$POLE_POSITIONS; fi
   - if $USE_DOCKING; then roslaunch rasberry_docking docking.launch use_sim:=$USE_SIM use_whycon:=$USE_WHYCON_DOCK dock_file:=$DOCK_FILE; fi
   check: "rosrun dynamic_reconfigure dynparam list | grep row_traversal"
   tags: [nav, site]
 ########################################################################################
-- name: graspberry_perception
-  panes:
-  - if ! $USE_SIM && $GRASPBERRY_ROBOT; then roslaunch rasberry_perception detector_client.launch backend:=$DETECTION_BACKEND $DETECTION_BACKEND_CONFIG image_ns:=$DETECTION_IMAGE_NS depth_ns:=$DETECTION_DEPTH_NS score:=$DETECTION_SCORE show_vis:=true service_name:=robot_perception; fi
-  - if ! $USE_SIM && $GRASPBERRY_ROBOT; then roslaunch rasberry_perception detector_client.launch backend:=$DETECTION_BACKEND $DETECTION_BACKEND_CONFIG run_on_start:=false image_ns:=/usb_cam depth_ns:="" score:=$DETECTION_SCORE show_vis:=true service_name:=gripper_perception; fi
-  tags: [graspberry_perception]
-- name: moveit!
-  panes:
-  - if $GRASPBERRY_ROBOT && [ "$MOUNT_TYPE" == "slim" ]  || [ "$MOUNT_TYPE" == "tall" ] && [ "$ARM_TYPE" == "scara_arm" ]; then roslaunch graspberry_moveit_config move_group.launch control_type:=$CONTROL_TYPE; fi
-  - if $GRASPBERRY_ROBOT && [ "$MOUNT_TYPE" == "world" ] && [ "$ARM_TYPE" == "scara_arm" ]; then roslaunch scara_arm_gripper_moveit_config move_group.launch control_type:=$CONTROL_TYPE; fi
-  - if $GRASPBERRY_ROBOT && [ "$MOUNT_TYPE" == "slim" ] && [ "$ARM_TYPE" == "saga_arm" ]; then roslaunch harvester_moveit_config move_group.launch control_type:=$CONTROL_TYPE; fi
-  - if $GRASPBERRY_ROBOT && [ "$MOUNT_TYPE" == "tall" ] && [ "$ARM_TYPE" == "gantry_arm" ]; then roslaunch harvester_tall_moveit_config move_group.launch control_type:=$CONTROL_TYPE; fi
-  - if $GRASPBERRY_ROBOT && [ "$MOUNT_TYPE" == "world" ]&& [ "$ARM_TYPE" == "gantry_arm" ]; then roslaunch gantry_arm_moveit_config move_group.launch control_type:=$CONTROL_TYPE; fi
-  - if $GRASPBERRY_ROBOT && [ "$MOUNT_TYPE" == "world" ]&& [ "$ARM_TYPE" == "igus_arm" ]; then roslaunch igus_arm_gripper_moveit_config move_group.launch control_type:=$CONTROL_TYPE; fi  
-  - if $GRASPBERRY_ROBOT && [ "$MOUNT_TYPE" == "world" ]&& [ "$ARM_TYPE" == "saga_arm" ]; then roslaunch saga_arm_moveit_config move_group.launch control_type:=$CONTROL_TYPE; fi  
-  check: "rostopic list | grep -q /move_group || ! $GRASPBERRY_ROBOT"
-  tags: [graspberry]
-- name: moveit_utils
-  panes:
-  - if $GRASPBERRY_ROBOT; then roslaunch moveit_tray_collision_gen row_collision_gen_from_map.launch mount_type:=$MOUNT_TYPE pole_height:=$POLE_HEIGHT pole_radius:=$POLE_RADIUS tray_height:=$TRAY_HEIGHT pole_width:=$POLE_WIDTH; fi
-  tags: [graspberry]  
-- name: graspberry_trajectory_planner
-  panes:
-  - if $GRASPBERRY_ROBOT; then rosrun harvester_trajectory_planner harvester_trajectory_planner ; fi
-  tags: [nav]
-- name: graspberry_picking_server
-  panes:
-  - if $GRASPBERRY_ROBOT; then roslaunch harvester_coordinator harvester_coordinator.launch robot_config:=$(rospack find harvester_coordinator)/config/properties/$ROBOT_NAME.yaml ; fi
-  - if $GRASPBERRY_ROBOT; then roslaunch thorvald_hri safety_beacon.launch service_manual:='/tg2/rl5' service_auto:='/tg2/rl6' service_error:='/tg2/rl7'; fi
-  tags: [nav]
 - name: localisation_prelims_aditional
   panes:
   - roslaunch rasberry_bringup corner_lasers_merger.launch
@@ -334,27 +249,6 @@ windows:
   - roslaunch toc robot.launch
   - if [ "$SLACK_WEBHOOK" ] && $STARTUP_SLACKEROS; then roslaunch slackeros slackeros.launch webhook:="$SLACK_WEBHOOK" topics:="/sentor/event" loggers:="/rosout:error"; else cat; fi
   tags: [monitoring, site]
-# - name: thorvald-gui
-#   panes:
-#   - DISPLAY=:0 roslaunch thorvald_uv_bringup thorvald_gui.launch
-- name: logistics
-  panes:
-  - if $USE_SIM && $GRASPBERRY_ROBOT; then roslaunch graspberry_logistics logistics_bringup.launch logistics_count:=$ARM_COUNT arm_type:=$ARM_TYPE mount_type:=$MOUNT_TYPE control_type:=$CONTROL_TYPE use_sim:=$USE_SIM; fi
-  - if ! $USE_SIM && $GRASPBERRY_ROBOT; then roslaunch fls1_pkg launch_FLS.launch; fi
-  tags: [graspberry_logistics]  
-- name: data_collection_server
-  panes:
-  - if $DATA_COLLECTION && [[ $DATA_SCENARIO == *"stream"* ]]; then rosrun topic_compression run in:=$COMPRESSED_CAMERA_COLOR_NS out:=$COMPRESSED_CAMERA_COLOR_NS/ts_compressed; fi
-  - if $DATA_COLLECTION && [[ $DATA_SCENARIO == *"stream"* ]]; then rosrun topic_compression run in:=$COMPRESSED_CAMERA_DEPTH_NS out:=$COMPRESSED_CAMERA_DEPTH_NS/ts_compressed; fi
-  - if $DATA_COLLECTION && [[ $DATA_SCENARIO == *"fotenix"* ]]; then roslaunch rasberry_bringup fotenix_server.launch fotenix_address:=$FOTENIX_ADDRESS fotenix_password:=$FOTENIX_PASSWORD env_loader_path:=/root/env_loader.sh; fi
-  - if $DATA_COLLECTION; then roslaunch topic_store start_database.launch scenario_file:="$DATA_SCENARIO" ; fi
-  - if $DATA_COLLECTION; then sleep 10; roslaunch rasberry_data_collection data_collection_server.launch scenario_file:="$DATA_SCENARIO" rosbridge_ip:=none collect_data:="$DATA_CAPTURE"; fi
-#  check: "rostopic list | grep topic_store || ! $DATA_COLLECTION"
-  tags: [data_collection ,data_collection_server, site]
-- name: data_collection_client
-  panes:
-  - if $DATA_COLLECTION; then rosrun rasberry_data_collection data_collection_client.py $DATA_COLLECTION_CLIENT_CONFIG ; fi
-  tags: [data_collection_client]
 - name: debug
   panes:
   - ls

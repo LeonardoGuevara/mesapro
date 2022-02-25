@@ -14,7 +14,7 @@ init_cmd: |
   
 
   #########################################################################################
-  # HUMAN-AWARE NAVIGATION
+  # HUMAN-AWARE NAVIGATION PARAMETERS
   export_default CATKIN_WORKSPACE_MAIN "$HOME/rasberry_ws"
   export_default CATKIN_WORKSPACE_AUX "$HOME/catkin_build_ws"	
   export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of config file
@@ -27,44 +27,33 @@ init_cmd: |
   
   export_default VISUAL_MODE 3 # "3" means perception+topological navigation info is displayed
   export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
-  export_default THERMAL_INFO true # "true" means use thermal information from FLIR camera
-  export_default USE_BAG true #if "false", the real sensors are launched
+  export_default USE_CAMERA_DETECTOR true #if "false", the rgbd+thermal human detector is not launched
+  export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
+  export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
   export_default USE_LEG_DETECTOR false #if "false", Lidar based leg_detector is not launched
-  export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", "180" or "270"
+  export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
-  
-  ###########################################################################################
-
-  # Set up ROS, robot and scenario configs, catkin_workspace, robot number:
+  export_default RS_SERIAL_N1 "146222253484" #serial number realsense camera 1
+  export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera 2
+  export_default FLIR_SERIAL_N1 "80060001-5113-3238-3233-393800000000" #serial number thermal camera 1
+  export_default FLIR_SERIAL_N2 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera 2
+  ##############################################################################################
   # Source ROS
-  ##########################################################################################
   # source "/opt/ros/$(rosversion -d)/setup.bash"
-  ##########################################################################################
- 
-  # Configure the development workspace (assuming we are in rasberry_bringup/tmule)
-  ##########################################################################################
-  #export_default CATKIN_WORKSPACE "`readlink -f ../../../.. || echo $HOME/rasberry_ws`"
-  #source "$CATKIN_WORKSPACE/devel/setup.bash"
-  #source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
-  #source $CATKIN_WORKSPACE_AUX/install/setup.bash --extend 
-  ########################################################################################## 
-  
-  # Search for VPN tun device
-  ##########################################################################################
+  # source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
+  #########################################################################################
+  #Set up ROS MASTER AND ROS IP
+  export_default ROS_IP "192.168.0.224" #Zotac IP address
+  export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
+  export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  export ROS_IP=$ROS_IP  
   #export_default VPN_BASE_ADDR "10.8.0.0"
   #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
-  ##########################################################################################
-  default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
-  # Set ROS_MASTER to the correct IP
-  export_default ROS_MASTER $default_ip
-  # Set ROS_IP not to the IP that we will connect to remotely
-  export_default ROS_IP `ip route get $ROS_MASTER | grep "src" | sed 's/.*src \([0-9\.]*\).*/\1/' || echo $ROS_MASTER`
-  # Set ROS_HOSTNAME to the ROS_IP to avoid configuring /etc/hosts for anyone who connects
-  export_default ROS_HOSTNAME "$ROS_IP"
-  export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  #default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
+  #export_default ROS_MASTER $default_ip
+  #############################################################################################
 
-##############################################################################################
 windows:
 - name: bag_files
   panes:
@@ -72,23 +61,23 @@ windows:
   check: "rostopic list || ! $USE_BAG"
 - name: rgbd_cameras
   panes:
-  - sleep 5 ; if ! $USE_BAG ; then roslaunch mesapro rs_multiple_devices.launch ; fi
+  - sleep 5 ; if ! $USE_BAG ; then roslaunch mesapro rs_multiple_devices.launch rs_serial_n1:=$RS_SERIAL_N1 rs_serial_n2:=$RS_SERIAL_N2; fi
   cleck: "rostopic list | grep -q /camera1/color/image_raw || $USE_BAG"
 - name: thermal_cameras
   panes:
-  - if ! $USE_BAG ; then roslaunch mesapro flir_thermal_module.launch ; fi
+  - if ! $USE_BAG ; then roslaunch mesapro flir_thermal_module.launch flir_serial_n1:=$FLIR_SERIAL_N1 flir_serial_n2:=$FLIR_SERIAL_N2 num_cam:=$N_CAMERAS; fi
   check: "rostopic list | grep -q /flir_module_driver1/thermal/image_raw || $USE_BAG"
 - name: hri_cameras_perception
   panes:
-  - roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL config_direct:=$CONFIG_DIRECT thermal_info:=$THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL
+  - if ! $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL ; fi
   - rosrun mesapro human_perception_system.py 
-  check: "rostopic list | grep -q /human_info_camera " 
+  check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
   - roslaunch mesapro hri_safety_system.launch audio_direct:=$AUDIO_DIRECT operation_mode:=$OPERATION_MODE
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization
   panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE  config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$THERMAL_INFO n_cameras:=$N_CAMERAS
+  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE  config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS
 #############################################################################################
 

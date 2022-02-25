@@ -169,6 +169,7 @@ class TopologicalNavServer(object):
         self.time_without_msg=5                 # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
+        self.no_safety_action=False             #flag to know if safety_system is working or not, "False" means "safety system working"
         ##########################################################################################################
         #########################################################################################################
         
@@ -327,17 +328,18 @@ class TopologicalNavServer(object):
             #########################################################################################################    
             #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
             #########################################################################################################
-            if self.current_node==self.goal or self.goal=="Unknown": #execute only if robot already finished previos route plan or if it is the first rviz goal given    
-                self.robot_action=0 # change action to "moving to a rviz goal"
-                self.past_action=self.robot_action  #to lock new robot_action
-                self.goal=goal.target
-                self.navigate(goal.target) #navigation is executed
-                if self.robot_action!=0 or self.current_node==self.goal: #if route was completed or new robot action is not "going to rviz goal"
-                    self.robot_action=4 # change robot_action to "wait for new command"
-            elif self.hri_safety_action==5:# execute only if no safety action is required, i.e. any safety action has priority over action "moving to rviz goal"
-                self.robot_action=0 # change action to "moving to a rviz goal"
-                self.goal=goal.target #save new goal given by clicking rviz
-                self.past_action=3 #to not update the new rviz goal with the hri_goal    
+            if self.no_safety_action==False: #execute only if safety_system is running
+                if self.current_node==self.goal or self.goal=="Unknown": #execute only if robot already finished previos route plan or if it is the first rviz goal given    
+                    self.robot_action=0 # change action to "moving to a rviz goal"
+                    self.past_action=self.robot_action  #to lock new robot_action
+                    self.goal=goal.target
+                    self.navigate(goal.target) #navigation is executed
+                    if self.robot_action!=0 or self.current_node==self.goal: #if route was completed or new robot action is not "going to rviz goal"
+                        self.robot_action=4 # change robot_action to "wait for new command"
+                elif self.hri_safety_action==5:# execute only if no safety action is required, i.e. any safety action has priority over action "moving to rviz goal"
+                    self.robot_action=0 # change action to "moving to a rviz goal"
+                    self.goal=goal.target #save new goal given by clicking rviz
+                    self.past_action=3 #to not update the new rviz goal with the hri_goal    
             ###########################################################################################################
             ###########################################################################################################
         else:
@@ -1050,6 +1052,7 @@ class TopologicalNavServer(object):
         pub_robot.publish(rob_msg)
         
         print("Safety message received")
+        self.no_safety_action=False #to let the robot know that the safety system is still working 
         self.timer_safety.cancel()
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
@@ -1091,6 +1094,7 @@ class TopologicalNavServer(object):
             
     def safety_timeout(self):
         print("No safety message received in a long time")
+        self.no_safety_action=True #flag to know that safety_system is not working
         self.robot_action=3 #pause the current robot action
         self.preemptCallback() #to stop current navigation_action
         #Publish current robot operation

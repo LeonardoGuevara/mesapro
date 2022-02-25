@@ -371,10 +371,7 @@ class hri_class:
                 self.safety_action=5 # no safety action / keep the previous robot action
                 self.audio_message=2 # message to ask the human for new order
                 self.new_goal=final_goal # the current goal is not changed
-            if current_goal=="Unknown" or final_goal=="Unknown": #if the robot doesn't start moving yet
-                self.safety_action=5 # no safety action 
-                self.audio_message=0 # no message
-                self.new_goal=final_goal # the current goal is not changed
+            
         else: #UVC
             self.new_goal=final_goal # the current goal is not changed
             self.safety_action=5 # no safety action / keep the previous robot action
@@ -412,6 +409,7 @@ class hri_class:
                             self.safety_action=5 # still waiting for a new human command to restart
                         self.audio_message=1 #UVC danger message
                         self.new_goal=final_goal # the current goal is not changed
+                    
             ###LOGISTICS###############################################
             else:
                 ##RISK LEVEL
@@ -534,7 +532,12 @@ class hri_class:
             self.safety_action=5 # keep the previous robot action     
             self.audio_message=1 #UVC danger message
             self.new_goal=final_goal # the current goal is not changed 
-             
+        
+        if current_goal=="Unknown" or final_goal=="Unknown": #if the robot doesn't start moving yet
+            self.safety_action=5 # no safety action 
+            self.audio_message=0 # no message
+            self.new_goal=final_goal # the current goal is not changed
+     
 ###############################################################################################
 # Main Script
 

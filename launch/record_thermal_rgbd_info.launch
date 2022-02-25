@@ -3,5 +3,5 @@
     <arg name="bag_file" default="/home/leo/aa_data/new_data/01-02-22/thermal_rgb_test" />
     
     <node pkg="rosbag" type="record" name="rosbag_record_thermal"
-        args="record -o $(arg bag_file) /flir_module_driver/thermal/image_raw /flir_module_driver/thermal/temp_meas_range /camera/color/image_raw /camera/aligned_depth_to_color/image_raw /camera/depth/image_rect_raw"/>   
+        args="record -o $(arg bag_file) /flir_module_driver2/thermal/image_raw /flir_module_driver2/thermal/temp_meas_range /camera/color/image_raw /camera/aligned_depth_to_color/image_raw /camera/depth/image_rect_raw"/>   
 </launch>
