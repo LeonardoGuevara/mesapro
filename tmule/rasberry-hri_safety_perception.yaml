@@ -32,17 +32,17 @@ init_cmd: |
   export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
   export_default USE_LEG_DETECTOR false #if "false", Lidar based leg_detector is not launched
   export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
-  export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
+  export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
   export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected 
-  export_default RS_SERIAL_N1 "146222253484" #serial number realsense camera 1
-  export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera 2
-  export_default FLIR_SERIAL_N1 "80060001-5113-3238-3233-393800000000" #serial number thermal camera 1
-  export_default FLIR_SERIAL_N2 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera 2
+  export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera 2
+  export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera 1
+  export_default FLIR_SERIAL_N2 "80060001-5113-3238-3233-393800000000" #serial number thermal camera 2
+  export_default FLIR_SERIAL_N1 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera 1
   ##############################################################################################
   # Source ROS
   # source "/opt/ros/$(rosversion -d)/setup.bash"
-  # source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
+  source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
   #########################################################################################
   #Set up ROS MASTER AND ROS IP
   export_default ROS_IP "192.168.0.224" #Zotac IP address
@@ -53,6 +53,7 @@ init_cmd: |
   #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
   #default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
   #export_default ROS_MASTER $default_ip
+  #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
   #############################################################################################
 
 ##############################################################################################
@@ -68,7 +69,7 @@ windows:
 - name: thermal_cameras
   panes:
   - if ! $USE_BAG ; then roslaunch mesapro flir_thermal_module.launch flir_serial_n1:=$FLIR_SERIAL_N1 flir_serial_n2:=$FLIR_SERIAL_N2 num_cam:=$N_CAMERAS; fi
-  check: "rostopic list | grep -q /flir_module_driver1/thermal/image_raw || $USE_BAG"
+  check: "rostopic list || $USE_BAG"
 - name: hri_dr_spaam_detector
   panes:
   - if $USE_LEG_DETECTOR ; then source $CONDA_DIRECT/etc/profile.d/conda.sh ; fi ; if $USE_LEG_DETECTOR ; then conda activate $CONDA_ENV ; fi ; if $USE_LEG_DETECTOR ; then roslaunch dr_spaam_ros dr_spaam_ros.launch ; fi
@@ -79,7 +80,7 @@ windows:
   check: "rostopic list | grep -q /people_tracker/pose_array || ! $USE_LEG_DETECTOR" 
 - name: hri_cameras_perception
   panes:
-  - if ! $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL; fi
+  - if $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL; fi
   - rosrun mesapro human_perception_system.py 
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system

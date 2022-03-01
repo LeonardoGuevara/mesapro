@@ -28,13 +28,13 @@ avoid_area=0.05 #percentage of the center of the merged image (front+back images
 search_area=0.3 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
 ##Importing RF model for posture recognition
 #posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
-posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+posture_classifier_model="/home/thorvald/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
 model_rf = joblib.load(posture_classifier_model)   
 ##OPENPOSE INITIALIZATION 
 #openpose_python=rospy.get_param("/hri_camera_detector/openpose_python") #you have to change /hri_camera_detector/ if the node is not named like this
 #openpose_models=rospy.get_param("/hri_camera_detector/openpose_models") #you have to change /hri_camera_detector/ if the node is not named like this
-openpose_python='/home/leo/rasberry_ws/src/openpose/build/python'
-openpose_models="/home/leo/rasberry_ws/src/openpose/models"
+openpose_python='/home/thorvald/rasberry_ws/src/openpose/build/python'
+openpose_models="/home/thorvald/rasberry_ws/src/openpose/models"
 try:
     sys.path.append(openpose_python);
     from openpose import pyopenpose as op
@@ -78,9 +78,9 @@ n_cameras=1 # 1 means that the back camera is emulated by reproducing the front 
 openpose_visual=True #to show or not a window with the human detection delivered by openpose
 #RGBD CAMERA INTRINSIC,DISTORTION PARAMETERS
 #posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
-posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+posture_classifier_model="/home/thorvald/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
 #config_direct=rospy.get_param("/hri_camera_detector/config_direct") #you have to change /hri_camera_detector/ if the node is not named like this
-config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+config_direct="/home/thorvald/rasberry_ws/src/mesapro/config/"
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 camera_param=list(dict.items(parsed_yaml_file["camera_config"]))

@@ -16,6 +16,7 @@ import time
 import cv2
 import yaml
 from mesapro.msg import human_detector_msg
+import ros_numpy
 ##########################################################################################
 #Feature extraction variables
 n_joints=19
@@ -116,7 +117,8 @@ class human_class:
     def rgbd_thermal_1_callback(self,rgb_front, depth_front, therm_front):
         ##################################################################################33
         #Front cameras info extraction
-        therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
+        #therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
+        therm_image_front = ros_numpy.numpify(therm_front)
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -125,7 +127,8 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
         
-        color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        #color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image = ros_numpy.numpify(rgb_front)
         color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
@@ -137,7 +140,8 @@ class human_class:
         img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) # crop to match the thermal field of view
         img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
-        depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image = ros_numpy.numpify(depth_front)
         depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         if image_rotation==90:

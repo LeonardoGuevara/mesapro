@@ -21,13 +21,13 @@ init_cmd: |
   #########################################################################################
   # Source ROS
   # source "/opt/ros/$(rosversion -d)/setup.bash"
-  # source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
+   source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
   #########################################################################################
   #Set up ROS MASTER AND ROS IP
-  export_default ROS_IP "192.168.0.224" #Zotac IP address
-  export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
-  export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
-  export ROS_IP=$ROS_IP  
+  #export_default ROS_IP "192.168.0.224" #Zotac IP address
+  #export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
+  #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  #export ROS_IP=$ROS_IP  
   #export_default VPN_BASE_ADDR "10.8.0.0"
   #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
   #default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`

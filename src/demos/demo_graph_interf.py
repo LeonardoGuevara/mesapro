@@ -12,6 +12,7 @@ import cv2
 import yaml
 import threading # Needed for Timer
 from mesapro.msg import human_msg, hri_msg, robot_msg
+import ros_numpy
 ##########################################################################################
 
 #Importing global parameters from .yaml file
@@ -31,11 +32,11 @@ thermal_info=rospy.get_param("/hri_visualization/thermal_info") #you have to cha
 image_rotation=rospy.get_param("/hri_visualization/image_rotation") #you have to change /hri_visualization/ if the node is not named like this
 #image_rotation=0 #it can be 0,90, 180, 270 measured clockwise     
 if image_rotation==270:
-    resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
+    resize_param=[120,130,285,380] #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 285/380 = 120/160 = 3/4
 elif image_rotation==90: #IT IS NOT WELL TUNNED YET
-    resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=90
-else: #image_rotation==0 
-    resize_param=[105,120,388,291] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=0
+    resize_param=[120,105,285,380] 
+else: #image_rotation==0 #IT IS NOT WELL TUNNED YET
+    resize_param=[120,130,380,285] 
 #################################################################################################################################
 #IMPORTING LABELS NAMES
 posture_labels=ar_param[2][1]
@@ -99,7 +100,8 @@ class human_class:
     def rgb_thermal_1_callback(self,rgb_front, therm_front):
         ##################################################################################33
         #Front cameras info extraction
-        therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
+        #therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
+        therm_image_front = ros_numpy.numpify(therm_front)
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -108,7 +110,8 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
         
-        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image_front = ros_numpy.numpify(rgb_front)
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -152,7 +155,8 @@ class human_class:
     def rgb_1_callback(self,rgb_front):
         ##################################################################################33
         #Front camera info extraction
-        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image_front = ros_numpy.numpify(rgb_front)
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -180,7 +184,8 @@ class human_class:
     def rgb_thermal_2_callback(self,rgb_front, therm_front,rgb_back, therm_back):
         ##################################################################################33
         #Front cameras info extraction
-        therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
+        #therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
+        therm_image_front = ros_numpy.numpify(therm_front)
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -189,7 +194,8 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
         
-        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image_front = ros_numpy.numpify(rgb_front)
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -203,7 +209,8 @@ class human_class:
         self.image_size = img_rgb_rz_front.shape
         ##################################################################################
         #Back cameras info extraction
-        therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
+        #therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
+        therm_image_back = ros_numpy.numpify(therm_back)
         if image_rotation==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -212,7 +219,8 @@ class human_class:
             img_t_rot_back=therm_image_back
         img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
         
-        color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        #color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        color_image_back = ros_numpy.numpify(rgb_back)
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -233,7 +241,8 @@ class human_class:
     def rgb_2_callback(self,rgb_front,rgb_back):
         ##################################################################################33
         #Front camera info extraction
-        color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image_front = ros_numpy.numpify(rgb_front)
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -244,7 +253,8 @@ class human_class:
         self.image_size = img_rgb_rot_front.shape
         ##################################################################################
         #Back camera info extraction
-        color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        #color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        color_image_back = ros_numpy.numpify(rgb_back)
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -403,7 +413,7 @@ if __name__ == '__main__':
         if visual_mode==1 or visual_mode==3:    
             if thermal_info==True:
                 thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #old topic name only for a single camera
-                image_front_sub = message_filters.Subscriber('/camera/color/image_raw', Image)    #old topic name only for a single camera
+                image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #old topic name only for a single camera
                 ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 1, 1)
                 ts.registerCallback(human.rgb_thermal_1_callback)
             else:
