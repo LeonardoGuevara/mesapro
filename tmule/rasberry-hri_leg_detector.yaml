@@ -16,7 +16,7 @@ init_cmd: |
   # HUMAN-AWARE NAVIGATION PARAMETERS
   export_default CATKIN_WORKSPACE_MAIN "$HOME/rasberry_ws"
   export_default CATKIN_WORKSPACE_AUX "$HOME/catkin_build_ws"	
-  export_default CONDA_DIRECT "$HOME/anaconda3" # directory where conda or minicoda is installed 
+  export_default CONDA_DIRECT "$HOME/anaconda3 || $HOME/miniconda3" # directory where conda or minicoda is installed 
   export_default CONDA_ENV "mypython3" #name of the conda environment with python3 
   #########################################################################################
   # Source ROS

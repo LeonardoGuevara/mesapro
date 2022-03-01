@@ -19,7 +19,7 @@ init_cmd: |
   export_default CATKIN_WORKSPACE_AUX "$HOME/catkin_build_ws"	
   export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of config file
   export_default AUDIO_DIRECT "$(rospack find mesapro)/audio/" #directory of audio files
-  export_default CONDA_DIRECT "$HOME/anaconda3" # directory where conda or minicoda is installed 
+  export_default CONDA_DIRECT "$HOME/anaconda3 || $HOME/miniconda3" # directory where conda or minicoda is installed 
   export_default CONDA_ENV "mypython3" #name of the conda environment with python3 
   export_default OPENPOSE_PYTHON "$CATKIN_WORKSPACE_MAIN/src/openpose/build/python" #assuming OpenPose is inside the RASBERRY_WS folder
   export_default OPENPOSE_MODELS "$CATKIN_WORKSPACE_MAIN/src/openpose/models"

@@ -118,7 +118,7 @@ class human_class:
         ##################################################################################33
         #Front cameras info extraction
         #therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
-        therm_image_front = ros_numpy.numpify(therm_front)
+        therm_image_front = ros_numpy.numpify(therm_front) #replacing cv_bridge
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -128,7 +128,8 @@ class human_class:
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
         
         #color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
-        color_image = ros_numpy.numpify(rgb_front)
+        color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
+        color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
@@ -136,12 +137,11 @@ class human_class:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
-        
         img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) # crop to match the thermal field of view
         img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
         #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
-        depth_image = ros_numpy.numpify(depth_front)
+        depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
         depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         if image_rotation==90:
@@ -200,7 +200,9 @@ class human_class:
     def rgbd_1_callback(self,rgb_front, depth_front):
         ##################################################################################33
         #Front camera info extraction
-        color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        #color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8") 
+        color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
+        color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
@@ -209,9 +211,9 @@ class human_class:
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
         
-        depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
         depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
-        
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
@@ -253,7 +255,8 @@ class human_class:
     def rgbd_thermal_2_callback(self,rgb_front, depth_front, therm_front,rgb_back, depth_back, therm_back):
         ##################################################################################33
         #Front cameras info extraction
-        therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
+        #therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
+        therm_image_front = ros_numpy.numpify(therm_front) #replacing cv_bridge
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -262,7 +265,9 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
         
-        color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        #color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
+        color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
@@ -270,13 +275,12 @@ class human_class:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
-        
         img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #crop to match the thermal field of view
         img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
-        depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
-        depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
-        
+        #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
+        depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image  
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
@@ -290,7 +294,8 @@ class human_class:
         self.image_size = img_rgb_rz_front.shape
         ##################################################################################
         #Back cameras info extraction
-        therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
+        #therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
+        therm_image_back = ros_numpy.numpify(depth_back) #replacing cv_bridge
         if image_rotation==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -299,9 +304,10 @@ class human_class:
             img_t_rot_back=therm_image_back
         img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
         
-        color_image = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        #color_image = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        color_image = ros_numpy.numpify(rgb_back) #replacing cv_bridge
+        color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_back=cv2.undistort(color_image, mtx, dist) #undistort image 
-        
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -311,9 +317,9 @@ class human_class:
         img_rgb_rz_back=np.zeros((img_t_rot_back.shape[0],img_t_rot_back.shape[1],3),np.uint8)
         img_rgb_rz_back=img_rgb_rot_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1],:]
         
-        depth_image = bridge.imgmsg_to_cv2(depth_back, "passthrough")
+        #depth_image = bridge.imgmsg_to_cv2(depth_back, "passthrough")
+        depth_image = ros_numpy.numpify(depth_back) #replacing cv_bridge
         depth_image_back=cv2.undistort(depth_image, mtx, dist) #undistort image 
-        
         depth_array_back = np.array(depth_image_back, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
@@ -339,9 +345,10 @@ class human_class:
     def rgbd_2_callback(self,rgb_front, depth_front,rgb_back, depth_back):
         ##################################################################################33
         #Front camera info extraction
-        color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        #color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
+        color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
+        color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
-        
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -349,9 +356,9 @@ class human_class:
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
         
-        depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
+        depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
         depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
-        
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
@@ -363,9 +370,10 @@ class human_class:
         self.image_size = img_rgb_rot_front.shape
         ##################################################################################
         #Back camera info extraction
-        color_image = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
-        color_image_back=cv2.undistort(color_image, mtx, dist) #undistort image 
-        
+        #color_image = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
+        color_image = ros_numpy.numpify(rgb_back) #replacing cv_bridge
+        color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
+        color_image_back =cv2.undistort(color_image, mtx, dist) #undistort image        
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -373,9 +381,9 @@ class human_class:
         else: #0 degrees
             img_rgb_rot_back=color_image_back            
 
-        depth_image = bridge.imgmsg_to_cv2(depth_back, "passthrough")
-        depth_image_back=cv2.undistort(depth_image, mtx, dist) #undistort image 
-        
+        #depth_image = bridge.imgmsg_to_cv2(depth_back, "passthrough")
+        depth_image = ros_numpy.numpify(depth_back) #replacing cv_bridge
+        depth_image_back =cv2.undistort(depth_image, mtx, dist) #undistort image 
         depth_array_back = np.array(depth_image_back, dtype=np.float32)/1000
         if image_rotation==90:
             img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
@@ -714,10 +722,10 @@ if __name__ == '__main__':
         image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image) #old topic name only for a single camera
         depth_front_sub = message_filters.Subscriber('/camera1/aligned_depth_to_color/image_raw', Image) #old topic name only for a single camera
         if thermal_info==True:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub], 10, 1)
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub], 5, 1)
             ts.registerCallback(human.rgbd_thermal_1_callback)
         else:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 1)    
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 5, 1)    
             ts.registerCallback(human.rgbd_1_callback)
     else: #n_camaras==2
         #Camara front and back
@@ -729,16 +737,16 @@ if __name__ == '__main__':
         image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image) #new topic names
         depth_back_sub = message_filters.Subscriber('/camera2/aligned_depth_to_color/image_raw', Image) #new topic names
         if thermal_info==True:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub,image_back_sub, depth_back_sub, thermal_back_sub], 1, 1)
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub,image_back_sub, depth_back_sub, thermal_back_sub], 5, 1)
             ts.registerCallback(human.rgbd_thermal_2_callback)
         else:
-            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub,image_back_sub, depth_back_sub], 1, 1)    
+            ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub,image_back_sub, depth_back_sub], 5, 1)    
             ts.registerCallback(human.rgbd_2_callback)
     if openpose_visual==False:
         rospy.spin()
     else:
         #Rate setup
-        rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
+        rate = rospy.Rate(1/0.001) # ROS publishing rate in Hz
         while not rospy.is_shutdown():
             #cv2.imshow("Human detector",human.color_image )
             #cv2.waitKey(10)  

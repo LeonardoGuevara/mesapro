@@ -334,7 +334,7 @@ if __name__ == '__main__':
     #Camara front
     image_front_sub = message_filters.Subscriber('camera/camera1/color/image_raw', Image) #old topic names
     depth_front_sub = message_filters.Subscriber('camera/camera1/aligned_depth_to_color/image_raw', Image) #old topic names
-    ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 1, 1) #1,0.01
+    ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub], 5, 1) #1,0.01
     ts.registerCallback(human.camera_callback)
     if visualization==False:
         rospy.spin()

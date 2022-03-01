@@ -111,14 +111,14 @@ class human_class:
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
         
         #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
-        color_image_front = ros_numpy.numpify(rgb_front)
+        color_image = ros_numpy.numpify(rgb_front)
+        color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
-        
         img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #to match the thermal field of view
         img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
@@ -156,7 +156,8 @@ class human_class:
         ##################################################################################33
         #Front camera info extraction
         #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
-        color_image_front = ros_numpy.numpify(rgb_front)
+        color_image = ros_numpy.numpify(rgb_front)
+        color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -195,14 +196,14 @@ class human_class:
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
         
         #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
-        color_image_front = ros_numpy.numpify(rgb_front)
+        color_image = ros_numpy.numpify(rgb_front)
+        color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
-            img_rgb_rot_front=color_image_front            
-        
+            img_rgb_rot_front=color_image_front                  
         img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #to match the thermal field of view
         img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
@@ -220,7 +221,8 @@ class human_class:
         img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
         
         #color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
-        color_image_back = ros_numpy.numpify(rgb_back)
+        color_image = ros_numpy.numpify(rgb_back)
+        color_image_back = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -242,7 +244,8 @@ class human_class:
         ##################################################################################33
         #Front camera info extraction
         #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
-        color_image_front = ros_numpy.numpify(rgb_front)
+        color_image = ros_numpy.numpify(rgb_front)
+        color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -254,7 +257,8 @@ class human_class:
         ##################################################################################
         #Back camera info extraction
         #color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
-        color_image_back = ros_numpy.numpify(rgb_back)
+        color_image = ros_numpy.numpify(rgb_back)
+        color_image_back = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
         elif image_rotation==270:
@@ -414,7 +418,7 @@ if __name__ == '__main__':
             if thermal_info==True:
                 thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #old topic name only for a single camera
                 image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #old topic name only for a single camera
-                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 1, 1)
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 5, 1)
                 ts.registerCallback(human.rgb_thermal_1_callback)
             else:
                 rospy.Subscriber('camera/camera1/color/image_raw', Image,human.rgb_1_callback) #really old topic name before thermal info
@@ -425,12 +429,12 @@ if __name__ == '__main__':
                 image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #new topic names
                 thermal_back_sub=message_filters.Subscriber('/flir_module_driver2/thermal/image_raw', Image) #new topic names
                 image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image)    #new topic names
-                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub,image_back_sub, thermal_back_sub], 1, 1)
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub,image_back_sub, thermal_back_sub], 5, 1)
                 ts.registerCallback(human.rgb_thermal_2_callback)
             else:
                 image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #new topic names
                 image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image)    #new topic names
-                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub,image_back_sub], 1, 1)
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub,image_back_sub], 5, 1)
                 ts.registerCallback(human.rgb_2_callback)
                 
     if visual_mode>=2:
