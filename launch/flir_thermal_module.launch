@@ -2,7 +2,7 @@
   <arg name="debug" default="true" /> <!-- set to true to view the image or false to launch just the driver of the camera -->
   <arg name="num_cam" default="" /> <!-- number of cameras, 1 or 2-->
   <arg name="ir_img_color" default="false" /> <!-- set to true to publish ir temp-coded color image, false for grayscale -->
-  <arg name="capture_time" default="0.3" /> <!-- estimated time of capture of the sensor in seconds -->
+  <arg name="capture_time" default="0.2" /> <!-- estimated time of capture of the sensor in seconds -->
   <arg name="flir_serial_n1" default="" /> <!-- serial number camera 1 -->
   <arg name="flir_serial_n2" default="" /> <!-- serial number camera 2 -->
   

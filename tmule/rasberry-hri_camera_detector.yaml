@@ -27,11 +27,11 @@ init_cmd: |
   
   export_default VISUAL_MODE 1 # "3" means perception+topological navigation info is displayed
   export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
-  export_default USE_CAMERA_DETECTOR false #if "false", the rgbd+thermal human detector is not launched
+  export_default USE_CAMERA_DETECTOR true #if "false", the rgbd+thermal human detector is not launched
   export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
   export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
   export_default USE_LEG_DETECTOR false #if "false", Lidar based leg_detector is not launched
-  export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
+  export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
   export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera 2
