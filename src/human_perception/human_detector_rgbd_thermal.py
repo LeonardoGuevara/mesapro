@@ -18,7 +18,12 @@ import yaml
 from mesapro.msg import human_detector_msg
 import ros_numpy
 ##########################################################################################
-#Feature extraction variables
+#GLOBAL CONFIG FILE DIRECTORY
+config_direct=rospy.get_param("/hri_camera_detector/config_direct") #you have to change /hri_camera_detector/ if the node is not named like this
+#config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+a_yaml_file = open(config_direct+"global_config.yaml")
+parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
+#FEATURE EXTRACTION PARAMETERS
 n_joints=19
 n_features=36
 joints_min=7 #minimum number of joints to consider a detection
@@ -27,7 +32,7 @@ time_threshold=3 #3 seconds as the minimum time between two consecute changes of
 time_change=0 #initial counter value
 avoid_area=0.05 #percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
 search_area=0.3 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
-##Importing RF model for posture recognition
+##MODEL FOR POSTURE RECOGNITION
 posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
 #posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
 model_rf = joblib.load(posture_classifier_model)   
@@ -55,35 +60,26 @@ opWrapper.start()
 datum = op.Datum()
 #Initializating cv_bridge
 bridge = CvBridge()
-#Setup ROS publiser
+#ROS PUBLISHER SET UP
 pub = rospy.Publisher('human_info_camera', human_detector_msg,queue_size=1) #small queue means priority to new data
 msg = human_detector_msg()
 #THERMAL INFORMATION
 thermal_info=rospy.get_param("/hri_camera_detector/thermal_info") #you have to change /hri_camera_detector/ if the node is not named like this
 #thermal_info=False
-#Parameters to resize rgbd images from 640x480 size to 160x120 and reoriented them 
+#PARAMETERS TO MATCH RGBD + THERMAL IMAGES 
 temp_thresh=100 #threshold to determine if the temperature if a pixel is considered as higher as human temperature
 detection_thresh=0.1 #percentage of pixels in the thermal image which have to satisfy the temp_thresh in order to rise the thermal_detection flag
 image_rotation=rospy.get_param("/hri_camera_detector/image_rotation") #you have to change /hri_camera_detector/ if the node is not named like this
 #image_rotation=0 #it can be 0,90,270 measured clockwise        
+matching_param=list(dict.items(parsed_yaml_file["matching_config"]))
 if image_rotation==270:
-    resize_param=[120,130,285,380] #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 285/380 = 120/160 = 3/4
-elif image_rotation==90: #IT IS NOT WELL TUNNED YET
-    resize_param=[120,105,285,380] 
-else: #image_rotation==0 #IT IS NOT WELL TUNNED YET
-    resize_param=[120,130,380,285] 
-#VISUALIZATION VARIABLES
-n_cameras=rospy.get_param("/hri_camera_detector/n_cameras") #you have to change /hri_camera_detector/ if the node is not named like this
-#n_cameras=1 # 1 means that the back camera is emulated by reproducing the front camera image
-openpose_visual=rospy.get_param("/hri_camera_detector/openpose_visual") #you have to change /hri_camera_detector/ if the node is not named like this
-#openpose_visual=True #to show or not a window with the human detection delivered by openpose
+    resize_param=matching_param[0][1] #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
+    #resize_param=[125,140,285,380]
+elif image_rotation==90:
+    resize_param=matching_param[1][1] 
+else: #image_rotation==0 
+    resize_param=matching_param[2][1] 
 #RGBD CAMERA INTRINSIC,DISTORTION PARAMETERS
-posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
-#posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
-config_direct=rospy.get_param("/hri_camera_detector/config_direct") #you have to change /hri_camera_detector/ if the node is not named like this
-#config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
-a_yaml_file = open(config_direct+"global_config.yaml")
-parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 camera_param=list(dict.items(parsed_yaml_file["camera_config"]))
 intr_param=camera_param[0][1]
 dist_param=camera_param[1][1]
@@ -93,6 +89,11 @@ mtx =  np.array([[intr_param[0], 0, intr_param[1]],
                  [0, intr_param[2], intr_param[3]],
                  [0, 0, 1]])
 dist=np.array(dist_param)
+#VISUALIZATION VARIABLES
+n_cameras=rospy.get_param("/hri_camera_detector/n_cameras") #you have to change /hri_camera_detector/ if the node is not named like this
+#n_cameras=1 # 1 means that the back camera is emulated by reproducing the front camera image
+openpose_visual=rospy.get_param("/hri_camera_detector/openpose_visual") #you have to change /hri_camera_detector/ if the node is not named like this
+#openpose_visual=True #to show or not a window with the human detection delivered by openpose
 #########################################################################################################################
 
 class human_class:
@@ -463,7 +464,7 @@ class human_class:
                     self.thermal_detection=True #if there are enough number of pixels with high intensity, it means there is thermal detection even if the human is not detected by the Openpose
                 else:
                     self.thermal_detection=False   
-        #Publish     
+        #Publish continuously 
         if self.n_human>0:
             #print('Human detection')
             msg.posture = [int(x) for x in list(self.posture[:,0])] #to ensure publish int
@@ -476,14 +477,24 @@ class human_class:
             msg.orientation = [int(x) for x in list(self.orientation[:,0])] #to ensure publish int
             msg.camera_id= [int(x) for x in list(self.camera_id[:,0])] #to ensure publish int
             msg.image_size= self.image_size  #asumming both cameras has the same image size
-            msg.thermal_detection=int(self.thermal_detection)
+            msg.thermal_detection=self.thermal_detection
             msg.intensity=[int(x) for x in list(self.intensity[:,0])] #to ensure publish int 
             pub.publish(msg)
-        elif self.n_human==0 and self.thermal_detection==True:
-            #print('Thermal detection')
+        else: #self.n_human==0:
+            msg.posture = [] 
+            msg.posture_prob = []
+            msg.centroid_x = []
+            msg.centroid_y = []
+            msg.position_x = []
+            msg.position_y = []
+            msg.distance = []
+            msg.orientation = []
+            msg.camera_id= [] 
+            msg.image_size= self.image_size  
             msg.thermal_detection=self.thermal_detection
+            msg.intensity=[] #to ensure publish int
             pub.publish(msg)
-    
+        
 ################################################################################################################            
     def feature_extraction_3D(self,poseKeypoints,depth_array,therm_array,n_joints,n_features):
         posture=np.zeros([len(poseKeypoints[:,0,0]),2])

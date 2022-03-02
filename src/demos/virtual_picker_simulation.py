@@ -373,6 +373,17 @@ if __name__ == '__main__':
             msg.n_human = 2
         elif human.distance[0,0]>dist_detection and human.distance[1,0]>dist_detection: 
             msg.n_human= 0
+            msg.posture = []
+            msg.posture_prob = []
+            msg.motion = []
+            msg.position_x = []
+            msg.position_y = []
+            msg.centroid_x = []
+            msg.centroid_y = []
+            msg.distance = []
+            msg.orientation = []
+            msg.area = []
+            msg.sensor = []
         elif human.distance[0,0]<=dist_detection and human.distance[1,0]>dist_detection:
             msg.posture = [human.posture[0,0]]
             msg.posture_prob = [human.posture[0,1]]

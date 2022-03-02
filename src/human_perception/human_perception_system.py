@@ -9,6 +9,7 @@ from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 import time
 from mesapro.msg import human_msg, human_detector_msg
+import threading # Needed for Timer
 ##########################################################################################
 
 #Setup ROS publiser
@@ -31,9 +32,9 @@ threshold_no_data=2 #seconds needed to remove a human from tracking list
 posture_threshold=0.3 #minimum probability delivered by gesture recognition algoritm to start tracking new human using camera info
 #General purposes variables
 main_counter=0
-new_data=[0,0]     #flag to know if a new data from LiDAR or Camera is available, first element is for LiDAR, second for Camera
-time_data=[0,0]    #list with the time in which new data was taken from Lidar or camera
-time_diff=[0,0]    #list with the time between two consecutive data taken from lidar or camera
+new_data=[0,0]     #flag to know if a new human detection from LiDAR or Camera is available, first element is for LiDAR, second for Camera
+time_data=[0,0]    #list with the time in which new detection was taken from Lidar or camera
+time_diff=[0,0]    #list with the time between two consecutive detections taken from lidar or camera
 #########################################################################################################################
 
 class robot_class:
@@ -74,12 +75,15 @@ class human_class:
         self.counter_old=np.ones([self.n_human,2]) # vector with the number of times the human tracked has not been uptated with data from lidar or camera, counter>0 means is not longer detected, counter<=0 means is being detected 
         #Thermal detection
         self.thermal_detection=False #assuming no thermal detection as initial value
+        # Safety timers (only for camera messages because leg detector is not publishing continuously)
+        self.cam_msg=True                       #flag to know if camera is publishing messages, by default is "True"
+        self.time_without_msg=5                 # Maximum time without receiving sensors messages 
+        self.timer_safety_cam = threading.Timer(self.time_without_msg,self.safety_timeout_cam) # If "n" seconds elapse, call safety_timeout() for camera
+        self.timer_safety_cam.start()
         
     def lidar_callback(self,legs):
         #print("DATA FROM LIDAR")
         if new_data[0]==0:
-            #if legs.poses is None: #if there is no human legs detected
-            #    print('No human detected from lidar')
             if legs.poses is not None: #only if there are legs detected           
                 k=0
                 pos=self.position_lidar
@@ -97,11 +101,16 @@ class human_class:
                 if k<len(pos): #if there are less human detected than before
                     pos=pos[0:k,:]    
                 self.position_lidar=pos
-                new_data[0]=1 # update flag for new data
+                new_data[0]=1 # update flag for new data only if there are legs detected, not only for receiving empty messages
                 time_diff[0]=time.time()-time_init-time_data[0]
                 time_data[0]=time.time()-time_init # update time when the last data was received
         
     def camera_callback(self,data):
+        #print("Camera message received")
+        self.timer_safety_cam.cancel()
+        self.timer_safety_cam = threading.Timer(self.time_without_msg,self.safety_timeout_cam) # If "n" seconds elapse, call safety_timeout()
+        self.timer_safety_cam.start()
+        self.cam_msg=True 
         #print("DATA FROM CAMERA")
         if new_data[1]==0 and len(data.distance)>0: #only if there is at least one human detected by camera
             k=0
@@ -469,7 +478,7 @@ class human_class:
             for k in range(0,len(new_human_flag)):
                 if new_human_flag[k]==0 and posture_new[k,1]>=posture_threshold: # only if the gesture estimation probability is reliable 
                     #print('New human tracked from the camera')
-                    print("ADDED",centroid_new[k,0])
+                    #print("ADDED",centroid_new[k,0])
                     n_human=n_human+1
                     #Human perception
                     position=np.append(position,[position_cam_new[k,:]],axis=0)
@@ -695,6 +704,11 @@ class human_class:
         
         return area
     
+    
+    def safety_timeout_cam(self):
+        print("No camera messages received in a long time")
+        self.cam_msg=False #to let the safety system know that human_perception is not getting info from the cameras
+        
 ###############################################################################################
 # Main Script
 
@@ -713,34 +727,41 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():	
         main_counter=main_counter+1
         #Human tracking
-        human.human_tracking()
-        #Human motion inference
+        human.human_tracking()     
         if new_data[0]==1:
             new_data[0]=0
         if new_data[1]==1:
             new_data[1]=0
-           
-        #Publish     
-        if human.n_human>1 or (human.n_human==1 and (human.motion_track[0,0]+human.centroid_track[0,0]+human.centroid_track[0,1]+human.posture_track[0,0]+human.position_track[0,0]+human.position_track[0,1]+human.distance_track[0,0])!=0):
-            msg.n_human = human.n_human
-            msg.posture = list(human.posture_track[:,0])
-            msg.posture_prob = list(human.posture_track[:,1])
-            msg.motion = list(human.motion_track[:,0])
-            msg.position_x = list(human.position_track[:,0])
-            msg.position_y = list(human.position_track[:,1])
-            msg.centroid_x =list(human.centroid_track[:,0])
-            msg.centroid_y =list(human.centroid_track[:,1])
-            msg.distance = list(human.distance_track[:,0])
-            msg.orientation = list(human.orientation_track[:,0])
-            msg.area = list(human.area[:,0])
-            msg.sensor = list(human.sensor[:,0])
-            msg.thermal_detection=human.thermal_detection
-        else:
-            msg.n_human = 0 #no human detected
-            msg.thermal_detection=human.thermal_detection
-        pub.publish(msg)
+        #Publish human_perception messages only if camaras are still publishing messages  
+        if human.cam_msg==True:
+            if human.n_human>1 or (human.n_human==1 and (human.motion_track[0,0]+human.centroid_track[0,0]+human.centroid_track[0,1]+human.posture_track[0,0]+human.position_track[0,0]+human.position_track[0,1]+human.distance_track[0,0])!=0):
+                msg.n_human = human.n_human
+                msg.posture = list(human.posture_track[:,0])
+                msg.posture_prob = list(human.posture_track[:,1])
+                msg.motion = list(human.motion_track[:,0])
+                msg.position_x = list(human.position_track[:,0])
+                msg.position_y = list(human.position_track[:,1])
+                msg.centroid_x =list(human.centroid_track[:,0])
+                msg.centroid_y =list(human.centroid_track[:,1])
+                msg.distance = list(human.distance_track[:,0])
+                msg.orientation = list(human.orientation_track[:,0])
+                msg.area = list(human.area[:,0])
+                msg.sensor = list(human.sensor[:,0])
+                msg.thermal_detection=human.thermal_detection
+            else: #no human detected
+                msg.n_human = 0 
+                msg.posture = []
+                msg.posture_prob = []
+                msg.motion = []
+                msg.position_x = []
+                msg.position_y = []
+                msg.centroid_x = []
+                msg.centroid_y = []
+                msg.distance = []
+                msg.orientation = []
+                msg.area = []
+                msg.sensor = []
+                msg.thermal_detection=human.thermal_detection
+            pub.publish(msg)
         rate.sleep() #to keep fixed the publishing loop rate
-        time_end=time.time()
-        pub_time=time_end-time_init
-        #print("TIME",round(pub_time,2))
         

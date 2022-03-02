@@ -8,8 +8,8 @@ import threading # Needed for Timer
 from mesapro.msg import hri_msg
 
 audio_direct=rospy.get_param("/hri_audio_alerts/audio_direct") #you have to change /hri_audio_alerts/ if the node is not named like this
-intervals_long=[10,10,10,10,10,10,10,10] #time till a message is repeated in the first version, in seconds, it depedns of each message
-intervals_short=[3,3,3,4,3,3,3,4] #time between two versions of the same message
+intervals_long=[10,10,10,10,10,10,10,10,10] #time till a message is repeated in the first version, in seconds, it depedns of each message
+intervals_short=[3,3,3,4,3,3,3,4,4] #time between two versions of the same message
 version=0 #to know which language has to be used
         
 class hri_class:
@@ -30,7 +30,7 @@ class hri_class:
         self.critical_dist=safety_info.critical_dist
         self.new_goal=safety_info.new_goal
         [self.current_audio,self.change_audio]=self.activate_audio()
-        print("Safety message received")
+        #print("Safety message received")
         self.timer_safety.cancel()
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
@@ -75,7 +75,8 @@ class hri_class:
             audio="moving_to_current_goal.mp3"
         if audio_index==7:
             audio="safety_system_not_working.mp3"
-        
+        if audio_index==8:
+            audio="human_perception_not_working.mp3"
         message=folder+audio
         return message
 

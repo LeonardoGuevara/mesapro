@@ -28,13 +28,13 @@ avoid_area=0.05 #percentage of the center of the merged image (front+back images
 search_area=0.3 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
 ##Importing RF model for posture recognition
 #posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
-posture_classifier_model="/home/thorvald/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
 model_rf = joblib.load(posture_classifier_model)   
 ##OPENPOSE INITIALIZATION 
 #openpose_python=rospy.get_param("/hri_camera_detector/openpose_python") #you have to change /hri_camera_detector/ if the node is not named like this
 #openpose_models=rospy.get_param("/hri_camera_detector/openpose_models") #you have to change /hri_camera_detector/ if the node is not named like this
-openpose_python='/home/thorvald/rasberry_ws/src/openpose/build/python'
-openpose_models="/home/thorvald/rasberry_ws/src/openpose/models"
+openpose_python='/home/leo/rasberry_ws/src/openpose/build/python'
+openpose_models="/home/leo/rasberry_ws/src/openpose/models"
 try:
     sys.path.append(openpose_python);
     from openpose import pyopenpose as op
@@ -66,11 +66,11 @@ detection_thresh=0.1 #percentage of pixels in the thermal image which have to sa
 #image_rotation=rospy.get_param("/hri_camera_detector/image_rotation") #you have to change /hri_camera_detector/ if the node is not named like this
 image_rotation=270 #it can be 0,90,270 measured clockwise        
 if image_rotation==270:
-    resize_param=[120,130,285,380] #[y_init_up,x_init_left,n_pixels_x,n_pixels_y,theta_degrees] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
+    resize_param=[125,140,285,380] #[y_init_up,x_init_left,n_pixels_x,n_pixels_y,theta_degrees] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
 elif image_rotation==90: #IT IS NOT WELL TUNNED YET
-    resize_param=[120,105,291,388] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=90
-else: #image_rotation==0 
-    resize_param=[105,120,388,291] #[y_init_up,x_init_left,x_pixels,y_pixels] assuming portrait mode with image_rotation=0
+    resize_param=[120,105,285,380] 
+else: #image_rotation==0 #IT IS NOT WELL TUNNED YET
+    resize_param=[120,130,380,285] 
 #VISUALIZATION VARIABLES
 #n_cameras=rospy.get_param("/hri_camera_detector/n_cameras") #you have to change /hri_camera_detector/ if the node is not named like this
 n_cameras=1 # 1 means that the back camera is emulated by reproducing the front camera image
@@ -78,9 +78,9 @@ n_cameras=1 # 1 means that the back camera is emulated by reproducing the front 
 openpose_visual=True #to show or not a window with the human detection delivered by openpose
 #RGBD CAMERA INTRINSIC,DISTORTION PARAMETERS
 #posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
-posture_classifier_model="/home/thorvald/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
 #config_direct=rospy.get_param("/hri_camera_detector/config_direct") #you have to change /hri_camera_detector/ if the node is not named like this
-config_direct="/home/thorvald/rasberry_ws/src/mesapro/config/"
+config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 camera_param=list(dict.items(parsed_yaml_file["camera_config"]))
@@ -125,7 +125,7 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
         
-        mat = get_M(0*(np.pi/180), 0*(np.pi/180), 0, 0, 0, 0,resize_param[2],resize_param[3])
+        mat = get_M(0*(np.pi/180), -5*(np.pi/180), 0, 10, 5, 5,resize_param[2],resize_param[3])
         img_t_rot_front= cv2.warpPerspective(img_t_rot_front, mat, (resize_param[2],resize_param[3]))
 
         
@@ -711,8 +711,8 @@ def get_M(theta, phi, gamma, dx, dy, dz,width, height):
     #f = d /1.8
     dz=f
     # Projection 2D -> 3D matrix
-    A1 = np.array([ [1, 0, -w/0.3], #originally -w/2
-                    [0, 1, -h/3], #originally -h/2
+    A1 = np.array([ [1, 0, -w/2.3], #originally -w/2
+                    [0, 1, -h/2], #originally -h/2
                     [0, 0, 1],
                     [0, 0, 1]])
     
@@ -742,8 +742,8 @@ def get_M(theta, phi, gamma, dx, dy, dz,width, height):
                     [0, 0, 0, 1]])
 
     # Projection 3D -> 2D matrix
-    A2 = np.array([ [f, 0, w/0.3, 0],
-                    [0, f, h/3, 0],
+    A2 = np.array([ [f, 0, w/2.3, 0],
+                    [0, f, h/2, 0],
                     [0, 0, 1, 0]])
 
     # Final transformation matrix

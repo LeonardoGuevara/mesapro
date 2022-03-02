@@ -78,7 +78,7 @@ windows:
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch audio_direct:=$AUDIO_DIRECT operation_mode:=$OPERATION_MODE
+  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization
   panes:

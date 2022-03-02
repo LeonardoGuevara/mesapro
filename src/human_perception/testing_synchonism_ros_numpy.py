@@ -75,7 +75,7 @@ class human_class:
         ##################################################################################33
         #Front cameras info extraction
         #therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
-        therm_image_front = ros_numpy.numpify(therm_front)
+        therm_image_front = ros_numpy.numpify(therm_front) # replacing cv_bridge
         
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)

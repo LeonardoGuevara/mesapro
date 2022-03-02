@@ -31,12 +31,14 @@ thermal_info=rospy.get_param("/hri_visualization/thermal_info") #you have to cha
 #thermal_info=False
 image_rotation=rospy.get_param("/hri_visualization/image_rotation") #you have to change /hri_visualization/ if the node is not named like this
 #image_rotation=0 #it can be 0,90, 180, 270 measured clockwise     
+matching_param=list(dict.items(parsed_yaml_file["matching_config"]))
 if image_rotation==270:
-    resize_param=[120,130,285,380] #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 285/380 = 120/160 = 3/4
-elif image_rotation==90: #IT IS NOT WELL TUNNED YET
-    resize_param=[120,105,285,380] 
-else: #image_rotation==0 #IT IS NOT WELL TUNNED YET
-    resize_param=[120,130,380,285] 
+    resize_param=matching_param[0][1] #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
+    #resize_param=[125,140,285,380]
+elif image_rotation==90:
+    resize_param=matching_param[1][1] 
+else: #image_rotation==0 
+    resize_param=matching_param[2][1] 
 #################################################################################################################################
 #IMPORTING LABELS NAMES
 posture_labels=ar_param[2][1]
