@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="time_without_msg" default="5"/>   
+      
+    <node pkg="mesapro" type="human_perception_system.py" name="hri_perception">
+        <param name="time_without_msg" value="$(arg time_without_msg)"/>
+    </node>
+</launch>
+
+

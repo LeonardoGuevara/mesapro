@@ -12,9 +12,9 @@ from topological_navigation.route_search2 import TopologicalRouteSearch2
 #from topological_navigation.tmap_utils import *
 from mesapro.msg import human_msg, hri_msg, robot_msg
 import threading # Needed for Timer
-##########################################################################################
-operation_mode=rospy.get_param("/hri_safety_system/operation_mode") #you have to change /hri_safety_system/ if the node is not named like this
-#operation_mode="logistics" #UVC or logistics
+#######################################################################################################################
+#GENERAL PURPUSES VARIABLES
+pub_hz=0.01 #main loop frequency
 #Setup ROS publiser
 pub_safety = rospy.Publisher('human_safety_info', hri_msg,queue_size=1)
 safety_msg = hri_msg()
@@ -68,7 +68,7 @@ class human_class:
         self.thermal_detection=False #true if thermal detection flag is also True
         #Safety Timer
         self.perception_msg=True      # if "False", human perception messages are not published, by default is "True"
-        self.time_without_msg=5       # Maximum time without receiving human_info messages
+        self.time_without_msg=rospy.get_param("/hri_safety_system/time_without_msg",5) # Maximum time without receiving human perception messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
         
@@ -132,8 +132,7 @@ class hri_class:
         self.critical_dist=0 #distance of the critical human
         self.risk=False #it is true if the detected human is considered in risk, used to avoid unnecesary stops with human who is not occluding the robot path
         self.new_goal="none" #name of the new final goal
-        self.operation=operation_mode   # logistics or UVC
-        #self.aligned=False #True if is the human is aligned to the robot front or back, False if the human is on the sides of the robot   
+        self.operation=rospy.get_param("/hri_safety_system/operation_mode","logistics") #can be "UVC" or "logistics"
         self.safe_cond=False #True if the human is static and facing the robot, False if not satisfying this safety condition
         
 
@@ -580,7 +579,7 @@ if __name__ == '__main__':
     rospy.Subscriber('/robot_pose', Pose, robot.robot_pose_callback)  
     robot.base_frame = rospy.get_param("row_traversal/base_frame", "base_link")
     #Rate setup
-    rate = rospy.Rate(1/0.01) # ROS publishing rate in Hz
+    rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz
     while not rospy.is_shutdown():	      
         hri.decision_making()
         #print("status",hri.status)

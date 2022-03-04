@@ -11,8 +11,8 @@ camera_config: #for depth image of realsense D455
 ##################################################
 matching_config: #for camera D455 + FLIR lepton
   270_param: [125,140,285,380]  #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] when image is rotated 270 degrees
-  90_param: [120,105,285,380]  #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] when image is rotated 90 degrees NOT WEEL CALIBRATED*****
-  0_param: [120,130,380,285]   #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] when image is rotated 0 degrees NOT WEEL CALIBRATED*****
+  90_param: [120,105,285,380]  #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] when image is rotated 90 degrees NOT WELL CALIBRATED*****
+  0_param: [120,130,380,285]   #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] when image is rotated 0 degrees NOT WELL CALIBRATED*****
 ##################################################
 action_recog_config:
   n_joints: 19       #19 body joints from openpose output (25 available)
@@ -27,6 +27,9 @@ human_safety_config:
   safety_action: ["move_to_goal","approaching_to_human","moving_away_from_human","pause","wait_for_new_human_command","no_safety_action"]
   human_command: ["no_command","approach","move_away","stop","yes","no"]
   operation_mode: ["logistics","UV-C_treatment"]
+  han_distances: [3.6,1] #Human to robot distances (m) at which the robot starts to slow down or stop -> [slow_down,stop]
+  logistics_risk_distances: [3.6,1.2] #Human to robot distances (m) used to determine the HRI risk during logistics 
+  uvc_risk_distances: [10,7] #Human to robot distances (m) used to determine the HRI risk during uvc treatment
 ###############################################
 robot_config:
   action: ["moving_to_goal","approaching_to_human","moving_away_from_human","pause","waiting_for_new_human_command"]

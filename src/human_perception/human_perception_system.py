@@ -4,7 +4,6 @@
 import rospy #tf
 import geometry_msgs.msg
 from geometry_msgs.msg import PoseArray
-#from sklearn.ensemble import RandomForestClassifier
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 import time
@@ -15,7 +14,6 @@ import threading # Needed for Timer
 #Setup ROS publiser
 pub = rospy.Publisher('human_info', human_msg,queue_size=1) #small queue means priority to new data
 msg = human_msg()
-pub_hz=0.01 #publising rate in seconds
 #Parameters for area inference
 row_width=1.3 #in meters
 angle_area=60 # in degrees mesuared from the local x-axis robot frame
@@ -35,6 +33,7 @@ main_counter=0
 new_data=[0,0]     #flag to know if a new human detection from LiDAR or Camera is available, first element is for LiDAR, second for Camera
 time_data=[0,0]    #list with the time in which new detection was taken from Lidar or camera
 time_diff=[0,0]    #list with the time between two consecutive detections taken from lidar or camera
+pub_hz=0.01 #main loop frequency
 #########################################################################################################################
 
 class robot_class:
@@ -77,7 +76,7 @@ class human_class:
         self.thermal_detection=False #assuming no thermal detection as initial value
         # Safety timers (only for camera messages because leg detector is not publishing continuously)
         self.cam_msg=True                       #flag to know if camera is publishing messages, by default is "True"
-        self.time_without_msg=5                 # Maximum time without receiving sensors messages 
+        self.time_without_msg=rospy.get_param("/hri_perception/time_without_msg",5) # Maximum time without receiving sensors messages 
         self.timer_safety_cam = threading.Timer(self.time_without_msg,self.safety_timeout_cam) # If "n" seconds elapse, call safety_timeout() for camera
         self.timer_safety_cam.start()
         
@@ -723,7 +722,7 @@ if __name__ == '__main__':
     rospy.Subscriber('/people_tracker/pose_array',PoseArray,human.lidar_callback) 
     rospy.Subscriber('/human_info_camera',human_detector_msg,human.camera_callback)  
     #Rate setup
-    rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
+    rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz
     while not rospy.is_shutdown():	
         main_counter=main_counter+1
         #Human tracking

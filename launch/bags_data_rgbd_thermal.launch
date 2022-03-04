@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <launch>   
-    <arg name="bag_sensors" default="/home/thorvald/Documents/mesapro/bags/match_test_2.bag" />
+    <arg name="bag_file" default="/home/leo/Documents/mesapro/bags/match_test_2.bag" />
     
     <node pkg="rosbag" type="play" name="rosbag_play_sensors"
-    args="--loop $(arg bag_sensors) --topics /camera/aligned_depth_to_color/image_raw /camera/color/image_raw /flir_module_driver/thermal/image_raw /flir_module_driver/thermal/temp_meas_range"/>  
+    args="--loop $(arg bag_file) --topics /camera/aligned_depth_to_color/image_raw /camera/color/image_raw /flir_module_driver/thermal/image_raw /flir_module_driver/thermal/temp_meas_range"/>  
      
 </launch>
 

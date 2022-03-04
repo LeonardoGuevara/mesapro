@@ -7,11 +7,14 @@ import time
 import threading # Needed for Timer
 from mesapro.msg import hri_msg
 
-audio_direct=rospy.get_param("/hri_audio_alerts/audio_direct") #you have to change /hri_audio_alerts/ if the node is not named like this
+default_audio_direct="/home/leo/rasberry_ws/src/mesapro/audio/"
+audio_direct=rospy.get_param("/hri_audio_alerts/audio_direct",default_audio_direct) #you have to change /hri_audio_alerts/ if the node is not named like this
 intervals_long=[10,10,10,10,10,10,10,10,10] #time till a message is repeated in the first version, in seconds, it depedns of each message
 intervals_short=[3,3,3,4,3,3,3,4,4] #time between two versions of the same message
 version=0 #to know which language has to be used
+pub_hz=0.01 #main loop frequency
         
+
 class hri_class:
     def __init__(self): #It is done only the first iteration
         self.safety_message=0
@@ -21,7 +24,7 @@ class hri_class:
         self.change_audio=False #flag to know if current message has to me changed
         self.repeat_audio=False #flag to know if current message should be reproduced again
         self.time_audio=(time.time()-time_init) #time when last message was activated
-        self.time_without_msg=5                 # Maximum time without receiving safety messages
+        self.time_without_msg=rospy.get_param("/hri_audio_alerts/time_without_msg",5) # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
         
@@ -92,7 +95,7 @@ if __name__ == '__main__':
     # Setup and call subscription
     rospy.Subscriber('human_safety_info',hri_msg,hri.safety_callback)
     #Rate setup
-    rate = rospy.Rate(1/0.001) # ROS loop rate in Hz
+    rate = rospy.Rate(1/pub_hz) # main loop frecuency in Hz
     #aux=1
     while not rospy.is_shutdown():
         audio_index=hri.current_audio

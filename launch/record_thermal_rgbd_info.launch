@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="bag_file" default="/home/leo/aa_data/new_data/01-02-22/thermal_rgb_test" />
+    <arg name="bag_file" default="/home/thorvald/Documents/mesapro/bags/thermal_rgbd_test" />
     
     <node pkg="rosbag" type="record" name="rosbag_record_thermal"
-        args="record -o $(arg bag_file) /flir_module_driver2/thermal/image_raw /flir_module_driver2/thermal/temp_meas_range /camera/color/image_raw /camera/aligned_depth_to_color/image_raw /camera/depth/image_rect_raw"/>   
+        args="record -o $(arg bag_file) /flir_module_driver1/thermal/image_raw /flir_module_driver1/thermal/temp_meas_range /camera1/color/image_raw /camera1/aligned_depth_to_color/image_raw /camera1/depth/image_rect_raw /camera1/depth/camera_info /camera1/color/camera_info /camera1/aligned_depth_to_color/camera_info"/>   
 </launch>

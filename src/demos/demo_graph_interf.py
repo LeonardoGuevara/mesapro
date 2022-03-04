@@ -7,62 +7,39 @@ import geometry_msgs.msg
 from geometry_msgs.msg import Pose
 from sensor_msgs.msg import Image
 import numpy as np #to use matrix
-from cv_bridge import CvBridge
 import cv2
 import yaml
 import threading # Needed for Timer
 from mesapro.msg import human_msg, hri_msg, robot_msg
 import ros_numpy
 ##########################################################################################
-
+#GENERAL PURPUSES VARIABLES
+pub_hz=0.01 #main loop frequency
 #Importing global parameters from .yaml file
-#config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
-config_direct=rospy.get_param("/hri_visualization/config_direct") #you have to change /hri_visualization/ if the node is not named like this
+default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+config_direct=rospy.get_param("/hri_visualization/config_direct",default_config_direct) #you have to change /hri_visualization/ if the node is not named like this
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
-ar_param=list(dict.items(parsed_yaml_file["action_recog_config"]))
-hs_param=list(dict.items(parsed_yaml_file["human_safety_config"]))
-r_param=list(dict.items(parsed_yaml_file["robot_config"]))
-#CAMERAS INFO
 ##############################################################################################################################
-#VALUES TAKEN FROM human_detector_rgbd_thermal.py
-#################################################################################################################################
-thermal_info=rospy.get_param("/hri_visualization/thermal_info") #you have to change /hri_visualization/ if the node is not named like this
-#thermal_info=False
-image_rotation=rospy.get_param("/hri_visualization/image_rotation") #you have to change /hri_visualization/ if the node is not named like this
-#image_rotation=0 #it can be 0,90, 180, 270 measured clockwise     
-matching_param=list(dict.items(parsed_yaml_file["matching_config"]))
-if image_rotation==270:
-    resize_param=matching_param[0][1] #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
-    #resize_param=[125,140,285,380]
-elif image_rotation==90:
-    resize_param=matching_param[1][1] 
-else: #image_rotation==0 
-    resize_param=matching_param[2][1] 
+#CAMERAS INFO
+thermal_info=rospy.get_param("/hri_visualization/thermal_info",True) #you have to change /hri_visualization/ if the node is not named like this
+image_rotation=rospy.get_param("/hri_visualization/image_rotation",270) #you have to change /hri_visualization/ if the node is not named like this
+resize_param=parsed_yaml_file.get("matching_config").get(str(image_rotation)+"_param",[125,140,285,380]) #parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y]
 #################################################################################################################################
 #IMPORTING LABELS NAMES
-posture_labels=ar_param[2][1]
-motion_labels=ar_param[3][1]
-orientation_labels=ar_param[4][1]
-hri_status_label=hs_param[0][1]
-audio_message_label=hs_param[1][1] 
-safety_action_label=hs_param[2][1]
-human_command_label=hs_param[3][1]
-action_label=r_param[0][1]
+posture_labels=parsed_yaml_file.get("action_recog_config").get("posture_labels") # labels of the gestures used to train the gesture recognition model
+motion_labels=parsed_yaml_file.get("action_recog_config").get("motion_labels") # labels of the possible motion actions
+orientation_labels=parsed_yaml_file.get("action_recog_config").get("orientation_labels") # labels of the possible human orientations
+hri_status_label=parsed_yaml_file.get("human_safety_config").get("hri_status") # labels of the possible HRI status
+audio_message_label=parsed_yaml_file.get("human_safety_config").get("audio_message") # labels of the possible safety audio messages
+safety_action_label=parsed_yaml_file.get("human_safety_config").get("safety_action") # labels of the possible safety actions
+human_command_label=parsed_yaml_file.get("human_safety_config").get("human_command") # labels of the possible human commands based on gesture recognition
+action_label=parsed_yaml_file.get("robot_config").get("action") # labels of the possible robot actions
 #########################################################################################################################
 #PLOT HRI PARAMETERS
 black_image_size=[680,650] #size of the black background where the parameters are shown
-visual_mode = rospy.get_param("/hri_visualization/visual_mode") #you have to change /hri_visualization/ if the node is not named like this
-#visual_mode=1 # visual_mode=1 means only perception, visual_mode=2 means simulated perception + simulated topo nav, visual_mode=3 means real robot
-n_cameras=rospy.get_param("/hri_visualization/n_cameras") #you have to change /hri_visualization/ if the node is not named like this
-#n_cameras=1 # 1 means that the back camera is emulated by reproducing the front camera image
-
-#GENERAL PURPUSES VARIABLES
-main_counter=0
-pub_hz=0.01
-#Initializating cv_bridge
-bridge = CvBridge()
-
+visual_mode = rospy.get_param("/hri_visualization/visual_mode",1) #"1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
+n_cameras=rospy.get_param("/hri_visualization/n_cameras",1) # 1 means that the back camera is emulated by reproducing the front camera image
 
 class human_class:
     def __init__(self): #It is done only the first iteration
@@ -102,7 +79,6 @@ class human_class:
     def rgb_thermal_1_callback(self,rgb_front, therm_front):
         ##################################################################################33
         #Front cameras info extraction
-        #therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
         therm_image_front = ros_numpy.numpify(therm_front)
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
@@ -112,7 +88,6 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
         
-        #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         color_image = ros_numpy.numpify(rgb_front)
         color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
@@ -157,7 +132,6 @@ class human_class:
     def rgb_1_callback(self,rgb_front):
         ##################################################################################33
         #Front camera info extraction
-        #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         color_image = ros_numpy.numpify(rgb_front)
         color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
@@ -187,7 +161,6 @@ class human_class:
     def rgb_thermal_2_callback(self,rgb_front, therm_front,rgb_back, therm_back):
         ##################################################################################33
         #Front cameras info extraction
-        #therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
         therm_image_front = ros_numpy.numpify(therm_front)
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
@@ -197,7 +170,6 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
         
-        #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         color_image = ros_numpy.numpify(rgb_front)
         color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
@@ -212,7 +184,6 @@ class human_class:
         self.image_size = img_rgb_rz_front.shape
         ##################################################################################
         #Back cameras info extraction
-        #therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
         therm_image_back = ros_numpy.numpify(therm_back)
         if image_rotation==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
@@ -222,7 +193,6 @@ class human_class:
             img_t_rot_back=therm_image_back
         img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
         
-        #color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
         color_image = ros_numpy.numpify(rgb_back)
         color_image_back = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
@@ -245,7 +215,6 @@ class human_class:
     def rgb_2_callback(self,rgb_front,rgb_back):
         ##################################################################################33
         #Front camera info extraction
-        #color_image_front = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         color_image = ros_numpy.numpify(rgb_front)
         color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
@@ -258,7 +227,6 @@ class human_class:
         self.image_size = img_rgb_rot_front.shape
         ##################################################################################
         #Back camera info extraction
-        #color_image_back = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
         color_image = ros_numpy.numpify(rgb_back)
         color_image_back = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
@@ -281,7 +249,7 @@ class hri_class:
         self.safety_action=5 #no safety action  
         self.human_command=0
         self.critical_index=0 #index of the human considered as critical during interaction (it is not neccesary the same than the closest human or the goal human)
-        self.time_without_msg=5                 # Maximum time without receiving safety messages
+        self.time_without_msg=rospy.get_param("/hri_visualization/time_without_msg",5) # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
                  
@@ -418,8 +386,8 @@ if __name__ == '__main__':
     if n_cameras==1:
         if visual_mode==1 or visual_mode==3:    
             if thermal_info==True:
-                thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #old topic name only for a single camera
-                image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #old topic name only for a single camera
+                thermal_front_sub=message_filters.Subscriber('/flir_module_driver1/thermal/image_raw', Image) #new topic name only for a single camera
+                image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #new topic name only for a single camera
                 ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 5, 1)
                 ts.registerCallback(human.rgb_thermal_1_callback)
             else:
@@ -444,15 +412,13 @@ if __name__ == '__main__':
         rospy.Subscriber('/robot_pose', Pose, robot.robot_callback_pos) 
         rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,robot.robot_callback_vel)    
     #Rate setup
-    rate = rospy.Rate(1/pub_hz) # ROS publishing rate in Hz
+    rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz
     while not rospy.is_shutdown():	
-        main_counter=main_counter+1
         if visual_mode==2:  
             color_image = np.zeros((black_image_size[0],black_image_size[1],3), np.uint8) 
         else: #visual_mode=1 or 3
             color_image=human.image
         visual_outputs(color_image)
-        print(main_counter)  
         print("MODE",visual_mode)
         rate.sleep() #to keep fixed the publishing loop rate
         

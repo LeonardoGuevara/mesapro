@@ -5,6 +5,10 @@
   <arg name="use_row_detector" default="false"  if="$(arg use_gps_only)"/>
   <!-- If we are working on the restricted tmap rather than the normal tmap -->
   <arg name="use_restrictions" default="false"/>
+  <!-- Maximum time without receiving safety or human perception messages  -->
+  <arg name="time_without_msg" default="5"/>
+  <!-- Directory to the mesapro global config file  -->
+  <arg name="config_direct" default="/home/leo/rasberry_ws/src/mesapro/config/" /> 
 
   <arg name="site_name" default="riseholme" />
   <arg name="site_path" default="" />
@@ -34,6 +38,8 @@
     <rosparam file="$(arg traversal_config)" command="load"/>
     <param name="use_row_detector" value="$(arg use_row_detector)"/>
     <param name="pole_positions_path" value="$(arg pole_positions)"/>
+    <param name="time_without_msg" value="$(arg time_without_msg)"/>
+    <param name="config_direct" value="$(arg config_direct)"/>
     <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>

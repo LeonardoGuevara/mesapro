@@ -22,7 +22,8 @@ areas_angle=[150,100,80,30,0] #in degrees
 dist_detection=7 #range in meters of human detection
 dist_thermal_detection=10 #range in meters of thermal detection
 main_counter=0
-
+pub_hz=0.01 #main loop frequency
+    
 class human_class:
     def __init__(self): #It is done only the first iteration
         #INFORMATION SIMULATED IN GAZEBO
@@ -349,8 +350,7 @@ if __name__ == '__main__':
     rospy.Subscriber('/robot_pose', Pose, robot.robot_callback_pos) 
     rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,robot.robot_callback_vel)    
     #Rate setup
-    pub_hz=0.01 #publising rate in seconds
-    rate = rospy.Rate(1/pub_hz) # ROS Rate in Hz
+    rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz
     while not rospy.is_shutdown():
         main_counter=main_counter+1  
         #print("main_counter",main_counter)

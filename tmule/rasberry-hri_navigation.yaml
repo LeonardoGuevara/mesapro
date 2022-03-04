@@ -12,21 +12,23 @@ init_cmd: |
     echo "  $0 -> $var_name=${!var_name}"
   }
 
-  # Set up ROS, robot and scenario configs, catkin_workspace, robot number:
+  
+  #############################################################################################
+  # HUMAN-AWARE NAVIGATION PARAMETERS
+  export_default CATKIN_WORKSPACE "$HOME/rasberry_ws"
+  export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of mesapro config file
+  export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
+  ##############################################################################################
   # Source ROS
-  ########################################################################################### NOT NECCESARY
-  #source "/opt/ros/$(rosversion -d)/setup.bash"
-  # Configure the development workspace (assuming we are in rasberry_bringup/tmule)
-  # export_default CATKIN_WORKSPACE "`readlink -f ../../../.. || echo $HOME/rasberry_ws`"
-  # source "$CATKIN_WORKSPACE/devel/setup.bash"
-  ###########################################################################################
+  # source "/opt/ros/$(rosversion -d)/setup.bash"
+  source $CATKIN_WORKSPACE/devel/setup.bash
+  #################################################################################################
   # Load system-specific config file
   if [ -r "$HOME/.rasberryrc" ]; then echo "*** loading $HOME/.rasberryrc" ; source "$HOME/.rasberryrc"; fi
   
   if [ -r "$HOME/.treatmentrc" ]; then echo "*** loading $HOME/.treatmentrc" ; source "$HOME/.treatmentrc"; fi
-  
-   # Load env variables for robots and scenario 
-  ############################################################################################### To launch tmule file outside /rasberry_bringup/tmule
+  ################################################################################################## To launch tmule file outside /rasberry_bringup/tmule  
+  # Load env variables for robots and scenario 
   #export_default BASE_CONFIG_DIR `readlink -f . || echo .`
   export_default BASE_CONFIG_DIR "$(rospack find rasberry_bringup)/tmule"
   ##################################################################################################
@@ -182,11 +184,13 @@ windows:
   - rosparam set /scenario_info/farm_name $FARM_NAME ; rosparam set /scenario_info/field_name $FIELD_NAME; rosparam set /scenario_info/application $APPLICATION
   check: "rosservice list | grep -q message_store"
   tags: [core, nav]
+################################################################################################### For thorvald_014, "extras.xacro" is replaced by "sensors.xacro"
 - name: robot
   panes:
   - roslaunch rasberry_bringup robot_bringup.launch robot_model:=$(rospack find rasberry_bringup)/config/robots/robot_$ROBOT_NO.yaml model_extras:=$(rospack find rasberry_bringup)/urdf/robot_${ROBOT_NO}_sensors.xacro datum_file:="$DATUM_FILE" ekf_publish_tf:="$EKF_PUBLISH_TF" simple_sim:=$USE_SIM with_teleoperation:=True teleop_controller_type:=$TELEOP_CONTROLLER teleop_controller:=$(rospack find thorvald_teleop)/config/$TELEOP_CONTROLLER.yaml joy_dev:=$JOY_DEV world:=$GAZEBO_WORLD_PATH with_gui:=$USE_GUI start_pose_x:=$ROBOT_POS_X start_pose_y:=$ROBOT_POS_Y start_pose_Y:=$ROBOT_POS_A include_plants:=$INCLUDE_PLANTS can_interface_type:=$CAN_INTERFACE_TYPE can_interface_name:=$CAN_INTERFACE_NAME
   check: "rostopic list | grep -q -e base_state"
   tags: [core, nav]
+#################################################################################################################################################################
 - name: lidars_bringup
   panes:
   - if ! $USE_SIM; then roslaunch rasberry_bringup rasberry_lidar.launch lidar_type:="$LIDAR_TYPE_FRONT" position:="front" ip_address:="192.168.0.11"; fi
@@ -220,16 +224,16 @@ windows:
   - roslaunch rasberry_navigation topological_map_manager2_central.launch tmap_file:=$TMAP_FILE use_restrictions:=$USE_RESTRICTIONS
   check: "rostopic list | grep -q /topological_map_2"
   tags: [nav]
-############################################################################################ launching modified scripts from mesapro package
+############################################################################################ launching modified scripts from mesapro package, for thorvald-014 -> row_traversal_thorvald_014.launch
 - name: topo_nav
   panes:
-  - if ! $USE_TEB_PLANNER; then roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/DWAPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS; else roslaunch rasberry_navigation topological_navigation2_robot.launch move_base_planner:=move_base/TebLocalPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS; fi
+  - if ! $USE_TEB_PLANNER; then roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/DWAPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS time_without_msg:=$TIME_WITHOUT_MSG; else roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/TebLocalPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS time_without_msg:=$TIME_WITHOUT_MSG; fi
   check: "rosservice list | grep -q topological_navigation"
   tags: [nav, site]
 - name: nav_actions
   panes:
   - if ! $USE_TEB_PLANNER; then roslaunch rasberry_move_base move_base_dwa.launch use_carrot_planner:=$USE_CARROT use_omni:="$USE_OMNI" robot_no:=$ROBOT_NO robot_footprint:=$ROBOT_FOOTPRINT; else roslaunch rasberry_move_base move_base_teb.launch use_carrot_planner:=$USE_CARROT use_omni:="$USE_OMNI" robot_no:=$ROBOT_NO; fi
-  - roslaunch mesapro row_traversal_thorvald_014.launch use_gps_only:="$USE_GPS_ONLY" detector_config_common:="$ROW_DETECTOR_CONFIG_COMMON" detector_config_ellipse:="$ROW_DETECTOR_CONFIG_ELLIPSE" traversal_config:="$ROW_TRAVERSAL_CONFIG" pole_positions:=$POLE_POSITIONS pole_likelihood_field:=$POLE_LIKELIHOOD_FIELD use_restrictions:=$USE_RESTRICTIONS site_path:=$SITE_PATH robot_type:=$RES_ROBOT_TYPE task:=$APPLICATION
+  - roslaunch mesapro row_traversal_thorvald_014.launch use_gps_only:="$USE_GPS_ONLY" detector_config_common:="$ROW_DETECTOR_CONFIG_COMMON" detector_config_ellipse:="$ROW_DETECTOR_CONFIG_ELLIPSE" traversal_config:="$ROW_TRAVERSAL_CONFIG" pole_positions:=$POLE_POSITIONS pole_likelihood_field:=$POLE_LIKELIHOOD_FIELD use_restrictions:=$USE_RESTRICTIONS site_path:=$SITE_PATH robot_type:=$RES_ROBOT_TYPE task:=$APPLICATION time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
   - if $USE_ROW_CHANGE_ACTION; then roslaunch rasberry_navigation row_change.launch pole_positions:=$POLE_POSITIONS; fi
   - if $USE_DOCKING; then roslaunch rasberry_docking docking.launch use_sim:=$USE_SIM use_whycon:=$USE_WHYCON_DOCK dock_file:=$DOCK_FILE; fi
   check: "rosrun dynamic_reconfigure dynparam list | grep row_traversal"

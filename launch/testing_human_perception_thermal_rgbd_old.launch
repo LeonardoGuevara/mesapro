@@ -4,6 +4,7 @@
     <arg name="openpose_models" default="/home/leo/rasberry_ws/src/openpose/models" />
     <arg name="posture_classifier_model" default="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib" />    
     <arg name="config_direct" default="/home/leo/rasberry_ws/src/mesapro/config/" /> 
+    <arg name="bag_file" default="/home/leo/Documents/mesapro/bags/match_test_2.bag" /> 
     <arg name="visual_mode" default="1" />   
     <arg name="thermal_info" default="True" />
     <arg name="image_rotation" default="270" />
@@ -11,7 +12,9 @@
     <arg name="n_cameras" default="1" />
     <arg name="openpose_visual" default="True" />    
     
-    <include file="$(find mesapro)/launch/bags_data_rgbd_thermal.launch"/>
+    <include file="$(find mesapro)/launch/bags_data_rgbd_thermal.launch">
+        <arg name="bag_file"   value="$(arg bag_file)"/>
+    </include>
 
     <node pkg="mesapro" type="human_safety_system.py" name="hri_safety_system">
         <param name="operation_mode" value="$(arg operation_mode)"/>

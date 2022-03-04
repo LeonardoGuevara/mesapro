@@ -14,24 +14,23 @@ init_cmd: |
 
   #########################################################################################
   # HUMAN-AWARE NAVIGATION PARAMETERS
-  export_default CATKIN_WORKSPACE_MAIN "$HOME/rasberry_ws"
-  export_default CATKIN_WORKSPACE_AUX "$HOME/catkin_build_ws"	
+  export_default CATKIN_WORKSPACE "$HOME/rasberry_ws"
   export_default CONDA_DIRECT "$HOME/anaconda3 || $HOME/miniconda3" # directory where conda or minicoda is installed 
   export_default CONDA_ENV "mypython3" #name of the conda environment with python3 
+  export_default BAG_FILE "$HOME/Documents/mesapro/bags/people_detection_zotac_3_2021-11-05-12-12-12.bag" #full name of the bag file to be reproduced 
   #########################################################################################
   # Source ROS
   # source "/opt/ros/$(rosversion -d)/setup.bash"
-   source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
+   source $CATKIN_WORKSPACE/devel/setup.bash
   #########################################################################################
   #Set up ROS MASTER AND ROS IP
   #export_default ROS_IP "192.168.0.224" #Zotac IP address
   #export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
   #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
   #export ROS_IP=$ROS_IP  
-  #export_default VPN_BASE_ADDR "10.8.0.0"
-  #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
-  #default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
-  #export_default ROS_MASTER $default_ip
+  
+  #export ROS_MASTER_URI="http://192.168.0.224:11311/"
+  #export ROS_IP=192.168.0.224 #Zotac IP address
   #############################################################################################
 
   
@@ -40,7 +39,7 @@ init_cmd: |
 windows:
 - name: bag_files
   panes:
-  - roslaunch mesapro bags_data_rgbd_lidar.launch
+  - roslaunch mesapro bags_data_rgbd_lidar.launch bag_file:=$BAG_FILE
   check: "rostopic list" 
 - name: hri_dr_spaam_detector
   panes:

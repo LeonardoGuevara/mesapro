@@ -9,18 +9,18 @@ import sys
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 from numpy import linalg as LA
-from cv_bridge import CvBridge
 import joblib
-#import pickle
 import time
 import cv2
 import yaml
 from mesapro.msg import human_detector_msg
 import ros_numpy
 ##########################################################################################
+#GENERAL PURPUSES VARIABLES
+pub_hz=0.001 #main loop frequency
 #GLOBAL CONFIG FILE DIRECTORY
-config_direct=rospy.get_param("/hri_camera_detector/config_direct") #you have to change /hri_camera_detector/ if the node is not named like this
-#config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+config_direct=rospy.get_param("/hri_camera_detector/config_direct",default_config_direct) #you have to change /hri_camera_detector/ if the node is not named like this
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 #FEATURE EXTRACTION PARAMETERS
@@ -33,14 +33,14 @@ time_change=0 #initial counter value
 avoid_area=0.05 #percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
 search_area=0.3 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
 ##MODEL FOR POSTURE RECOGNITION
-posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model") #you have to change /hri_camera_detector/ if the node is not named like this
-#posture_classifier_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+default_post_class_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
+posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model",default_post_class_model) #you have to change /hri_camera_detector/ if the node is not named like this
 model_rf = joblib.load(posture_classifier_model)   
 ##OPENPOSE INITIALIZATION 
-openpose_python=rospy.get_param("/hri_camera_detector/openpose_python") #you have to change /hri_camera_detector/ if the node is not named like this
-openpose_models=rospy.get_param("/hri_camera_detector/openpose_models") #you have to change /hri_camera_detector/ if the node is not named like this
-#openpose_python='/home/leo/rasberry_ws/src/openpose/build/python'
-#openpose_models="/home/leo/rasberry_ws/src/openpose/models"
+default_openpose_python='/home/leo/rasberry_ws/src/openpose/build/python'
+default_openpose_models="/home/leo/rasberry_ws/src/openpose/models"
+openpose_python=rospy.get_param("/hri_camera_detector/openpose_python",default_openpose_python) #you have to change /hri_camera_detector/ if the node is not named like this
+openpose_models=rospy.get_param("/hri_camera_detector/openpose_models",default_openpose_models) #you have to change /hri_camera_detector/ if the node is not named like this
 try:
     sys.path.append(openpose_python);
     from openpose import pyopenpose as op
@@ -58,42 +58,28 @@ opWrapper = op.WrapperPython()
 opWrapper.configure(params)
 opWrapper.start()
 datum = op.Datum()
-#Initializating cv_bridge
-bridge = CvBridge()
 #ROS PUBLISHER SET UP
 pub = rospy.Publisher('human_info_camera', human_detector_msg,queue_size=1) #small queue means priority to new data
 msg = human_detector_msg()
 #THERMAL INFORMATION
-thermal_info=rospy.get_param("/hri_camera_detector/thermal_info") #you have to change /hri_camera_detector/ if the node is not named like this
-#thermal_info=False
+thermal_info=rospy.get_param("/hri_camera_detector/thermal_info",True) #you have to change /hri_camera_detector/ if the node is not named like this
 #PARAMETERS TO MATCH RGBD + THERMAL IMAGES 
 temp_thresh=100 #threshold to determine if the temperature if a pixel is considered as higher as human temperature
 detection_thresh=0.1 #percentage of pixels in the thermal image which have to satisfy the temp_thresh in order to rise the thermal_detection flag
-image_rotation=rospy.get_param("/hri_camera_detector/image_rotation") #you have to change /hri_camera_detector/ if the node is not named like this
-#image_rotation=0 #it can be 0,90,270 measured clockwise        
-matching_param=list(dict.items(parsed_yaml_file["matching_config"]))
-if image_rotation==270:
-    resize_param=matching_param[0][1] #[y_init_up,x_init_left,n_pixels_x,n_pixels_y] assuming portrait mode with image_rotation=270, keeping original aspect ratio 3:4,i.e 291/388 = 120/160 = 3/4
-    #resize_param=[125,140,285,380]
-elif image_rotation==90:
-    resize_param=matching_param[1][1] 
-else: #image_rotation==0 
-    resize_param=matching_param[2][1] 
+image_rotation=rospy.get_param("/hri_camera_detector/image_rotation",270) #it can be 0,90,270 measured clockwise        
+resize_param=parsed_yaml_file.get("matching_config").get(str(image_rotation)+"_param",[125,140,285,380]) #parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y]
 #RGBD CAMERA INTRINSIC,DISTORTION PARAMETERS
-camera_param=list(dict.items(parsed_yaml_file["camera_config"]))
-intr_param=camera_param[0][1]
-dist_param=camera_param[1][1]
-#intr_param=[384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] #[fx cx fy cy]
-#dist_param=[-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] #[k1 k2 t1 t2 k3]
+default_intr_param=[384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] #[fx cx fy cy] for realsense D455
+default_dist_param=[-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] #[k1 k2 t1 t2 k3] for realsense D455
+intr_param=parsed_yaml_file.get("camera_config").get("intr_param",default_intr_param) #camera intrinsic parameters
+dist_param=parsed_yaml_file.get("camera_config").get("dist_param",default_dist_param) #camera distortion parameters
 mtx =  np.array([[intr_param[0], 0, intr_param[1]],
                  [0, intr_param[2], intr_param[3]],
                  [0, 0, 1]])
 dist=np.array(dist_param)
 #VISUALIZATION VARIABLES
-n_cameras=rospy.get_param("/hri_camera_detector/n_cameras") #you have to change /hri_camera_detector/ if the node is not named like this
-#n_cameras=1 # 1 means that the back camera is emulated by reproducing the front camera image
-openpose_visual=rospy.get_param("/hri_camera_detector/openpose_visual") #you have to change /hri_camera_detector/ if the node is not named like this
-#openpose_visual=True #to show or not a window with the human detection delivered by openpose
+n_cameras=rospy.get_param("/hri_camera_detector/n_cameras",1) # 1 means that the back camera is emulated by reproducing the front camera image
+openpose_visual=rospy.get_param("/hri_camera_detector/openpose_visual",True)  #to show or not a window with the human detection delivered by openpose
 #########################################################################################################################
 
 class human_class:
@@ -118,7 +104,6 @@ class human_class:
     def rgbd_thermal_1_callback(self,rgb_front, depth_front, therm_front):
         ##################################################################################33
         #Front cameras info extraction
-        #therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
         therm_image_front = ros_numpy.numpify(therm_front) #replacing cv_bridge
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
@@ -128,7 +113,6 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
         
-        #color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
         color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
@@ -141,7 +125,6 @@ class human_class:
         img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) # crop to match the thermal field of view
         img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
-        #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
         depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
         depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
@@ -201,7 +184,6 @@ class human_class:
     def rgbd_1_callback(self,rgb_front, depth_front):
         ##################################################################################33
         #Front camera info extraction
-        #color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8") 
         color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
         color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
@@ -212,7 +194,6 @@ class human_class:
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
         
-        #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
         depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
         depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
@@ -256,7 +237,6 @@ class human_class:
     def rgbd_thermal_2_callback(self,rgb_front, depth_front, therm_front,rgb_back, depth_back, therm_back):
         ##################################################################################33
         #Front cameras info extraction
-        #therm_image_front = bridge.imgmsg_to_cv2(therm_front, "mono8") #Gray scale image
         therm_image_front = ros_numpy.numpify(therm_front) #replacing cv_bridge
         if image_rotation==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
@@ -266,7 +246,6 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
         
-        #color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
         color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
@@ -279,7 +258,6 @@ class human_class:
         img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #crop to match the thermal field of view
         img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
-        #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
         depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
         depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image  
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
@@ -295,7 +273,6 @@ class human_class:
         self.image_size = img_rgb_rz_front.shape
         ##################################################################################
         #Back cameras info extraction
-        #therm_image_back = bridge.imgmsg_to_cv2(therm_back, "bgr8")
         therm_image_back = ros_numpy.numpify(depth_back) #replacing cv_bridge
         if image_rotation==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
@@ -305,7 +282,6 @@ class human_class:
             img_t_rot_back=therm_image_back
         img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
         
-        #color_image = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
         color_image = ros_numpy.numpify(rgb_back) #replacing cv_bridge
         color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_back=cv2.undistort(color_image, mtx, dist) #undistort image 
@@ -318,7 +294,6 @@ class human_class:
         img_rgb_rz_back=np.zeros((img_t_rot_back.shape[0],img_t_rot_back.shape[1],3),np.uint8)
         img_rgb_rz_back=img_rgb_rot_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1],:]
         
-        #depth_image = bridge.imgmsg_to_cv2(depth_back, "passthrough")
         depth_image = ros_numpy.numpify(depth_back) #replacing cv_bridge
         depth_image_back=cv2.undistort(depth_image, mtx, dist) #undistort image 
         depth_array_back = np.array(depth_image_back, dtype=np.float32)/1000
@@ -346,7 +321,6 @@ class human_class:
     def rgbd_2_callback(self,rgb_front, depth_front,rgb_back, depth_back):
         ##################################################################################33
         #Front camera info extraction
-        #color_image = bridge.imgmsg_to_cv2(rgb_front, "bgr8")
         color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
         color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_front=cv2.undistort(color_image, mtx, dist) #undistort image 
@@ -357,7 +331,6 @@ class human_class:
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
         
-        #depth_image = bridge.imgmsg_to_cv2(depth_front, "passthrough")
         depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
         depth_image_front=cv2.undistort(depth_image, mtx, dist) #undistort image 
         depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
@@ -371,7 +344,6 @@ class human_class:
         self.image_size = img_rgb_rot_front.shape
         ##################################################################################
         #Back camera info extraction
-        #color_image = bridge.imgmsg_to_cv2(rgb_back, "bgr8")
         color_image = ros_numpy.numpify(rgb_back) #replacing cv_bridge
         color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
         color_image_back =cv2.undistort(color_image, mtx, dist) #undistort image        
@@ -382,7 +354,6 @@ class human_class:
         else: #0 degrees
             img_rgb_rot_back=color_image_back            
 
-        #depth_image = bridge.imgmsg_to_cv2(depth_back, "passthrough")
         depth_image = ros_numpy.numpify(depth_back) #replacing cv_bridge
         depth_image_back =cv2.undistort(depth_image, mtx, dist) #undistort image 
         depth_array_back = np.array(depth_image_back, dtype=np.float32)/1000
@@ -729,9 +700,9 @@ if __name__ == '__main__':
     if n_cameras==1:
         #Camara front
         if thermal_info==True:
-            thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #old topic name only for a single camera
-        image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image) #old topic name only for a single camera
-        depth_front_sub = message_filters.Subscriber('/camera1/aligned_depth_to_color/image_raw', Image) #old topic name only for a single camera
+            thermal_front_sub=message_filters.Subscriber('/flir_module_driver/thermal/image_raw', Image) #new topic name only for a single camera
+        image_front_sub = message_filters.Subscriber('/camera/color/image_raw', Image) #new topic name only for a single camera
+        depth_front_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw', Image) #new topic name only for a single camera
         if thermal_info==True:
             ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, depth_front_sub, thermal_front_sub], 5, 1)
             ts.registerCallback(human.rgbd_thermal_1_callback)
@@ -757,7 +728,7 @@ if __name__ == '__main__':
         rospy.spin()
     else:
         #Rate setup
-        rate = rospy.Rate(1/0.001) # ROS publishing rate in Hz
+        rate = rospy.Rate(1/pub_hz) # main loop frecuency in Hz
         while not rospy.is_shutdown():
             #cv2.imshow("Human detector",human.color_image )
             #cv2.waitKey(10)  

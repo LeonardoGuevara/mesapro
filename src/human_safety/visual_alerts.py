@@ -6,7 +6,9 @@ import threading # Needed for Timer
 
 from mesapro.msg import hri_msg
 from std_msgs.msg import String
-      
+
+pub_hz=0.1 #main loop frequency
+
 class hri_class:
     def __init__(self): #It is done only the first iteration
         self.status=0
@@ -14,7 +16,7 @@ class hri_class:
         self.audio_message=0        
         self.current_alert="none"
         self.new_goal="Unknown"
-        self.time_without_msg=5                 # Maximum time without receiving safety messages
+        self.time_without_msg=rospy.get_param("/hri_visual_alerts/time_without_msg",5) # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
         self.problem=False #Flag to know if safety system or human perception have problems
@@ -61,7 +63,7 @@ if __name__ == '__main__':
     pub = rospy.Publisher('visual_alerts', String, queue_size=1)
     rospy.Subscriber('human_safety_info',hri_msg,hri.safety_callback)
     #Rate setup
-    rate = rospy.Rate(1/0.1) # ROS loop rate in Hz
+    rate = rospy.Rate(1/pub_hz) # main loop frecuency in Hz
     #aux=1
     while not rospy.is_shutdown():
         hri.activate_alerts()

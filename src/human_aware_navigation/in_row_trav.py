@@ -3,7 +3,7 @@
 import rospy
 import math
 import PyKDL
-import sys, yaml, os
+import yaml
 import actionlib
 
 import tf
@@ -127,12 +127,18 @@ class inRowTravServer(object):
         #########################################################################################################    
         #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
         #########################################################################################################
-        self.hri_dist=100                       # distance to the critical human computed by the safety_system
-        self.hri_safety_action=5                # new safety action determined by the safety_system
+        #Importing global parameters from .yaml file
+        default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+        config_direct=rospy.get_param("/row_traversal/config_direct",default_config_direct) #you have to change /hri_visualization/ if the node is not named like this
+        a_yaml_file = open(config_direct+"global_config.yaml")
+        parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
+        han_distances=parsed_yaml_file.get("human_safety_config").get("han_distances",[3.6,1]) #distances used when robot is "approaching to picker"
+        self.hri_dist=100                       # distance to the critical human computed by the safety_system, 100 as initial value
+        self.hri_safety_action=5                # new safety action determined by the safety_system, initially "no safety action"
         self.robot_action=4                     # current robot action, initially "waiting for human command",
-        self.han_start_dist=3.6                 # Human to robot Distance at which the robot starts to slow down
-        self.han_final_dist=1                   # Human to robot Distance at which the robot must stop
-        self.time_without_msg=5                 # Maximum time without receiving safety messages
+        self.han_start_dist=han_distances[0]    # Human to robot Distance at which the robot starts to slow down
+        self.han_stop_dist=han_distances[1]     # Human to robot Distance at which the robot must stop
+        self.time_without_msg=rospy.get_param("/row_traversal/time_without_msg",5) # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
 
@@ -994,8 +1000,8 @@ class inRowTravServer(object):
             if self.hri_safety_action==1: #if safety action is "reduce speed" while approaching
                 dist=self.hri_dist  
                 if dist <= self.han_start_dist:
-                    slowdown_delta = self.han_start_dist - self.han_final_dist
-                    current_percent = (dist - self.han_final_dist) / slowdown_delta
+                    slowdown_delta = self.han_start_dist - self.han_stop_dist
+                    current_percent = (dist - self.han_stop_dist) / slowdown_delta
                     if current_percent >0:
                         #print("Limiting speed")
                         speed = (current_percent*self.forward_speed)
@@ -1093,8 +1099,8 @@ class inRowTravServer(object):
             if self.hri_safety_action==1: #if safety action is "reduce speed" while approaching
                 dist=self.hri_dist  
                 if dist <= self.han_start_dist:
-                    slowdown_delta = self.han_start_dist - self.han_final_dist
-                    current_percent = (dist - self.han_final_dist) / slowdown_delta
+                    slowdown_delta = self.han_start_dist - self.han_stop_dist
+                    current_percent = (dist - self.han_stop_dist) / slowdown_delta
                     if current_percent >0:
                         #print("Limiting speed")
                         speed = (current_percent*self.forward_speed)
@@ -1608,10 +1614,11 @@ class inRowTravServer(object):
         elif safety_info.safety_action==5: #if no safety action is required
             self.hri_safety_action=self.robot_action          
         self.hri_dist=safety_info.critical_dist   
-        print("Safety message received")
+        #print("Safety message received")
         self.timer_safety.cancel()
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
+        
         
     def safety_timeout(self):
         print("No safety message received in a long time")

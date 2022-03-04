@@ -1,24 +1,17 @@
 <launch>
   <arg name="debug" default="true" /> <!-- set to true to view the image or false to launch just the driver of the camera -->
-  <arg name="num_cam" default="" /> <!-- number of cameras, 1 or 2-->
+  <arg name="num_cam" default="1" /> <!-- number of cameras, 1 or 2-->
   <arg name="ir_img_color" default="false" /> <!-- set to true to publish ir temp-coded color image, false for grayscale -->
-  <arg name="capture_time" default="0.18" /> <!-- estimated time of capture of the sensor in seconds -->
-  <arg name="flir_serial_n1" default="" /> <!-- serial number camera 1 -->
-  <arg name="flir_serial_n2" default="" /> <!-- serial number camera 2 -->
-  
+  <arg name="capture_time" default="0.18" /> <!-- estimated time of capture of the sensor in seconds, to syncronize with realsense D455, it is set as 0.18 -->
+  <arg name="flir_serial_n2" default="000c0035-510f-3538-3530-333500000000" /> <!-- serial number camera front -->
+  <arg name="flir_serial_n1" default="80060001-5113-3238-3233-393800000000" /> <!-- serial number camera back -->
+  <arg name="min_range" default="30000" /> <!-- minimum measurement range for scaling to pixel value [0,255] -->
+  <arg name="max_range" default="31000" /> <!-- maximum measurement range for scaling to pixel value [0,255] -->
+    
 
-  <node pkg="flir_module_driver" type="flir_module_driver_node" name="flir_module_driver" output="screen" respawn="false" if="$(eval arg('num_cam') == 1)">
-    <param name="min_range_meas" type="int" value="30000" /> <!-- minimum measurement range for scaling to pixel value [0,255]-->
-    <param name="max_range_meas" type="int" value="30960" /> <!-- maximum measurement range for scaling to pixel value [0,255]-->
-    <param name="ir_img_color" type="bool" value="$(arg ir_img_color)" /> <!-- set to true to publish ir temp-coded color image, false for grayscale -->
-    <param name="auto_gain" type="bool" value="false" /> <!-- set to true to autoadjust the scale instead of using a fix measurement range -->
-    <param name="serial_number" type="string" value="$(arg flir_serial_n1)" /> <!-- serial number of the device. On a console type: smesg | grep SerialNumber -->
-    <param name="capture_time" type="double" value="$(arg capture_time)" /> <!-- estimated time of capture of the sensor in seconds -->
-  </node>
-
-  <node pkg="flir_module_driver" type="flir_module_driver_node" name="flir_module_driver1" output="screen" respawn="false" if="$(eval arg('num_cam') == 2)">
-    <param name="min_range_meas" type="int" value="30000" /> <!-- minimum measurement range for scaling to pixel value [0,255]-->
-    <param name="max_range_meas" type="int" value="30960" /> <!-- maximum measurement range for scaling to pixel value [0,255]-->
+  <node pkg="flir_module_driver" type="flir_module_driver_node" name="flir_module_driver1" output="screen" respawn="false" >
+    <param name="min_range_meas" type="int" value="$(arg min_range)" /> <!-- minimum measurement range for scaling to pixel value [0,255]-->
+    <param name="max_range_meas" type="int" value="$(arg max_range)" /> <!-- maximum measurement range for scaling to pixel value [0,255]-->
     <param name="ir_img_color" type="bool" value="$(arg ir_img_color)" /> <!-- set to true to publish ir temp-coded color image, false for grayscale -->
     <param name="auto_gain" type="bool" value="false" /> <!-- set to true to autoadjust the scale instead of using a fix measurement range -->
     <param name="serial_number" type="string" value="$(arg flir_serial_n1)" /> <!-- serial number of the device. On a console type: smesg | grep SerialNumber -->
@@ -26,8 +19,8 @@
   </node>
 
   <node pkg="flir_module_driver" type="flir_module_driver_node" name="flir_module_driver2" output="screen" respawn="false" if="$(eval arg('num_cam') == 2)">
-    <param name="min_range_meas" type="int" value="30000" /> <!-- minimum measurement range for scaling to pixel value [0,255]-->
-    <param name="max_range_meas" type="int" value="30960" /> <!-- maximum measurement range for scaling to pixel value [0,255]-->
+    <param name="min_range_meas" type="int" value="$(arg min_range)" /> <!-- minimum measurement range for scaling to pixel value [0,255]-->
+    <param name="max_range_meas" type="int" value="$(arg max_range)" /> <!-- maximum measurement range for scaling to pixel value [0,255]-->
     <param name="ir_img_color" type="bool" value="$(arg ir_img_color)" /> <!-- set to true to publish ir temp-coded color image, false for grayscale -->
     <param name="auto_gain" type="bool" value="false" /> <!-- set to true to autoadjust the scale instead of using a fix measurement range -->
     <param name="serial_number" type="string" value="$(arg flir_serial_n2)" /> <!-- serial number of the device. On a console type: smesg | grep SerialNumber -->
@@ -36,10 +29,7 @@
 
   <!-- VISUALIZATION -->
   <group if="$(eval arg('debug') == 1)">
-    <node name="rqt_image_view_thermal" pkg="rqt_image_view" type="rqt_image_view" respawn="true" output="screen" if="$(eval arg('num_cam') == 1)">
-      <remap from="image" to="/flir_one_node/thermal/image_raw" />
-    </node>
-    <node name="rqt_image_view_thermal1" pkg="rqt_image_view" type="rqt_image_view" respawn="true" output="screen" if="$(eval arg('num_cam') == 2)">
+    <node name="rqt_image_view_thermal" pkg="rqt_image_view" type="rqt_image_view" respawn="true" output="screen" >
       <remap from="image" to="/flir_one_node/thermal1/image_raw" />
     </node>
     <node name="rqt_image_view_thermal2" pkg="rqt_image_view" type="rqt_image_view" respawn="true" output="screen" if="$(eval arg('num_cam') == 2)">

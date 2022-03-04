@@ -18,7 +18,8 @@
   <arg name="reconfigure_edges" default="true"/>
   <!-- If we are using the restricted tmap rather than the normal tmap. Must first publish the robot type: rostopic pub /type std_msgs/String "data: $RES_ROBOT_TYPE" -->
   <arg name="use_restrictions" default="false"/>
-
+  <!-- Maximum time without receiving safety or human perception messages  -->
+  <arg name="time_without_msg" default="5"/>
 
   <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
@@ -45,6 +46,7 @@
     <param name="move_base_planner" type="str" value="$(arg move_base_planner)"/>
     <param name="max_dist_to_closest_edge" value="$(arg max_dist_to_closest_edge)"/>
     <param name="reconfigure_edges" value="$(arg reconfigure_edges)"/>
+    <param name="time_without_msg" value="$(arg time_without_msg)"/>
     <rosparam param="move_base_actions" subst_value="True">$(arg move_base_actions)</rosparam>
 
     <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>

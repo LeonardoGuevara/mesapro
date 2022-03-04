@@ -32,6 +32,7 @@ from mesapro.msg import hri_msg, robot_msg
 #from topological_navigation_msgs.msg import NavRoute
 from math import * #to avoid prefix math.
 import threading # Needed for Timer
+pub_hz=0.01 #main loop frequency
 ##########################################################################################################
 ##########################################################################################################
 # A list of parameters topo nav is allowed to change and their mapping from dwa speak.
@@ -166,7 +167,7 @@ class TopologicalNavServer(object):
         self.op_mode="logistics"              # assuming logistics as operation mode, it can also be "UV-C" mode
         self.current_target="Unknown"        # current closest node in the route plan, initial condition "Unknown"
         rospy.Subscriber('human_safety_info',hri_msg,self.safety_callback)  
-        self.time_without_msg=5                 # Maximum time without receiving safety messages
+        self.time_without_msg=rospy.get_param("/topological_navigation/time_without_msg",5) # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
         self.no_safety_action=False             #flag to know if safety_system is working or not, "False" means "safety system working"
@@ -1051,7 +1052,7 @@ class TopologicalNavServer(object):
         rob_msg.goal_node=self.goal #final goal in the route
         pub_robot.publish(rob_msg)
         
-        print("Safety message received")
+        #print("Safety message received")
         self.no_safety_action=False #to let the robot know that the safety system is still working 
         self.timer_safety.cancel()
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
@@ -1120,7 +1121,7 @@ if __name__ == "__main__":
     #########################################################################################################    
     #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
     #########################################################################################################
-    rate = rospy.Rate(1/0.01) # rate in Hz
+    rate = rospy.Rate(1/pub_hz) # rate in Hz
     while not rospy.is_shutdown():	
         #print("ROBOT OPERATION MAIN",server.robot_action)
         server.robot_update_action()

@@ -4,13 +4,16 @@
     <arg name="openpose_python" default="/home/leo/rasberry_ws/src/openpose/build/python" />
     <arg name="openpose_models" default="/home/leo/rasberry_ws/src/openpose/models" />
     <arg name="posture_classifier_model" default="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib" />
+    <arg name="bag_file" default="/home/leo/Documents/mesapro/bags/people_detection_zotac_3_2021-11-05-12-12-12.bag" /> 
     <arg name="visual_mode" default="1" />   
     <arg name="image_rotation" default="0" />  
     <arg name="thermal_info" default="False" />
     <arg name="operation_mode" default="logistics" />   
     <arg name="n_cameras" default="1" />
 
-    <include file="$(find mesapro)/launch/bags_data_rgbd_legs.launch"/>
+    <include file="$(find mesapro)/launch/bags_data_rgbd_legs.launch">
+        <arg name="bag_file"   value="$(arg bag_file)"/>
+    </include>
 
     <node pkg="mesapro" type="human_safety_system.py" name="hri_safety_system">
         <param name="operation_mode" value="$(arg operation_mode)"/>

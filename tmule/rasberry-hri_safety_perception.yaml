@@ -15,17 +15,17 @@ init_cmd: |
 
   #########################################################################################
   # HUMAN-AWARE NAVIGATION PARAMETERS
-  export_default CATKIN_WORKSPACE_MAIN "$HOME/rasberry_ws"
-  export_default CATKIN_WORKSPACE_AUX "$HOME/catkin_build_ws"	
-  export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of config file
+  export_default CATKIN_WORKSPACE "$HOME/rasberry_ws"
+  export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of mesapro config file
   export_default AUDIO_DIRECT "$(rospack find mesapro)/audio/" #directory of audio files
   export_default CONDA_DIRECT "$HOME/anaconda3 || $HOME/miniconda3" # directory where conda or minicoda is installed 
   export_default CONDA_ENV "mypython3" #name of the conda environment with python3 
-  export_default OPENPOSE_PYTHON "$CATKIN_WORKSPACE_MAIN/src/openpose/build/python" #assuming OpenPose is inside the RASBERRY_WS folder
-  export_default OPENPOSE_MODELS "$CATKIN_WORKSPACE_MAIN/src/openpose/models"
+  export_default OPENPOSE_PYTHON "$CATKIN_WORKSPACE/src/openpose/build/python" #assuming OpenPose is inside the RASBERRY_WS folder
+  export_default OPENPOSE_MODELS "$CATKIN_WORKSPACE/src/openpose/models" #assuming OpenPose is inside the RASBERRY_WS folder
   export_default POSTURE_CLASSIFIER_MODEL "$(rospack find mesapro)/config/classifier_model_3D_v2.joblib" #model of the human gesture classifier
+  export_default BAG_FILE "$HOME/Documents/mesapro/bags/match_test_2.bag" #full name of the bag file to be reproduced 
   
-  export_default VISUAL_MODE 3 # "3" means perception+topological navigation info is displayed
+  export_default VISUAL_MODE 3 # "1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
   export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
   export_default USE_CAMERA_DETECTOR true #if "false", the rgbd+thermal human detector is not launched
   export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
@@ -35,40 +35,41 @@ init_cmd: |
   export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
   export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected 
-  export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera 2
-  export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera 1
-  export_default FLIR_SERIAL_N2 "80060001-5113-3238-3233-393800000000" #serial number thermal camera 2
-  export_default FLIR_SERIAL_N1 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera 1
+  export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera back
+  export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera front
+  export_default FLIR_SERIAL_N2 "80060001-5113-3238-3233-393800000000" #serial number thermal camera back
+  export_default FLIR_SERIAL_N1 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera front
+  export_default FLIR_MIN_RANGE "30000" # minimum measurement range for scaling to pixel value [0,255]
+  export_default FLIR_MAX_RANGE "31000" # mamixum measurement range for scaling to pixel value [0,255]
+  export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
   ##############################################################################################
   # Source ROS
   # source "/opt/ros/$(rosversion -d)/setup.bash"
-  source $CATKIN_WORKSPACE_MAIN/devel/setup.bash
+  source $CATKIN_WORKSPACE/devel/setup.bash
   #########################################################################################
   #Set up ROS MASTER AND ROS IP
   export_default ROS_IP "192.168.0.224" #Zotac IP address
   export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
   export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
   export ROS_IP=$ROS_IP  
-  #export_default VPN_BASE_ADDR "10.8.0.0"
-  #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
-  #default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
-  #export_default ROS_MASTER $default_ip
-  #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  
+  #export ROS_MASTER_URI="http://192.168.0.224:11311/"
+  #export ROS_IP=192.168.0.224 #Zotac IP address
   #############################################################################################
 
 ##############################################################################################
 windows:
 - name: bag_files
   panes:
-  - if $USE_BAG ; then roslaunch mesapro bags_data_rgbd_thermal.launch ; fi
+  - if $USE_BAG ; then roslaunch mesapro bags_data_rgbd_thermal.launch bag_file:=$BAG_FILE; fi
   check: "rostopic list || ! $USE_BAG"
 - name: rgbd_cameras
   panes:
-  - sleep 5 ; if ! $USE_BAG ; then roslaunch mesapro rs_multiple_devices.launch rs_serial_n1:=$RS_SERIAL_N1 rs_serial_n2:=$RS_SERIAL_N2; fi
+  - sleep 5 ; if ! $USE_BAG ; then roslaunch mesapro rs_multiple_devices.launch rs_serial_n1:=$RS_SERIAL_N1 rs_serial_n2:=$RS_SERIAL_N2 num_cam:=$N_CAMERAS; fi
   cleck: "rostopic list | grep -q /camera1/color/image_raw || $USE_BAG"
 - name: thermal_cameras
   panes:
-  - if ! $USE_BAG ; then roslaunch mesapro flir_thermal_module.launch flir_serial_n1:=$FLIR_SERIAL_N1 flir_serial_n2:=$FLIR_SERIAL_N2 num_cam:=$N_CAMERAS; fi
+  - if ! $USE_BAG ; then roslaunch mesapro flir_thermal_module.launch flir_serial_n1:=$FLIR_SERIAL_N1 flir_serial_n2:=$FLIR_SERIAL_N2 num_cam:=$N_CAMERAS min_range:=$FLIR_MIN_RANGE max_range:=$FLIR_MAX_RANGE; fi
   check: "rostopic list || $USE_BAG"
 - name: hri_dr_spaam_detector
   panes:
@@ -81,15 +82,15 @@ windows:
 - name: hri_cameras_perception
   panes:
   - if $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL; fi
-  - rosrun mesapro human_perception_system.py 
+  - roslaunch mesapro hri_perception_system.py time_without_msg:=$TIME_WITHOUT_MSG
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE
-  - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT
+  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG
+  - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization
   panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE  config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS
+  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE  config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG
 #############################################################################################
 
