@@ -28,8 +28,8 @@ human_safety_config:
   human_command: ["no_command","approach","move_away","stop","yes","no"]
   operation_mode: ["logistics","UV-C_treatment"]
   han_distances: [3.6,1] #Human to robot distances (m) at which the robot starts to slow down or stop -> [slow_down,stop]
-  logistics_risk_distances: [3.6,1.2] #Human to robot distances (m) used to determine the HRI risk during logistics 
-  uvc_risk_distances: [10,7] #Human to robot distances (m) used to determine the HRI risk during uvc treatment
+  collision_risk_distances: [3.6,1.2] #Human to robot distances (m) used to determine the HRI risk in case of collisions -> [risky,dangerous]
+  uvc_risk_distances: [10,7] #Human to robot distances (m) used to determine the HRI risk during uvc treatment > [risky,dangerous]
 ###############################################
 robot_config:
   action: ["moving_to_goal","approaching_to_human","moving_away_from_human","pause","waiting_for_new_human_command"]

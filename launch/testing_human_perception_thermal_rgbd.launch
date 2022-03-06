@@ -20,6 +20,7 @@
 
     <node pkg="mesapro" type="human_safety_system.py" name="hri_safety_system">
         <param name="operation_mode" value="$(arg operation_mode)"/>
+        <param name="config_direct" value="$(arg config_direct)"/>
     </node>
 
     <node pkg="mesapro" type="human_detector_rgbd_thermal.py" name="hri_camera_detector">

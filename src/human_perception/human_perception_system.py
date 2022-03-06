@@ -10,7 +10,7 @@ import time
 from mesapro.msg import human_msg, human_detector_msg
 import threading # Needed for Timer
 ##########################################################################################
-
+#GENERAL PURPUSES VARIABLES
 #Setup ROS publiser
 pub = rospy.Publisher('human_info', human_msg,queue_size=1) #small queue means priority to new data
 msg = human_msg()
@@ -18,16 +18,17 @@ msg = human_msg()
 row_width=1.3 #in meters
 angle_area=60 # in degrees mesuared from the local x-axis robot frame
 #Parameters for matching
-meter_threshold=[0.5,1] # error in meters within two human detections are considered the same human, different for lidar than for camera
-tracking_threshold=3 #times a data is received
-w_data=[0.2,0.8] #weights used for calculating a weighted average during matching old with new data
+meter_threshold=[0.5,1] # error in meters within two human detections are considered the same human, different for lidar than for camera -> [lidar,camera]
+tracking_threshold=3 #times a detection has to be received in order to consider for tracking
+w_data=[0.2,0.8] #weights used for calculating a weighted average during matching old with new data -> [old,new]
+lidar_to_cam=[-0.35,0] #distances [x,y] in meters used to compensate the difference in position between the lidars and the cameras (The camera location is the reference origin)
 #Parameters for Motion inference
 n_samples=8 #number of samples used for the motion inference
 n_samples_gest=2 #number of samples used for the gesture inference
-speed_threshold=0.5  # < means static, > means slow motion 
+speed_threshold=0.5  # < speed_threshold means static, > speed_threshold means slow motion 
 #Paremeters for human Tracking
-threshold_no_data=2 #seconds needed to remove a human from tracking list
-posture_threshold=0.3 #minimum probability delivered by gesture recognition algoritm to start tracking new human using camera info
+threshold_no_data=2 #seconds needed to remove an old human tracked from tracking list
+posture_threshold=0.3 #minimum probability delivered by gesture recognition algoritm to start tracking new human using camera info, critical to reduce false positive detections when thermal_info is not activated
 #General purposes variables
 main_counter=0
 new_data=[0,0]     #flag to know if a new human detection from LiDAR or Camera is available, first element is for LiDAR, second for Camera
@@ -90,8 +91,8 @@ class human_class:
                     if k<len(pos):
                         ##########################################################################################################
                         #THIS DISTANCE NEEDS TO BE CALIBRATED ACCORDING TO THE LIDAR READINGS RESPECT TO THE CAMERAS POSITION (The camera location is the reference origin)
-                        pos[k,0] = pose.position.x -0.35 # -0.55
-                        pos[k,1] = pose.position.y  #+0.45
+                        pos[k,0] = pose.position.x + lidar_to_cam[0] # -0.35
+                        pos[k,1] = pose.position.y + lidar_to_cam[1]  #+0
                         ############################################################################################################
                     else: #if there are more human detected than before
                         position_new=np.array([pose.position.x,pose.position.y])
@@ -196,7 +197,7 @@ class human_class:
             new_human_flag=np.zeros([len(position_lidar_new[:,0]),1]) #assuming all are new humans
             for k in range(0,n_human): 
                 for kk in range(0,len(position_lidar_new[:,0])):
-                    distance_lidar=sqrt((position_lidar_new[kk,0])**2+(position_lidar_new[kk,1])**2) 
+                    distance_lidar=np.sqrt((position_lidar_new[kk,0])**2+(position_lidar_new[kk,1])**2) 
                     diff[k,kk]=abs(distance[k,:]-distance_lidar)        
                 counter_no_new_data=0 # counter to know if the k-th human tracked is not longer detected
                 for kk in range(0,len(position_lidar_new[:,0])):
@@ -206,10 +207,10 @@ class human_class:
                         #It depends how to interpret the X-Y frame used by the human leg detector
                         angle=atan2(position_lidar_new[kk,1],position_lidar_new[kk,0])# if local x-axis is aligned to the robot orientation
                         #############################################################################################################################
-                        if angle>pi: #  to keep the angle between [-180,+180]
-                            angle=angle-2*pi
-                        if angle<-pi:
-                            angle=angle+2*pi
+                        if angle>np.pi: #  to keep the angle between [-180,+180]
+                            angle=angle-2*np.pi
+                        if angle<-np.pi:
+                            angle=angle+2*np.pi
                         area_new[kk,0]=self.area_inference_lidar(angle,position_lidar_new[kk,1],position_lidar_new[kk,0])                     
                         ###############################################################################################################################
                         #Determine if a new data match with the k-th human tracked
@@ -220,7 +221,7 @@ class human_class:
                         if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]:# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk                           
                             #Updating speed,motion and time_track
-                            dist_lidar=sqrt(position_lidar_new[new_index,0]**2+position_lidar_new[new_index,1]**2)
+                            dist_lidar=np.sqrt(position_lidar_new[new_index,0]**2+position_lidar_new[new_index,1]**2)
                             motion_diff=distance[k,:]-dist_lidar
                             speed[k,:]=abs(motion_diff/time_diff[0])-rob_speed
                             time_track[k,0]=time_data[0]
@@ -322,7 +323,7 @@ class human_class:
                     centroid=np.append(centroid,np.zeros([1,2]),axis=0)
                     orientation=np.append(orientation,np.zeros([1,1]),axis=0)
                     distance=np.append(distance,np.zeros([1,1]),axis=0)
-                    distance[-1,0]=sqrt((position_lidar_new[k,0])**2+(position_lidar_new[k,1])**2) 
+                    distance[-1,0]=np.sqrt((position_lidar_new[k,0])**2+(position_lidar_new[k,1])**2) 
                     sensor=np.append(sensor,np.ones([1,1]),axis=0) #1 because it is a lidar type data
                     #Posture and Motion inference
                     motion=np.append(motion,np.zeros([1,1]),axis=0) #new human detection starts with motion label 0 = "not_defined"
@@ -356,10 +357,10 @@ class human_class:
                         ##############################################################################################################################
                         angle=atan2(position_cam_new[kk,1],position_cam_new[kk,0])# if local x-axis is aligned to the robot orientation
                         #############################################################################################################################
-                        if angle>pi: #  to keep the angle between [-180,+180]
-                            angle=angle-2*pi
-                        if angle<-pi:
-                            angle=angle+2*pi
+                        if angle>np.pi: #  to keep the angle between [-180,+180]
+                            angle=angle-2*np.pi
+                        if angle<-np.pi:
+                            angle=angle+2*np.pi
                         area_new[kk,0]=self.area_inference(angle,position_cam_new[kk,1],position_cam_new[kk,0])                     
                         
                         if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]: #and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
@@ -679,26 +680,26 @@ class human_class:
 
     def area_inference(self,angle,pos_y,pos_x):
         #Front
-        if (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or (pos_y>(3/2)*row_width and pos_x>0): #if belongs to 0
+        if (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=angle_area*(np.pi/180) and angle<=np.pi/2) or (pos_y>(3/2)*row_width and pos_x>0): #if belongs to 0
             area=0
-        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=0 and angle<=angle_area*(pi/180): # if belongs to area 1
+        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=0 and angle<=angle_area*(np.pi/180): # if belongs to area 1
             area=1
         elif pos_y>=-row_width/2 and pos_y<=row_width/2 and pos_x>=0: # if belongs to area 2
             area=2
-        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=0 and angle>=-angle_area*(pi/180): # if belongs to area 3
+        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=0 and angle>=-angle_area*(np.pi/180): # if belongs to area 3
             area=3
-        elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=-angle_area*(pi/180) and angle>=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x>0): #if belongs to 4   
+        elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=-angle_area*(np.pi/180) and angle>=-np.pi/2) or (pos_y<=-(3/2)*row_width and pos_x>0): #if belongs to 4   
             area=4
         #Back
-        elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi+angle_area*(pi/180) and angle<=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x<0): #if belongs to 5   
+        elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-np.pi+angle_area*(np.pi/180) and angle<=-np.pi/2) or (pos_y<=-(3/2)*row_width and pos_x<0): #if belongs to 5   
             area=5
-        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi and angle<=-pi+angle_area*(pi/180): # if belongs to area 6
+        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-np.pi and angle<=-np.pi+angle_area*(np.pi/180): # if belongs to area 6
             area=6
         elif pos_y>= -row_width/2 and pos_y<=row_width/2 and pos_x<=0: # if belongs to area 7
             area=7
-        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
+        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=np.pi and angle>=np.pi-angle_area*(np.pi/180): # if belongs to area 8
             area=8
-        elif (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi-angle_area*(pi/180) and angle>=pi/2) or (pos_y>=(3/2)*row_width and pos_x<0): #if belongs to 9
+        elif (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=np.pi-angle_area*(np.pi/180) and angle>=np.pi/2) or (pos_y>=(3/2)*row_width and pos_x<0): #if belongs to 9
             area=9
         
         return area

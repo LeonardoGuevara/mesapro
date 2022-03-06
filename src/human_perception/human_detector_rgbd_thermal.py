@@ -3,7 +3,6 @@
 #required packages
 import rospy #tf
 import message_filters #to sync the messages
-#from sklearn.ensemble import RandomForestClassifier
 from sensor_msgs.msg import Image
 import sys
 from math import * #to avoid prefix math.
@@ -24,11 +23,11 @@ config_direct=rospy.get_param("/hri_camera_detector/config_direct",default_confi
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 #FEATURE EXTRACTION PARAMETERS
-n_joints=19
-n_features=36
+n_joints=parsed_yaml_file.get("action_recog_config").get("n_joints",19) #19 body joints from openpose output (25 available)
+n_features=parsed_yaml_file.get("action_recog_config").get("n_features",36) #19 distances + 17 angles = 36 features
 joints_min=7 #minimum number of joints to consider a detection
-performance="normal" #OpenPose performance, initial condition
-time_threshold=3 #3 seconds as the minimum time between two consecute changes of openpose performance
+performance="normal" #OpenPose performance, can be "normal" or "high", "normal" as initial condition
+time_threshold=3 # minimum time allowed (in seconds) between two consecute changes of openpose performance
 time_change=0 #initial counter value
 avoid_area=0.05 #percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
 search_area=0.3 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
@@ -529,7 +528,7 @@ class human_class:
                     if temp_max<joints_temp_init[k]:
                         temp_max=joints_temp_init[k] #updating the joint highest temp
                         joint_temp_max=k #index of the joint with the highest temp
-            Js=sqrt(J_sum2/(n_joints))
+            Js=np.sqrt(J_sum2/(n_joints))
             #Find pixel with max temp around the joint with the highest temp of the skeleton
             if thermal_info==True and temp_max>0:
                 #Defining the limits of the search
@@ -565,7 +564,7 @@ class human_class:
                 #Distances from each joint to the neck joint
                 dist=[0]*n_joints
                 for k in range(0,n_joints):
-                   dist[k]=sqrt((joints_x[k]-joints_x[1])**2+(joints_y[k]-joints_y[1])**2+(joints_z[k]-joints_z[1])**2)  
+                   dist[k]=np.sqrt((joints_x[k]-joints_x[1])**2+(joints_y[k]-joints_y[1])**2+(joints_z[k]-joints_z[1])**2)  
             
                 #Vectors between joints
                 v1_2=[joints_x[1]-joints_x[2], joints_y[1]-joints_y[2], joints_z[1]-joints_z[2]]  

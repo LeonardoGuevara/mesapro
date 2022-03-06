@@ -86,11 +86,11 @@ windows:
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG
+  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
   - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization
   panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE  config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG
+  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG
 #############################################################################################
 

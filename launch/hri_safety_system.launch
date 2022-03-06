@@ -1,12 +1,13 @@
 <?xml version="1.0"?>
 <launch>
+    <arg name="config_direct" default="/home/leo/rasberry_ws/src/mesapro/config/" /> 
     <arg name="operation_mode" default="logistics" /> 
     <arg name="time_without_msg" default="5"/>
-
-    
+ 
     <node pkg="mesapro" type="human_safety_system.py" name="hri_safety_system"> 
 	<param name="operation_mode" value="$(arg operation_mode)"/>
         <param name="time_without_msg" value="$(arg time_without_msg)"/>
+        <param name="config_direct" value="$(arg config_direct)"/>
     </node>
 
 </launch>

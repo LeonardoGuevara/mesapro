@@ -18,6 +18,13 @@ pub_hz=0.01 #main loop frequency
 #Setup ROS publiser
 pub_safety = rospy.Publisher('human_safety_info', hri_msg,queue_size=1)
 safety_msg = hri_msg()
+#Importing global parameters from .yaml file
+default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+config_direct=rospy.get_param("/hri_safety_system/config_direct",default_config_direct) #you have to change /hri_safety_system/ if the node is not named like this
+a_yaml_file = open(config_direct+"global_config.yaml")
+parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
+collision_risk_dist=parsed_yaml_file.get("human_safety_config").get("collision_risk_distances",[3.6,1.2]) #Human to robot distances (m) used to determine the HRI risk during logistics 
+uvc_risk_dist=parsed_yaml_file.get("human_safety_config").get("uvc_risk_distances",[10,7]) #Human to robot distances (m) used to determine the HRI risk during uvc treatment
 #########################################################################################################################
 
 class robot_class:
@@ -132,7 +139,7 @@ class hri_class:
         self.critical_dist=0 #distance of the critical human
         self.risk=False #it is true if the detected human is considered in risk, used to avoid unnecesary stops with human who is not occluding the robot path
         self.new_goal="none" #name of the new final goal
-        self.operation=rospy.get_param("/hri_safety_system/operation_mode","logistics") #can be "UVC" or "logistics"
+        self.operation=rospy.get_param("/hri_safety_system/operation_mode","logistics") #it can be "UVC" or "logistics"
         self.safe_cond=False #True if the human is static and facing the robot, False if not satisfying this safety condition
         
 
@@ -153,7 +160,7 @@ class hri_class:
             aligned_old=True
             if area[critical_index]==2 or area[critical_index]==7:
                 centered_old=True
-        if dist[critical_index]<=1.2 and aligned_old==True:
+        if dist[critical_index]<=collision_risk_dist[1] and aligned_old==True:
             danger_old=True 
         if (sensor[critical_index]!=1 and posture[critical_index]==1 and danger_old==False and polytunnel==True and aligned_old==True):
             gesture_old=True
@@ -176,7 +183,7 @@ class hri_class:
                 aligned_new=True
                 if area[k]==2 or area[k]==7:
                     centered_new=True
-            if dist[k]<=1.2 and aligned_new==True:
+            if dist[k]<=collision_risk_dist[1] and aligned_new==True:
                 danger_new=True 
             if (sensor[k]!=1 and posture[k]==1 and danger_new==False and polytunnel==True and aligned_new==True):
                 gesture_new=True
@@ -410,10 +417,10 @@ class hri_class:
                     self.human_command=0 #no human command expected during uv-c treatment
                     if self.risk==True: #only execute if there is risk of producing human injuries 
                         if action==0: #if robot is moving to goal   
-                            if self.critical_dist>10: #if human is above 10m from the robot
+                            if self.critical_dist>uvc_risk_dist[0]: #if human is above 10m from the robot
                                 self.status=1 #safety HRI
                                 self.safety_action=5 # keep the previous robot action
-                            elif self.critical_dist>=7 and self.critical_dist<10: #if human is between 7-10m from the robot
+                            elif self.critical_dist>=uvc_risk_dist[1] and self.critical_dist<uvc_risk_dist[0]: #if human is between 7-10m from the robot
                                 self.status=2 #risky HRI
                                 self.safety_action=5  # keep the previous robot action
                             else: #if human is within 7m
@@ -437,9 +444,9 @@ class hri_class:
                 ###LOGISTICS###############################################
                 else:
                     ##RISK LEVEL
-                    if self.critical_dist>3.6: #if human is above 3.6m and robot is on normal operation
+                    if self.critical_dist>collision_risk_dist[0]: #if human is above 3.6m and robot is on normal operation
                         self.status=1 # safety HRI
-                    elif self.critical_dist>1.2 and self.critical_dist<=3.6: #if human is between 1.2-3.6m
+                    elif self.critical_dist>collision_risk_dist[1] and self.critical_dist<=collision_risk_dist[0]: #if human is between 1.2-3.6m
                         self.status=2 # risky HRI
                     else: #if human is within 1.2m
                         self.status=3 # dangerous HRI
