@@ -31,8 +31,10 @@ init_cmd: |
   export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
   export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
   export_default USE_LEG_DETECTOR false #if "false", Lidar based leg_detector is not launched
-  export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
+  export_default USE_VISUAL_ALERTS false # if "true", colored beacon is activated
+  export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
   export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
+  export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
   export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected 
   export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera back
@@ -87,7 +89,7 @@ windows:
 - name: hri_safety_system
   panes:
   - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
-  - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG
+  - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization
   panes:

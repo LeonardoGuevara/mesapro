@@ -11,7 +11,7 @@ default_audio_direct="/home/leo/rasberry_ws/src/mesapro/audio/"
 audio_direct=rospy.get_param("/hri_audio_alerts/audio_direct",default_audio_direct) #you have to change /hri_audio_alerts/ if the node is not named like this
 intervals_long=[10,10,10,10,10,10,10,10,10] #time till a message is repeated in the first version, in seconds, it depedns of each message
 intervals_short=[3,3,3,4,3,3,3,4,4] #time between two versions of the same message
-version=0 #to know which language has to be used
+version=0 #to know which language its been used, initially is English
 pub_hz=0.01 #main loop frequency
         
 

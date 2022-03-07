@@ -25,6 +25,8 @@ init_cmd: |
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected 
   export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
+  export_default USE_VISUAL_ALERTS false # if "true", colored beacon is activated
+  export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
   #########################################################################################
   # Source ROS
   # source "/opt/ros/$(rosversion -d)/setup.bash"
@@ -234,8 +236,7 @@ windows:
 - name: hri_safety_system
   panes:
   - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
-  - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG
-
+  - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS
 - name: hri_visualization
   panes:
   - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG
