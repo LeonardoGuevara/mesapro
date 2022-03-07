@@ -2,8 +2,8 @@ directories_config:
   open_pose_python: '/home/leo/rasberry_ws/src/openpose/build/python'
   open_pose_models: "/home/leo/rasberry_ws/src/openpose/models"
   gesture_classifier_model: "/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
-  training_set: '/home/leo/aa_data/new_data/training/'
-  testing_set: '/home/leo/aa_data/new_data/testing/' 
+  training_set: '/home/leo/Leo/aa_data/new_data/training/'
+  testing_set: '/home/leo/Documents/mesapro/bags/' 
 ###############################################  
 camera_config: #for depth image of realsense D455
   intr_param: [384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] #[fx cx fy cy]
