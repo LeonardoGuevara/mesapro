@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
+
   <arg name="use_gps_only" default="false" />
   <arg name="use_row_detector" default="true"  unless="$(arg use_gps_only)"/>
   <arg name="use_row_detector" default="false"  if="$(arg use_gps_only)"/>

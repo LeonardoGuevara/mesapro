@@ -129,7 +129,7 @@ class inRowTravServer(object):
         #########################################################################################################
         #Importing global parameters from .yaml file
         default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
-        config_direct=rospy.get_param("/row_traversal/config_direct",default_config_direct) #you have to change /hri_visualization/ if the node is not named like this
+        config_direct=rospy.get_param("/row_traversal/config_direct",default_config_direct) #you have to change /row_traversal/ if the node is not named like this
         a_yaml_file = open(config_direct+"global_config.yaml")
         parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
         han_distances=parsed_yaml_file.get("human_safety_config").get("han_distances",[3.6,1]) #distances used when robot is "approaching to picker"
