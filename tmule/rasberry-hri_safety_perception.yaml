@@ -84,7 +84,7 @@ windows:
 - name: hri_cameras_perception
   panes:
   - if $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL; fi
-  - roslaunch mesapro hri_perception_system.py time_without_msg:=$TIME_WITHOUT_MSG
+  - roslaunch mesapro hri_perception_system.launch time_without_msg:=$TIME_WITHOUT_MSG
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:

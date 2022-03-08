@@ -30,10 +30,10 @@ init_cmd: |
   export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
-  export_default RS_SERIAL_N1 "146222253484" #serial number realsense camera back
-  export_default RS_SERIAL_N2 "146222254714" #serial number realsense camera front
-  export_default FLIR_SERIAL_N1 "80060001-5113-3238-3233-393800000000" #serial number thermal camera back
-  export_default FLIR_SERIAL_N2 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera front
+  export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera back
+  export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera front
+  export_default FLIR_SERIAL_N2 "80060001-5113-3238-3233-393800000000" #serial number thermal camera back
+  export_default FLIR_SERIAL_N1 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera front
   export_default FLIR_MIN_RANGE "30000" # minimum measurement range for scaling to pixel value [0,255]
   export_default FLIR_MAX_RANGE "31000" # mamixum measurement range for scaling to pixel value [0,255]
   export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
@@ -68,7 +68,7 @@ windows:
 - name: hri_cameras_perception
   panes:
   - if $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch openpose_python:=$OPENPOSE_PYTHON openpose_models:=$OPENPOSE_MODELS posture_classifier_model:=$POSTURE_CLASSIFIER_MODEL config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL ; fi
-  - roslaunch mesapro hri_perception_system.py time_without_msg:=$TIME_WITHOUT_MSG 
+  - roslaunch mesapro hri_perception_system.launch time_without_msg:=$TIME_WITHOUT_MSG 
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
