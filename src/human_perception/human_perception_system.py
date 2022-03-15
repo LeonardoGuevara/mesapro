@@ -211,7 +211,7 @@ class human_class:
                             angle=angle-2*np.pi
                         if angle<-np.pi:
                             angle=angle+2*np.pi
-                        area_new[kk,0]=self.area_inference_lidar(angle,position_lidar_new[kk,1],position_lidar_new[kk,0])                     
+                        area_new[kk,0]=self.area_inference(angle,position_lidar_new[kk,1],position_lidar_new[kk,0])                     
                         ###############################################################################################################################
                         #Determine if a new data match with the k-th human tracked
                         if sensor[k]==2: #if previous data is from camera

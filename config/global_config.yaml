@@ -1,8 +1,8 @@
 directories_config:
   open_pose_python: '/home/leo/rasberry_ws/src/openpose/build/python'
   open_pose_models: "/home/leo/rasberry_ws/src/openpose/models"
-  gesture_classifier_model: "/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v2.joblib"
-  training_set: '/home/leo/Leo/aa_data/new_data/training/'
+  gesture_classifier_model: "/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v3.joblib"
+  training_set: '/home/leo/Documents/mesapro/bags/training/'
   testing_set: '/home/leo/Documents/mesapro/bags/09-03-2022/' 
 ###############################################  
 camera_config: #for depth image of realsense D455
@@ -17,14 +17,14 @@ matching_config: #for camera D455 + FLIR lepton
 action_recog_config:
   n_joints: 19       #19 body joints from openpose output (25 available)
   n_features: 36     #19 distances + 17 angles = 36 features
-  posture_labels: ["no_gesture","both_arms","both_hands","crouched_down","left_arm","left_hand","picking","right_arm","right_hand"]
+  posture_labels: ["no_gesture","left_arm_up","left_hand_front","left_arm_sideways","left_forearm_sideways","right_arm_up","right_hand_front","right_arm_sideways","right_forearm_sideways","both_arms_up","both_hands_front","crouched_down","picking"]
   motion_labels: ["not_defined","mostly_static", "moving"]
   orientation_labels: ["facing_the_robot", "giving_the_back", "left_side", "right_side"]
 ################################################
 human_safety_config:
   hri_status: ["no_human","safety_hri","risky_hri","dangerous_hri"]
   audio_message: ["no_message","alert_UVC_danger","ask_for_next_action","ask_for_free_space","alert_approaching","alert_moving_away","alert_moving_to_goal","safety_system_error","human_perception_error","teleoperation_mode","gesture_control_mode"]
-  safety_action: ["move_to_goal","approaching_to_human","moving_away_from_human","pause","wait_for_new_human_command","no_safety_action","teleoperation","gesture_control"]
+  safety_action: ["move_to_goal","approach_to_human","move_away_from_human","pause","wait_for_new_human_command","teleoperation","gesture_control","no_safety_action"]
   human_command: ["no_command","approach","move_away","stop","move_forwards","move_backwards","move_right","move_left"]
   operation_mode: ["logistics","UV-C_treatment"]
   han_distances: [3.6,1] #Human to robot distances (m) at which the robot starts to slow down or stop -> [slow_down,stop]
@@ -32,5 +32,5 @@ human_safety_config:
   uvc_risk_distances: [10,7] #Human to robot distances (m) used to determine the HRI risk during uvc treatment > [risky,dangerous]
 ###############################################
 robot_config:
-  action: ["moving_to_goal","approaching_to_human","moving_away_from_human","pause","waiting_for_new_human_command","teleoperation","gesture_control"]
+  action: ["moving_to_goal","approaching","moving_away","pause","waiting_for_new_human_command","teleoperation","gesture_control"]
 

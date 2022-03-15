@@ -39,7 +39,7 @@ class human_class:
 
 class hri_class:
     def __init__(self): #It is done only the first iteration
-        self.safety_action=5 # no safety action as initial condition     
+        self.safety_action=7 # no safety action as initial condition     
         self.human_command=0 # no human command as initial condition
         self.critical_index=0 #index of the human considered as critical during interaction (it is not neccesary the same than the closest human or the goal human)
         self.han_start_dist=han_distances[0]    # Human to robot Distance at which the robot starts to slow down
@@ -49,7 +49,7 @@ class hri_class:
         self.timer_safety.start()
         # Dynamically reconfigurable parameters
         self.align_tolerance= 0.2               # tolerance to consider the robot aligned to the human (in metres)
-        self.x_speed_limit=0.5                  # Maximum speed on the X axis
+        self.x_speed_limit=0.3                  # Maximum speed on the X axis
         self.y_speed_limit=0.3                  # Maximum speed on the Y axis
         self.turning_speed_limit=0.1            # Maximum turning speed
         self.turning_kp=0.5                     # Gains for tunning speed control
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     #Rate setup
     rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz
     while not rospy.is_shutdown():	 
-        if hri.safety_action==7: #Excecute only if gesture control at footpaths is needed.
+        if hri.safety_action==6: #Excecute only if gesture control at footpaths is needed.
             robot.vel=hri.get_speed(human.pos_x,human.pos_y,hri.human_command)  
             cmd_vel.linear.x = robot.vel[0]
             cmd_vel.linear.y = robot.vel[1]

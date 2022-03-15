@@ -134,7 +134,6 @@ class inRowTravServer(object):
         parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
         han_distances=parsed_yaml_file.get("human_safety_config").get("han_distances",[3.6,1]) #distances used when robot is "approaching to picker"
         self.hri_dist=100                       # distance to the critical human computed by the safety_system, 100 as initial value
-        self.hri_safety_action=5                # new safety action determined by the safety_system, initially "no safety action"
         self.robot_action=4                     # current robot action, initially "waiting for human command",
         self.han_start_dist=han_distances[0]    # Human to robot Distance at which the robot starts to slow down
         self.han_stop_dist=han_distances[1]     # Human to robot Distance at which the robot must stop
@@ -982,7 +981,7 @@ class inRowTravServer(object):
         #########################################################################################################    
         #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
         #########################################################################################################
-        if self.hri_safety_action==0 or self.hri_safety_action==2 or self.hri_safety_action==5: #execute if safety action is "going to goal" or "moving away" or "no safety action"
+        if self.robot_action==0 or self.robot_action==2: #if robot action is "moving to goal" or "moving away from human"
             if not self.constant_forward_speed:
                 if not self.object_detected and self.curr_distance_to_object <= self.approach_dist_to_obj:
                     speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
@@ -996,8 +995,8 @@ class inRowTravServer(object):
             else:
                 speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
         
-        else: #execute if safety action is "reduce speed" or "stop" or "pause"
-            if self.hri_safety_action==1: #if safety action is "reduce speed" while approaching
+        else: #execute if robot action is "approaching" or "stop" or "pause"
+            if self.robot_action==1: #if safety action is "reduce speed" while approaching
                 dist=self.hri_dist  
                 if dist <= self.han_start_dist:
                     slowdown_delta = self.han_start_dist - self.han_stop_dist
@@ -1010,7 +1009,7 @@ class inRowTravServer(object):
                         speed = 0.0
                 else:
                     speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
-            elif self.hri_safety_action==3 or self.hri_safety_action==4: #if a safety action is "stop" or if the robot is "waiting for a human command" 
+            elif self.robot_action==3 or self.robot_action==4: #if robot action is "stop" or if the robot is "waiting for a human command" 
                 #print("stop")
                 speed = 0.0
         if self.backwards_mode:
@@ -1073,7 +1072,7 @@ class inRowTravServer(object):
         #########################################################################################################    
         #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
         #########################################################################################################
-        if self.hri_safety_action==0 or self.hri_safety_action==2 or self.hri_safety_action==5: #execute if safety action is "going to goal" or "moving away" or "no safety action"
+        if self.robot_action==0 or self.robot_action==2: #if robot action is "moving to goal" or "moving away from human"
             if not self.constant_forward_speed:
                 if not self.object_detected and self.curr_distance_to_object <= self.approach_dist_to_obj:
                     #print "not limiting"
@@ -1095,8 +1094,8 @@ class inRowTravServer(object):
                     speed = -self.forward_speed
                 else:
                     speed = self.forward_speed
-        else:  #execute if safety action is "reduce speed" or "stop" or "pause"
-            if self.hri_safety_action==1: #if safety action is "reduce speed" while approaching
+        else:  #execute if robot action is "approaching" or "stop" or "pause"
+            if self.robot_action==1: #if robot action is "reduce speed" while approaching
                 dist=self.hri_dist  
                 if dist <= self.han_start_dist:
                     slowdown_delta = self.han_start_dist - self.han_stop_dist
@@ -1114,7 +1113,7 @@ class inRowTravServer(object):
                         speed = -self.forward_speed
                     else:
                         speed = self.forward_speed
-            elif self.hri_safety_action==3 or self.hri_safety_action==4: #if a safety action is "stop" or if the robot is "waiting for a human command" 
+            elif self.robot_action==3 or self.robot_action==4: #if robot action is "stop" or if the robot is "waiting for a human command" 
                 print("stop")
                 speed = 0.0
         #############################################################################################################
@@ -1609,17 +1608,12 @@ class inRowTravServer(object):
         self.robot_action=robot_info.action
         
     def safety_callback(self,safety_info):
-        if safety_info.safety_action!=self.hri_safety_action and safety_info.safety_action!=5: #if safety action is required
-            self.hri_safety_action=safety_info.safety_action 
-        elif safety_info.safety_action==5: #if no safety action is required
-            self.hri_safety_action=self.robot_action          
         self.hri_dist=safety_info.critical_dist   
         #print("Safety message received")
         self.timer_safety.cancel()
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
-        
-        
+                
     def safety_timeout(self):
         print("No safety message received in a long time")
         self.hri_safety_action=4 # to stop the robot

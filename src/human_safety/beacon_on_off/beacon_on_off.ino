@@ -83,6 +83,23 @@ void activation()
         
       }
   }
+  if (current_alert=="green_blink"){
+      if (blinking_flag==true){
+        digitalWrite(green_pin, HIGH);   // activate the green led
+        digitalWrite(red_pin, LOW);   // deactivate the red led
+        digitalWrite(yellow_pin, LOW);   // deactivate the yellow led
+        blinking_flag=false;
+        delay(period_blink);
+      }
+      else{
+        digitalWrite(green_pin, LOW);   // deactivate the green led
+        digitalWrite(red_pin, LOW);   // deactivate the red led
+        digitalWrite(yellow_pin, LOW);   // deactivate the yellow led
+        blinking_flag=true;
+        delay(period_blink);
+        
+      }
+  }
 }
   
 void loop()

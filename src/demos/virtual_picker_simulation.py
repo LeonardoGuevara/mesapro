@@ -224,12 +224,12 @@ def joy_callback(data):
     if np.shape(buttons)[0]>0:
         #new_data[0]=1 
         if buttons[4]>0: #L1 to control picker01 
-            if buttons[0]>0: #square is two arms (approach) 
-                human.posture[1,0]=1
-            if buttons[1]>0: #triangle is right hand (stop)
-                human.posture[1,0]=8
-            if buttons[2]>0: #circle is two hands (move away)
-                human.posture[1,0]=2
+            if buttons[0]>0: #square is (approach) 
+                human.posture[1,0]=7
+            if buttons[1]>0: #triangle is (stop)
+                human.posture[1,0]=10
+            if buttons[2]>0: #circle is (move away)
+                human.posture[1,0]=4
             if buttons[9]>0: #option to change the human orientation to back
                 human.orientation[1]=1
             if buttons[8]>0: #start to change the human orientation to front
@@ -263,12 +263,12 @@ def joy_callback(data):
                     human.posture[1,0]=0 #to reset human gesture
          
         elif buttons[6]>0: #R1 to control picker00 
-            if buttons[0]>0: #square is two arms (approach) 
-                human.posture[0,0]=1
-            if buttons[1]>0: #triangle is right hand (stop)
-                human.posture[0,0]=8
-            if buttons[2]>0: #circle is two hands (move away)
-                human.posture[0,0]=2
+            if buttons[0]>0: #square is (approach) 
+                human.posture[0,0]=7
+            if buttons[1]>0: #triangle is (stop)
+                human.posture[0,0]=10
+            if buttons[2]>0: #circle is (move away)
+                human.posture[0,0]=4
             if buttons[9]>0: #option to change the human orientation to back
                 human.orientation[0]=1
             if buttons[8]>0: #start to change the human orientation to front
