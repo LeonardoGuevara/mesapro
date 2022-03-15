@@ -3,7 +3,7 @@
     <arg name="bag_file" default="/home/leo/Documents/mesapro/bags/match_test_2.bag" />
     
     <node pkg="rosbag" type="play" name="rosbag_play_sensors"
-    args="--loop $(arg bag_file) --topics /camera/aligned_depth_to_color/image_raw /camera/color/image_raw /flir_module_driver/thermal/image_raw /flir_module_driver/thermal/temp_meas_range"/>  
+    args="--loop $(arg bag_file) --topics /camera1/aligned_depth_to_color/image_raw /camera1/color/image_raw /flir_module_driver1/thermal/image_raw /flir_module_driver1/thermal/temp_meas_range /camera2/aligned_depth_to_color/image_raw /camera2/color/image_raw /flir_module_driver2/thermal/image_raw /flir_module_driver2/thermal/temp_meas_range"/>  
      
 </launch>
 

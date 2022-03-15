@@ -41,9 +41,9 @@ except ImportError as e:
 params = dict()
 params["model_folder"] = openpose_models
 if performance=="normal":
-    params["net_resolution"] = "-1x256" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+    params["net_resolution"] = "-1x368" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
 else:
-    params["net_resolution"] = "-1x352" #High performance
+    params["net_resolution"] = "-1x480" #High performance
 #params["maximize_positives"] = True
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
@@ -55,11 +55,12 @@ image_rotation=0 #it can be 0,90,270 measured clockwise
 openpose_visual=True  #to show or not a window with the human detection delivered by openpose
 #TRAINING PARAMETERS
 mode=1 # it can be 0 for training or 1 for testing 
-topic_list=['/camera/camera1/color/image_raw','/camera/color/image_raw','/camera/camera1/aligned_depth_to_color/image_raw','/camera/aligned_depth_to_color/image_raw'] #name of topics (old and new) to be extracted from bag files
+topic_list=['/camera/camera1/color/image_raw','/camera1/color/image_raw','/camera/camera1/aligned_depth_to_color/image_raw','/camera1/aligned_depth_to_color/image_raw'] #name of topics (old and new) to be extracted from bag files
 X=np.zeros([1,len(dist)+len(angles)])#.flatten()
 Y=np.zeros([1,1]).flatten()
 training_folder=parsed_yaml_file.get("directories_config").get("training_set") 
 testing_folder=parsed_yaml_file.get("directories_config").get("testing_set") 
+dist_threshold=7 #maximim distance (m) at which the human detection is considered for training/testing
 ##TESTING PARAMETERS
 posture_classifier_model=n_features=parsed_yaml_file.get("directories_config").get("gesture_classifier_model") #Full name of the gesture_classifier_model to be tested
 model_rf = joblib.load(posture_classifier_model)   
@@ -180,25 +181,37 @@ def feature_extraction_3D(poseKeypoints,depth_array):
             
             features=dist+angles  
             n_human=1
-            #HUMAN CENTROID CALCULATION
+            #HUMAN CENTROID AND DISTANCE CALCULATION
             n_joints_cent=0
             x_sum=0
             y_sum=0     
+            dist_sum=0
             centroid=[0,0]
             for k in range(0,n_joints):
                 if joints_x_init[k]!=0 and joints_y_init[k]!=0 and joints_z_init[k]!=0:
                     if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==12: #Only consider keypoints in the center of the body
+                        dist_sum=joints_z_init[k]+dist_sum
                         x_sum=x_sum+joints_x_init[k]
                         y_sum=y_sum+joints_y_init[k]
                         n_joints_cent=n_joints_cent+1
             #Only continue if there is at least 1 joint with x*y*z!=0 in the center of the body
             if n_joints_cent!=0:
-                if joints_x_init[1]!=0 and joints_y_init[1]!=0 and joints_z_init[1]!=0: #If neck joint exists, then this is choosen as centroid
-                    centroid[0]=joints_x_init[1]
-                    centroid[1]=joints_y_init[1]
-                else: #the centroid is an average
-                    centroid[0]=x_sum/n_joints_cent
-                    centroid[1]=y_sum/n_joints_cent
+                distance=dist_sum/n_joints_cent
+                if distance<dist_threshold:
+                    if joints_x_init[1]!=0 and joints_y_init[1]!=0 and joints_z_init[1]!=0: #If neck joint exists, then this is choosen as centroid
+                        centroid[0]=joints_x_init[1]
+                        centroid[1]=joints_y_init[1]
+                    else: #the centroid is an average
+                        centroid[0]=x_sum/n_joints_cent
+                        centroid[1]=y_sum/n_joints_cent
+                else:#not valid skeleton detection
+                    n_human=0
+                    features=[]
+                    centroid=[]     
+            else:#not valid skeleton detection
+                n_human=0
+                features=[]
+                centroid=[] 
         else: #not valid skeleton detection
             n_human=0
             features=[]

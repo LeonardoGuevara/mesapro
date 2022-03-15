@@ -5,7 +5,7 @@
   <arg name="capture_time" default="0.18" /> <!-- estimated time of capture of the sensor in seconds, to syncronize with realsense D455, it is set as 0.18 -->
   <arg name="flir_serial_n2" default="000c0035-510f-3538-3530-333500000000" /> <!-- serial number camera front -->
   <arg name="flir_serial_n1" default="80060001-5113-3238-3233-393800000000" /> <!-- serial number camera back -->
-  <arg name="min_range" default="30000" /> <!-- minimum measurement range for scaling to pixel value [0,255] -->
+  <arg name="min_range" default="28900" /> <!-- minimum measurement range for scaling to pixel value [0,255] -->
   <arg name="max_range" default="31000" /> <!-- maximum measurement range for scaling to pixel value [0,255] -->
     
 

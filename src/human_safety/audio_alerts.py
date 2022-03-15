@@ -9,8 +9,8 @@ from mesapro.msg import hri_msg
 
 default_audio_direct="/home/leo/rasberry_ws/src/mesapro/audio/"
 audio_direct=rospy.get_param("/hri_audio_alerts/audio_direct",default_audio_direct) #you have to change /hri_audio_alerts/ if the node is not named like this
-intervals_long=[10,10,10,10,10,10,10,10,10] #time till a message is repeated in the first version, in seconds, it depedns of each message
-intervals_short=[3,3,3,4,3,3,3,4,4] #time between two versions of the same message
+intervals_long=[10,10,10,10,10,10,10,10,10,10,10] #time in which the first version of a message is repeated, in seconds,
+intervals_short=[3,3,3,4,3,3,3,4,4,3,3] #time between two versions of the same message
 version=0 #to know which language its been used, initially is English
 pub_hz=0.01 #main loop frequency
         
@@ -80,6 +80,10 @@ class hri_class:
             audio="safety_system_not_working.mp3"
         if audio_index==8:
             audio="human_perception_not_working.mp3"
+        if audio_index==9:
+            audio="teleoperation_activated.mp3"
+        if audio_index==10:
+            audio="gesture_control_activated.mp3"
         message=folder+audio
         return message
 

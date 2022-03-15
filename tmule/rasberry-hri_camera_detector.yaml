@@ -20,13 +20,13 @@ init_cmd: |
   export_default OPENPOSE_PYTHON "$CATKIN_WORKSPACE/src/openpose/build/python" #assuming OpenPose is inside the RASBERRY_WS folder
   export_default OPENPOSE_MODELS "$CATKIN_WORKSPACE/src/openpose/models" #assuming OpenPose is inside the RASBERRY_WS folder
   export_default POSTURE_CLASSIFIER_MODEL "$(rospack find mesapro)/config/classifier_model_3D_v2.joblib" #model of the human gesture classifier
-  export_default BAG_FILE "$HOME/Documents/mesapro/bags/match_test_2.bag" #full name of the bag file to be reproduced 
+  export_default BAG_FILE "$HOME/Documents/mesapro/bags/testing/thermal_rgbd_test_2022-03-09-13-04-45.bag" #full name of the bag file to be reproduced 
  
   export_default VISUAL_MODE 1 # "1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
   export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
   export_default USE_CAMERA_DETECTOR true #if "false", the rgbd+thermal human detector is not launched
   export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
-  export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
+  export_default USE_BAG true #if "true", a bag file is launched instead of getting on-line data from sensors
   export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized

@@ -22,13 +22,13 @@ meter_threshold=[0.5,1] # error in meters within two human detections are consid
 tracking_threshold=3 #times a detection has to be received in order to consider for tracking
 w_data=[0.2,0.8] #weights used for calculating a weighted average during matching old with new data -> [old,new]
 lidar_to_cam=[-0.35,0] #distances [x,y] in meters used to compensate the difference in position between the lidars and the cameras (The camera location is the reference origin)
-#Parameters for Motion inference
+#Parameters for Motion and Gesture inference
 n_samples=8 #number of samples used for the motion inference
-n_samples_gest=2 #number of samples used for the gesture inference
+n_samples_gest=4 #number of samples used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
+posture_threshold=0.5 #minimum probability delivered by gesture recognition algoritm to consider a gesture valid
 speed_threshold=0.5  # < speed_threshold means static, > speed_threshold means slow motion 
 #Paremeters for human Tracking
 threshold_no_data=2 #seconds needed to remove an old human tracked from tracking list
-posture_threshold=0.3 #minimum probability delivered by gesture recognition algoritm to start tracking new human using camera info, critical to reduce false positive detections when thermal_info is not activated
 #General purposes variables
 main_counter=0
 new_data=[0,0]     #flag to know if a new human detection from LiDAR or Camera is available, first element is for LiDAR, second for Camera
@@ -377,7 +377,7 @@ class human_class:
                                 posture_buffer[k,n_samples_gest-1]=posture_new[new_index,0]
                                 posture_prob_buffer[k,0:n_samples_gest-1]=posture_prob_buffer[k,1:n_samples_gest]
                                 posture_prob_buffer[k,n_samples_gest-1]=posture_new[new_index,1]
-                                posture[k,:]=human.human_gesture_inference(posture_buffer[k,:],posture_prob_buffer[k,:])
+                                [posture[k,:],counter_posture[k]]=human.human_gesture_inference(posture_buffer[k,:],posture_prob_buffer[k,:],posture[k,:],counter_posture[k])
                             #Updating centroid, and orientation
                             centroid[k,:]=centroid_new[new_index,:]
                             orientation[k,:]=orientation_new[new_index,:]
@@ -476,7 +476,7 @@ class human_class:
                 area=np.zeros([n_human,1])
             #To include a new human to be tracked
             for k in range(0,len(new_human_flag)):
-                if new_human_flag[k]==0 and posture_new[k,1]>=posture_threshold: # only if the gesture estimation probability is reliable 
+                if new_human_flag[k]==0:# and posture_new[k,1]>=posture_threshold: # only if the gesture estimation probability is reliable 
                     #print('New human tracked from the camera')
                     #print("ADDED",centroid_new[k,0])
                     n_human=n_human+1
@@ -658,25 +658,29 @@ class human_class:
             motion=2           
         return motion
 
-    def human_gesture_inference(self,posture,posture_prob):
+    def human_gesture_inference(self,posture,posture_prob,current_posture,counter_posture):
         count=0
         post=0
         for k in range(0,n_samples_gest-1):
             if posture[k]==posture[k+1]:
                 count=count+1
                 post=posture[k]
-        if count>=n_samples_gest-1:
+        if count>=n_samples_gest-1: #if most of the postures in the buffer are the same, then update with new posture
             prob=np.mean(posture_prob)
-            if prob<posture_threshold: # only if the openpose probability is reliable 
+            if prob<posture_threshold: #if the openpose probability is not reliable, then consider new posture as "no gesture"
                 post=0 #no gesture
                 prob=0 #probability 0
-        else:
-            post=0 #no gesture
-            prob=0 #probability 0
+            if current_posture[0]!=post and current_posture[0]!=0: #reset buffer if change in gesture is detected, except when previos gesture was "no gesture"
+                counter_posture=0
+                post=0 #no gesture
+                prob=0 #probability 0
+        else: #keep the last posture label and probability
+            post=0#current_posture[0] #0 #no gesture
+            prob=0#current_posture[1] #0 #probability 0
         result=np.zeros([1,2])
         result[0,0]=post
         result[0,1]=prob
-        return result
+        return result,counter_posture
 
     def area_inference(self,angle,pos_y,pos_x):
         #Front

@@ -391,7 +391,7 @@ if __name__ == '__main__':
                 ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 5, 1)
                 ts.registerCallback(human.rgb_thermal_1_callback)
             else:
-                rospy.Subscriber('camera/camera1/color/image_raw', Image,human.rgb_1_callback) #really old topic name before thermal info
+                rospy.Subscriber('camera1/color/image_raw', Image,human.rgb_1_callback, queue_size=5) #new topic name before thermal info
     else: #n_cameras==2
         if visual_mode==1 or visual_mode==3:    
             if thermal_info==True:

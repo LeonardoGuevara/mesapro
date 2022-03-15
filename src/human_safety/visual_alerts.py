@@ -20,6 +20,7 @@ class hri_class:
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
         self.problem=False #Flag to know if safety system or human perception have problems
+        self.teleop=False #Flag to know if teleoperation mode is activated
         
     def safety_callback(self,safety_info):
         self.status=safety_info.hri_status
@@ -28,6 +29,8 @@ class hri_class:
         self.audio_message=safety_info.audio_message
         if self.audio_message==8:
              self.problem=True #to alert that human perception system is not publishing 
+        if self.audio_message==9:
+             self.teleop=True #to alert that robot is in teleoperation     
         print("Safety message received")
         self.timer_safety.cancel()
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
@@ -49,7 +52,9 @@ class hri_class:
         if self.problem==True: 
             self.current_alert="red_blink" # means that there are problems with the safety system or human perception system
         if self.new_goal=="Unknown":
-            self.current_alert="none" #means robot is not moving autonomously yet
+            self.current_alert="none" #means robot is not moving autonomously yet or teleoperation is activated
+        if self.teleop==True:
+           self.current_alert="green_blink" #means robot is moving in teleoperation mode
         
 ###############################################################################################
 # Main Script

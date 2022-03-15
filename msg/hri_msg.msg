@@ -6,5 +6,6 @@ int64 critical_index
 float64 critical_dist
 string new_goal
 string operation_mode
+string action_mode
 
 
