@@ -161,7 +161,7 @@ class hri_class:
                 centered_old=True
         if dist[critical_index]<=collision_risk_dist[1] and aligned_old==True:
             danger_old=True 
-        if (sensor[critical_index]!=1 and posture[critical_index]==7 and danger_old==False and aligned_old==True):  #rigth_forearm_sideways
+        if (sensor[critical_index]!=1 and posture[critical_index]==8 and danger_old==False and aligned_old==True):  #rigth_forearm_sideways
             gesture_old=True
             if polytunnel==True:
                 command_old=1 #approach (approching to picker inside polytunnels)
@@ -176,7 +176,13 @@ class hri_class:
                 command_old=2 #move away (move away from picker inside polytunnel)
             else:
                 command_old=5 #move backwards (move away from human at footpaths)
-          
+        elif (sensor[critical_index]!=1 and posture[critical_index]==7 and aligned_old==True and polytunnel==False): #right_arm_sideways
+            gesture_old=True
+            command_old=6 #move right (only valid at footpaths)
+        elif (sensor[critical_index]!=1 and posture[critical_index]==3 and aligned_old==True and polytunnel==False): #left_arm_sideways
+            gesture_old=True
+            command_old=7 #move left (only valid at footpaths)
+            
         for k in range(0,n_human):  
             update=False
             aligned_new=False #initial value
@@ -190,7 +196,7 @@ class hri_class:
                     centered_new=True
             if dist[k]<=collision_risk_dist[1] and aligned_new==True:
                 danger_new=True 
-            if (sensor[k]!=1 and posture[k]==7 and danger_new==False and aligned_new==True): #rigth_forearm_sideways
+            if (sensor[k]!=1 and posture[k]==8 and danger_new==False and aligned_new==True): #rigth_forearm_sideways
                 gesture_new=True
                 if polytunnel==True:
                     command_new=1 #approach (approching to picker inside polytunnels)
@@ -205,6 +211,12 @@ class hri_class:
                     command_new=2 #move away (move away from picker inside polytunnel)
                 else:
                     command_new=5 #move backwards (move away from human at footpaths)
+            elif (sensor[k]!=1 and posture[k]==7 and aligned_new==True and polytunnel==False): #right_arm_sideways
+                gesture_new=True
+                command_new=6 #move right (only valid at footpaths)
+            elif (sensor[k]!=1 and posture[k]==3 and aligned_new==True and polytunnel==False): #left_arm_sideways
+                gesture_new=True
+                command_new=7 #move left (only valid at footpaths)
             #############################################################
             #THIS IS THE CORE OF THE CRITICAL HUMAN SELECTION
             if danger_old==True:
@@ -486,14 +498,9 @@ class hri_class:
                         self.audio_message=5 #message moving away
                         self.safety_action=2 # to make the robot move away from the picker
                         self.new_goal=self.find_new_goal(h_global_y,r_pos_y,current_goal_info)
-                    #In case the picker wants the robot to move forwards (towards the human position), only valid at footpaths
-                    elif self.human_command==4:
+                    #In case the picker wants to control the robot velocities by performing gestures (only valid at footpaths)
+                    elif self.human_command>=4 and self.human_command<=7:
                         self.audio_message=10 #alet of gesture control
-                        self.safety_action=6 # to make the robot activate the gesture control at footpaths
-                        self.new_goal=final_goal # the current goal is not changed
-                    #In case the picker wants the robot to move backwards (away from the human position), only valid at footpaths
-                    elif self.human_command==5: 
-                        self.audio_message=10 #alert of gesture control
                         self.safety_action=6 # to make the robot activate the gesture control at footpaths
                         self.new_goal=final_goal # the current goal is not changed
                        

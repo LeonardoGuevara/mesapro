@@ -57,27 +57,25 @@ class hri_class:
 
     def get_speed(self, error_x,error_y,command):
         #Check if human detected is located in front of the robot or at the back
-        speed=[0,0,0] #[linear.x,linear.y,angular.z]
+        speed=[0,0,0] #initial values, [linear.x,linear.y,angular.z]
         if error_x<0:
             backwards_mode=True
         else:
             backwards_mode=False
-        #Check if robot face which detected the human is aligned to the human position, if not, rotate with radius 0 till make error_y converge within the aligned threshold
-        if backwards_mode==False:
-            speed[2]=self.turning_kp*error_y
-        else:
-            speed[2]=-self.turning_kp*error_y
-        #Limit turning speed
-        if speed[2]>self.turning_speed_limit:
-            speed[2]=self.turning_speed_limit
-        if speed[2]<-self.turning_speed_limit:
-            speed[2]=-self.turning_speed_limit
-    
-        #Start moving forwards or backwards only if robot is within the aligned threshold
-        if abs(error_y)<self.align_tolerance:
-            if  command==5: #execute if gesture command is "move away from the human"
-                speed[0] = -self.x_speed_limit
-            elif command==4: #execute if safety action is "move towards the human"
+        
+        if command==4: #execute if safety action is "move forwards" or ""move towards the human"
+            #Check if the robot face which detected the human is aligned to the human position, if not, rotate with radius 0 till make error_y converge within the aligned threshold
+            if backwards_mode==False:
+                speed[2]=self.turning_kp*error_y
+            else:
+                speed[2]=-self.turning_kp*error_y
+            #Limit turning speed
+            if speed[2]>self.turning_speed_limit:
+                speed[2]=self.turning_speed_limit
+            if speed[2]<-self.turning_speed_limit:
+                speed[2]=-self.turning_speed_limit  
+            #Start moving towards the human only if robot is within the aligned threshold
+            if abs(error_y)<self.align_tolerance:
                 dist=abs(error_x) 
                 if dist <= self.han_start_dist:
                     slowdown_delta = self.han_start_dist - self.han_stop_dist
@@ -90,8 +88,15 @@ class hri_class:
                         speed[0] = 0.0
                 else:
                     speed[0] = self.x_speed_limit
-            if backwards_mode==True:
-                speed[0] = -speed[0]
+        if command==5: #execute if gesture command is "move backwards"
+            speed[0] = -self.x_speed_limit
+        if command==6: #execute if gesture command is "move right"
+            speed[1] = self.y_speed_limit
+        if command==7: #execute if gesture command is "move left"
+            speed[1] = -self.y_speed_limit
+        if backwards_mode==True: #In any case, if the robot is in backward mode, then change the linear speeds signs
+            speed[0] = -speed[0]
+            speed[1] = -speed[1]
         print("SPEED",speed)
         ###################################################################################################
         return speed

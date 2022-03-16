@@ -978,44 +978,20 @@ class inRowTravServer(object):
 
 
     def get_row_entry_speed(self, distance_travelled):
-        #########################################################################################################    
-        #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
-        #########################################################################################################
-        if self.robot_action==0 or self.robot_action==2: #if robot action is "moving to goal" or "moving away from human"
-            if not self.constant_forward_speed:
-                if not self.object_detected and self.curr_distance_to_object <= self.approach_dist_to_obj:
-                    speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
-                else:
-                    slowdown_delta = self.approach_dist_to_obj - self.min_dist_to_obj
-                    current_percent = (self.curr_distance_to_object - self.min_dist_to_obj) / slowdown_delta
-                    if current_percent >0:
-                        speed = min((current_percent*self.forward_speed), (self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))))
-                    else:
-                        speed = 0.0
-            else:
+        if not self.constant_forward_speed:
+            if not self.object_detected and self.curr_distance_to_object <= self.approach_dist_to_obj:
                 speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
-        
-        else: #execute if robot action is "approaching" or "stop" or "pause"
-            if self.robot_action==1: #if safety action is "reduce speed" while approaching
-                dist=self.hri_dist  
-                if dist <= self.han_start_dist:
-                    slowdown_delta = self.han_start_dist - self.han_stop_dist
-                    current_percent = (dist - self.han_stop_dist) / slowdown_delta
-                    if current_percent >0:
-                        #print("Limiting speed")
-                        speed = (current_percent*self.forward_speed)
-                    else:
-                        #print("stop")
-                        speed = 0.0
+            else:
+                slowdown_delta = self.approach_dist_to_obj - self.min_dist_to_obj
+                current_percent = (self.curr_distance_to_object - self.min_dist_to_obj) / slowdown_delta
+                if current_percent >0:
+                    speed = min((current_percent*self.forward_speed), (self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))))
                 else:
-                    speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
-            elif self.robot_action==3 or self.robot_action==4: #if robot action is "stop" or if the robot is "waiting for a human command" 
-                #print("stop")
-                speed = 0.0
+                    speed = 0.0
+        else:
+            speed = self.row_entry_min_speed + max(0.0, (self.row_entry_kp*distance_travelled))
         if self.backwards_mode:
             speed = -speed
-        #################################################################################################
-        ###################################################################################################
         return speed
     
 

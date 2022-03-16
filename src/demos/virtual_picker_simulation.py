@@ -225,7 +225,7 @@ def joy_callback(data):
         #new_data[0]=1 
         if buttons[4]>0: #L1 to control picker01 
             if buttons[0]>0: #square is (approach) 
-                human.posture[1,0]=7
+                human.posture[1,0]=8
             if buttons[1]>0: #triangle is (stop)
                 human.posture[1,0]=10
             if buttons[2]>0: #circle is (move away)
@@ -234,8 +234,10 @@ def joy_callback(data):
                 human.orientation[1]=1
             if buttons[8]>0: #start to change the human orientation to front
                 human.orientation[1]=0
-            #if buttons[15]>0: #up to change the human area to any (in front)
-            #    human.area[1]=2
+            if buttons[15]>0: #up to command the robot to (move right)
+                human.posture[1,0]=7
+            if buttons[17]>0: #down to command the robot to (move left)
+                human.posture[1,0]=3
             #if buttons[17]>0: #down to change the human area to any (back)
             #    human.area[1]=7
             #if buttons[14]>0: #left to change the human area to 0 (on the side)
@@ -264,7 +266,7 @@ def joy_callback(data):
          
         elif buttons[6]>0: #R1 to control picker00 
             if buttons[0]>0: #square is (approach) 
-                human.posture[0,0]=7
+                human.posture[0,0]=8
             if buttons[1]>0: #triangle is (stop)
                 human.posture[0,0]=10
             if buttons[2]>0: #circle is (move away)
@@ -273,6 +275,10 @@ def joy_callback(data):
                 human.orientation[0]=1
             if buttons[8]>0: #start to change the human orientation to front
                 human.orientation[0]=0
+            if buttons[15]>0: #up to command the robot to move right
+                human.posture[0,0]=7
+            if buttons[17]>0: #down to command the robot to move left
+                human.posture[0,0]=3
             #if buttons[15]>0: #up to change the human area to any (in front)
             #    human.area[0]=2
             #if buttons[17]>0: #down to change the human area to any (back)
