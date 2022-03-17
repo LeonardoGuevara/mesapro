@@ -15,7 +15,7 @@ cmd_pub = rospy.Publisher('/nav_vel', Twist, queue_size=1)
 cmd_vel = Twist()
 #Importing global parameters from .yaml file
 default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
-config_direct=rospy.get_param("/row_traversal/config_direct",default_config_direct) #you have to change /row_traversal/ if the node is not named like this
+config_direct=rospy.get_param("/gesture_control/config_direct",default_config_direct) #you have to change /gesture_control/ if the node is not named like this
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 han_distances=parsed_yaml_file.get("human_safety_config").get("han_distances",[3.6,1]) #distances used when robot is "approaching to picker"
@@ -44,7 +44,7 @@ class hri_class:
         self.critical_index=0 #index of the human considered as critical during interaction (it is not neccesary the same than the closest human or the goal human)
         self.han_start_dist=han_distances[0]    # Human to robot Distance at which the robot starts to slow down
         self.han_stop_dist=han_distances[1]     # Human to robot Distance at which the robot must stop
-        self.time_without_msg=rospy.get_param("/row_traversal/time_without_msg",5) # Maximum time without receiving safety messages
+        self.time_without_msg=rospy.get_param("/gesture_control/time_without_msg",5) # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
         # Dynamically reconfigurable parameters
@@ -122,7 +122,7 @@ if __name__ == '__main__':
     human=human_class()
     robot=robot_class()
     # Initialize our node    
-    rospy.init_node('footpath_navigation',anonymous=True)
+    rospy.init_node('footpath_gesture_control',anonymous=True)
     rospy.Subscriber('human_safety_info',hri_msg,hri.safety_callback)  
     rospy.Subscriber('human_info',human_msg,human.human_callback)  
     #Rate setup

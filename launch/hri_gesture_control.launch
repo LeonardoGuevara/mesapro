@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<launch>
+
+  <!-- Maximum time without receiving safety or human perception messages  -->
+  <arg name="time_without_msg" default="5"/>
+  <!-- Directory to the mesapro global config file  -->
+  <arg name="config_direct" default="/home/leo/rasberry_ws/src/mesapro/config/" /> 
+
+  <node pkg="mesapro" type="footpath_gesture_control.py" name="gesture_control" output="screen">
+    <param name="time_without_msg" value="$(arg time_without_msg)"/>
+    <param name="config_direct" value="$(arg config_direct)"/>
+  </node>
+
+</launch>

@@ -236,7 +236,7 @@ windows:
   panes:
   - if ! $USE_TEB_PLANNER; then roslaunch rasberry_move_base move_base_dwa.launch use_carrot_planner:=$USE_CARROT use_omni:="$USE_OMNI" robot_no:=$ROBOT_NO robot_footprint:=$ROBOT_FOOTPRINT; else roslaunch rasberry_move_base move_base_teb.launch use_carrot_planner:=$USE_CARROT use_omni:="$USE_OMNI" robot_no:=$ROBOT_NO; fi
   - roslaunch mesapro row_traversal_thorvald_014.launch use_gps_only:="$USE_GPS_ONLY" detector_config_common:="$ROW_DETECTOR_CONFIG_COMMON" detector_config_ellipse:="$ROW_DETECTOR_CONFIG_ELLIPSE" traversal_config:="$ROW_TRAVERSAL_CONFIG" pole_positions:=$POLE_POSITIONS pole_likelihood_field:=$POLE_LIKELIHOOD_FIELD use_restrictions:=$USE_RESTRICTIONS site_path:=$SITE_PATH robot_type:=$RES_ROBOT_TYPE task:=$APPLICATION time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
-  - rosrun mesapro footpath_control.py time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
+  - roslaunch mesapro hri_gesture_control.launch time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
   check: "rosrun dynamic_reconfigure dynparam list | grep row_traversal"
   tags: [nav, site]
 ######################################################################################## for thorvald-014, sentor.launch comes from rasberry_uv instead of rasberry_core
