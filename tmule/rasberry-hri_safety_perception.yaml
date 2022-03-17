@@ -41,7 +41,7 @@ init_cmd: |
   export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera front
   export_default FLIR_SERIAL_N2 "80060001-5113-3238-3233-393800000000" #serial number thermal camera back
   export_default FLIR_SERIAL_N1 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera front
-  export_default FLIR_MIN_RANGE "30000" # minimum measurement range for scaling to pixel value [0,255]
+  export_default FLIR_MIN_RANGE "29000" # minimum measurement range for scaling to pixel value [0,255]
   export_default FLIR_MAX_RANGE "31000" # mamixum measurement range for scaling to pixel value [0,255]
   export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
   ##############################################################################################
@@ -63,7 +63,7 @@ init_cmd: |
 windows:
 - name: bag_files
   panes:
-  - if $USE_BAG ; then roslaunch mesapro bags_data_rgbd_thermal.launch bag_file:=$BAG_FILE; fi
+  - sleep 5 ; if $USE_BAG ; then roslaunch mesapro bags_data_rgbd_thermal.launch bag_file:=$BAG_FILE; fi
   check: "rostopic list || ! $USE_BAG"
 - name: rgbd_cameras
   panes:

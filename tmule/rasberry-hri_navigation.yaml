@@ -41,21 +41,21 @@ init_cmd: |
   
   ################################################################################################ CHANGING ROS_MASTER AND ROS_IP
   # Search for VPN tun device
-  export_default VPN_BASE_ADDR "10.8.0.0"
-  default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
-  default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
+  #export_default VPN_BASE_ADDR "10.8.0.0"
+  #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
+  #default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
   # Set ROS_MASTER to the correct IP
-  export_default ROS_MASTER $default_ip
+  #export_default ROS_MASTER $default_ip
   # Set ROS_IP not to the IP that we will connect to remotely
-  export_default ROS_IP `ip route get $ROS_MASTER | grep "src" | sed 's/.*src \([0-9\.]*\).*/\1/' || echo $ROS_MASTER`
+  #export_default ROS_IP `ip route get $ROS_MASTER | grep "src" | sed 's/.*src \([0-9\.]*\).*/\1/' || echo $ROS_MASTER`
   # Set ROS_HOSTNAME to the ROS_IP to avoid configuring /etc/hosts for anyone who connects
-  export_default ROS_HOSTNAME "$ROS_IP"
-  export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
-  
-  #export_default ROS_IP "192.168.0.101" #NUC IP address
-  #export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
+  #export_default ROS_HOSTNAME "$ROS_IP"
   #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
-  #export ROS_IP=$ROS_IP  
+  
+  export_default ROS_IP "192.168.0.101" #NUC IP address
+  export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
+  export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  export ROS_IP=$ROS_IP  
   ################################################################################################
   
   # Figure out the robot number from the hostname, assuming it is like `thorvald-XXX`

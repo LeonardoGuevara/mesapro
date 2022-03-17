@@ -282,7 +282,7 @@ class human_class:
             self.image_size = img_rgb_rz_front.shape
             ##################################################################################
             #Back cameras info extraction
-            therm_image_back = ros_numpy.numpify(depth_back) #replacing cv_bridge
+            therm_image_back = ros_numpy.numpify(therm_back) #replacing cv_bridge
             if image_rotation==90:
                 img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
             elif image_rotation==270:
@@ -675,7 +675,7 @@ class human_class:
                             camera_id[kk]=1
                             #HUMAN XY POSITION IN PIXELS INTO 3D WORLD
                             centroid_3d[kk,0] = -distance[kk,0] #z-axis in camera 3d world is the negative x-axis of robot frame
-                            #MAP CENTROID COORDINATES FROM THE CROPPED AND ROTATED IMAGE TO THE ORIGINAL IMAGE (UNDISTORTED)
+                            #MAP CENTROID COORDINATES FROM THE CROPPED AND ROTATED IMAGE TO THE ORIGINAL IMAGE (UNDISTORTED) which is the one aligned to the robot x-axis
                             if thermal_info==True:
                                 orig_centroid_y=centroid[kk,0]-width+resize_param[1]
                             else: #means that the original image was not cropped
