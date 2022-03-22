@@ -7,20 +7,19 @@ import geometry_msgs.msg
 from geometry_msgs.msg import Pose
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
-import marvelmind_nav.msg
-from tf.transformations import euler_from_quaternion
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from mesapro.msg import human_msg
 from geometry_msgs.msg import PoseStamped
 import time
 
 ##########################################################################################
 picker_step=0.05 # maximum picker step each time an action is triggered 
-picker_step_angle=0.1 # maximim picker step in radians
+picker_step_angle=0.03 # maximim picker step in radians
 n_samples=10 #number of samples used for the motion inference
 speed_threshold=[0.6,1]  # [static, slow motion] m/s
 areas_angle=[150,100,80,30,0] #in degrees
-dist_detection=7 #range in meters of human detection
-dist_thermal_detection=10 #range in meters of thermal detection
+dist_detection=10 #range in meters of human detection
+dist_thermal_detection=15 #range in meters of thermal detection
 main_counter=0
 pub_hz=0.01 #main loop frequency
     
@@ -57,6 +56,7 @@ class human_class:
         theta = angles[2]
         pos_theta=np.unwrap([theta])[0]
         pose= np.array([pos.x,pos.y,pos_theta])
+        #print("SUBSCRIBER",pose)
         self.position_global[0,:]=pose
         #Human Motion and distance
         time_new=time.time()-time_init
@@ -103,17 +103,17 @@ class human_class:
         #Area
         self.area[0]=area_inference_lidar(pos_y,pos_x)
         #Orientation
-        #if self.area[0]>=0 and self.area[0]<=4:
-        #    if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
-        #        orientation=1 #back
-        #    else:  #front
-        #        orientation=0
-        #else:
-        #    if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
-        #        orientation=0 #front
-        #    else:  #back
-        #        orientation=1
-        #self.orientation[0]=orientation
+        if self.area[0]>=0 and self.area[0]<=4:
+            if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
+                orientation=1 #back
+            else:  #front
+                orientation=0
+        else:
+            if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
+                orientation=0 #front
+            else:  #back
+                orientation=1
+        self.orientation[0]=orientation
         #new_data[1]=1
 
     def actor01_callback(self,p2):
@@ -169,17 +169,17 @@ class human_class:
         #Area
         self.area[1]=area_inference_lidar(pos_y,pos_x)
         #Orientation
-        #if self.area[1]>=0 and self.area[1]<=4:
-        #    if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
-        #        orientation=1 #back
-        #    else:  #front
-        #        orientation=0
-        #else:
-        #    if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
-        #        orientation=0 #front
-        #    else:  #back
-        #        orientation=1
-        #self.orientation[1]=orientation
+        if self.area[1]>=0 and self.area[1]<=4:
+            if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
+                orientation=1 #back
+            else:  #front
+                orientation=0
+        else:
+            if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
+                orientation=0 #front
+            else:  #back
+                orientation=1
+        self.orientation[1]=orientation
         #new_data[2]=1
 
 class robot_class:
@@ -230,10 +230,10 @@ def joy_callback(data):
                 human.posture[1,0]=10
             if buttons[2]>0: #circle is (move away)
                 human.posture[1,0]=4
-            if buttons[9]>0: #option to change the human orientation to back
-                human.orientation[1]=1
-            if buttons[8]>0: #start to change the human orientation to front
-                human.orientation[1]=0
+            #if buttons[9]>0: #option to change the human orientation to back
+            #    human.orientation[1]=1
+            #if buttons[8]>0: #start to change the human orientation to front
+            #    human.orientation[1]=0
             if buttons[15]>0: #up to command the robot to (move right)
                 human.posture[1,0]=7
             if buttons[17]>0: #down to command the robot to (move left)
@@ -271,10 +271,10 @@ def joy_callback(data):
                 human.posture[0,0]=10
             if buttons[2]>0: #circle is (move away)
                 human.posture[0,0]=4
-            if buttons[9]>0: #option to change the human orientation to back
-                human.orientation[0]=1
-            if buttons[8]>0: #start to change the human orientation to front
-                human.orientation[0]=0
+            #if buttons[9]>0: #option to change the human orientation to back
+            #    human.orientation[0]=1
+            #if buttons[8]>0: #start to change the human orientation to front
+            #    human.orientation[0]=0
             if buttons[15]>0: #up to command the robot to move right
                 human.posture[0,0]=7
             if buttons[17]>0: #down to command the robot to move left
@@ -432,23 +432,40 @@ if __name__ == '__main__':
         #    new_data[4]=0
         
         #setup publiser in ROS
-        pub=rospy.Publisher('/hedge_pos_a',marvelmind_nav.msg.hedge_pos_a, queue_size=10)
-        msg= marvelmind_nav.msg.hedge_pos_a()
         #Publish command for Picker 1
-        msg.address= 1
-        msg.timestamp_ms=0
-        msg.x_m = human.position_global[0][0]
-        msg.y_m = human.position_global[0][1]
-        msg.z_m = 0
-        pub.publish(msg)
-        #Publish command for Picker 2
-        msg.address= 2
-        msg.timestamp_ms=0
-        msg.x_m = human.position_global[1][0]
-        msg.y_m = human.position_global[1][1]
-        msg.z_m = 0
+        
+        pub = rospy.Publisher("/picker01/posestamped", PoseStamped, queue_size=5)
+        msg = PoseStamped()
+        msg.header.seq = 1
+        msg.header.stamp = rospy.Time.now()
+        msg.header.frame_id = "map"
+        msg.pose.position.x = human.position_global[0][0]
+        msg.pose.position.y = human.position_global[0][1]
+        msg.pose.position.z = 0.0
+        quater = quaternion_from_euler(0, 0, human.position_global[0][2], 'ryxz')
+        msg.pose.orientation.x = quater[0]
+        msg.pose.orientation.y = quater[1]
+        msg.pose.orientation.z = quater[2]
+        msg.pose.orientation.w = quater[3]
         pub.publish(msg)
         
+        #Publish command for Picker 2
+        pub = rospy.Publisher("/picker02/posestamped", PoseStamped, queue_size=5)
+        msg = PoseStamped()
+        msg.header.seq = 1
+        msg.header.stamp = rospy.Time.now()
+        msg.header.frame_id = "map"
+        msg.pose.position.x = human.position_global[1][0]
+        msg.pose.position.y = human.position_global[1][1]
+        msg.pose.position.z = 0.0
+        quater = quaternion_from_euler(0, 0, human.position_global[1][2], 'ryxz')
+        msg.pose.orientation.x = quater[0]
+        msg.pose.orientation.y = quater[1]
+        msg.pose.orientation.z = quater[2]
+        msg.pose.orientation.w = quater[3]
+        pub.publish(msg)
+        
+        #print("PUBLISH ",human.position_global[0,:])
         #pub=rospy.Publisher('/picker01/posestamped',PoseStamped)
         #msg=PoseStamped()
         #msg.header.frame_id = "map"

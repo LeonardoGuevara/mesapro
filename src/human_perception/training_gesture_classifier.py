@@ -43,7 +43,7 @@ params["model_folder"] = openpose_models
 if performance=="normal":
     params["net_resolution"] = "-1x368" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
 else:
-    params["net_resolution"] = "-1x432" #High performance
+    params["net_resolution"] = "-1x464" #High performance
 #params["maximize_positives"] = True
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
@@ -52,7 +52,7 @@ datum = op.Datum()
 #VISUALIZATION PARAMETERS
 openpose_visual=True  #to show or not a window with the human detection delivered by openpose
 #TRAINING PARAMETERS
-mode=0 # it can be 0 for training or 1 for testing 
+mode=1 # it can be 0 for training or 1 for testing 
 topic_list=['/camera/camera1/color/image_raw','/camera1/color/image_raw','/camera/camera1/aligned_depth_to_color/image_raw','/camera1/aligned_depth_to_color/image_raw'] #name of topics (old and new) to be extracted from bag files
 X=np.zeros([1,len(dist)+len(angles)])#.flatten()
 Y=np.zeros([1,1]).flatten()
@@ -87,16 +87,16 @@ def feature_extraction_3D(poseKeypoints,depth_array):
            biggest_index=skeleton_size.index(biggest)
            center=min(skeleton_position)
            center_index=skeleton_position.index(center)
-           size_ordered=sorted(skeleton_size);
+           #size_ordered=sorted(skeleton_size);
            # When there is only a big skeleton
-           if (size_ordered[-2]/size_ordered[-1])<0.5:
-               keypoints=data[biggest_index,:,:]
-           else: # When there are two or more big skeletons
-                if center_index==biggest_index:
-                    keypoints=data[biggest_index,:,:]
-                else:
-                    keypoints=data[center_index,:,:]       
-        
+           #if (size_ordered[-2]/size_ordered[-1])<0.5 and size_ordered[-1]!=0:
+           #    keypoints=data[biggest_index,:,:]
+           #else: # When there are two or more big skeletons
+           if center_index==biggest_index:
+                keypoints=data[biggest_index,:,:]
+           else:
+                keypoints=data[center_index,:,:]       
+    
         ### 3D Feature extraction####
         #Using only the important joints
         joints_x_init=keypoints[0:n_joints,0]
@@ -237,7 +237,7 @@ for k in range(0,n_labels):
     files = os.listdir(folder_name)
     for file in files:
         bag = rosbag.Bag(folder_name+file)
-        for topic, msg, t in bag.read_messages(topics=topic_list):
+        for topic, msg, t in bag.read_messages(topics=topic_list):          
             #################################################################################################
             ## EXTRACTING MSG FROM BAG FILES
             #################################################################################################
@@ -277,38 +277,55 @@ for k in range(0,n_labels):
             ## OPENPOSE DETECTION
             #################################################################################################
             if new_data==[1,1] and len(depth_array[0])==len(color_image[0]) and len(depth_array[1])==len(color_image[1]):
-                new_data=[0,0]                
-                ####################################################################################################
-                #Keypoints extraction using OpenPose
-                datum.cvInputData = color_image
-                opWrapper.emplaceAndPop(op.VectorDatum([datum]))
-                #Feature extraction
-                [features,n_human,centroid]=feature_extraction_3D(datum.poseKeypoints,depth_array)
-                if n_human==1: #execute only if there is a valid detection                                      
-                    if mode==1: #TESTING
-                        #HUMAN POSTURE RECOGNITION
-                        X=np.array(features).transpose()
-                        Y=model_rf.predict([X])
-                        # Model Accuracy, how often is the classifier correct?
-                        print("RESULT:",counter,labels[int(Y)])
-                    else: #TRAINING                  
-                        X_new=np.array(features)
-                        X=np.concatenate((X, [X_new]), axis=0)
-                        Y_new=k              
-                        Y=np.concatenate((Y, [Y_new]), axis=0)
-                        print("RESULT:",counter,labels[int(Y_new)])
-                    counter=counter+1
-                else:
-                    print("Not valid OpenPose detection")
-                    ######################################################################
-                    ######################################################################        
-                #Visualization
-                image=datum.cvOutputData
-                if centroid!=[]:
-                    center_coordinates = (int(centroid[0]), int(centroid[1])) 
-                    image = cv2.circle(image, center_coordinates, 5, (255, 0, 0), 20) #BLUE   
-                cv2.imshow("OpenPose Python API",image)
-                cv2.waitKey(10)
+                new_data=[0,0]  
+                mirror_counter=0 
+                while mirror_counter<=1:           
+                    if mirror_counter==1: #to mirror the image the second time
+                        color_image=cv2.flip(color_image, 1)
+                        depth_array=cv2.flip(depth_array, 1)
+                    ####################################################################################################
+                    #Keypoints extraction using OpenPose
+                    datum.cvInputData = color_image
+                    opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+                    #Feature extraction
+                    [features,n_human,centroid]=feature_extraction_3D(datum.poseKeypoints,depth_array)
+                    if n_human==1: #execute only if there is a valid detection                                      
+                        if mode==1: #TESTING
+                            #HUMAN POSTURE RECOGNITION
+                            X=np.array(features).transpose()
+                            Y=model_rf.predict([X])
+                            # Model Accuracy, how often is the classifier correct?
+                            print("RESULT:",counter,labels[int(Y)])
+                        else: #TRAINING                  
+                            X_new=np.array(features)
+                            X=np.concatenate((X, [X_new]), axis=0)
+                            if mirror_counter==0:
+                                Y_new=k
+                            else:
+                                if k>=1 and k<=4: #if originally was left label, then renamed then to right
+                                    Y_new=k+4
+                                elif k>=5 and k<=8: #if originally was right label, then renamed then to left
+                                    Y_new=k-4
+                                else:
+                                    Y_new=k #label is not changing after mirror
+                            Y=np.concatenate((Y, [Y_new]), axis=0)
+                            print("RESULT:",counter,labels[int(Y_new)])
+                        counter=counter+1
+                    else:
+                        print("Not valid OpenPose detection")
+                        ######################################################################
+                        ######################################################################        
+                    #Visualization
+                    image=datum.cvOutputData
+                    if centroid!=[]:
+                        center_coordinates = (int(centroid[0]), int(centroid[1])) 
+                        image = cv2.circle(image, center_coordinates, 5, (255, 0, 0), 20) #BLUE   
+                    cv2.imshow("OpenPose Python API",image)
+                    cv2.waitKey(10)
+                    if mode==1:    
+                        mirror_counter=mirror_counter+2
+                    else:
+                        mirror_counter=mirror_counter+1
             #if i==5 or i==10 or i==15 or i==20:
             #    break
         bag.close()
@@ -320,7 +337,7 @@ if mode==0:
     #Train the model using the training sets y_pred=clf.predict(X_test)
     clf.fit(np.array(X),Y)
     #Exporting the model
-    joblib.dump(clf, config_direct+"/classifier_model_3D_v4.joblib")    
+    joblib.dump(clf, config_direct+"/classifier_model_3D_v5.joblib")    
     
 
 

@@ -2,8 +2,8 @@
 
 #required packages
 import rospy
-from tf.transformations import euler_from_quaternion
-from geometry_msgs.msg import Pose
+from tf.transformations import euler_from_quaternion , quaternion_from_euler
+from geometry_msgs.msg import Pose, PoseStamped
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 import yaml
@@ -18,6 +18,8 @@ pub_hz=0.01 #main loop frequency
 #Setup ROS publiser
 pub_safety = rospy.Publisher('human_safety_info', hri_msg,queue_size=1)
 safety_msg = hri_msg()
+pub_pose = rospy.Publisher("/human/posestamped", PoseStamped, queue_size=1)
+pose_msg = PoseStamped()
 #Importing global parameters from .yaml file
 default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
 config_direct=rospy.get_param("/hri_safety_system/config_direct",default_config_direct) #you have to change /hri_safety_system/ if the node is not named like this
@@ -65,6 +67,8 @@ class robot_class:
         
 class human_class:
     def __init__(self): 
+        self.pos_x=[0]
+        self.pos_y=[0]
         self.posture=[0]
         self.motion=[0] 
         self.distance=[0]
@@ -80,6 +84,8 @@ class human_class:
         self.timer_safety.start()
         
     def human_callback(self,human_info):
+        self.pos_x=human_info.position_x
+        self.pos_y=human_info.position_y
         self.posture=human_info.posture
         self.motion=human_info.motion   
         self.distance=human_info.distance
@@ -101,21 +107,21 @@ class human_class:
         print("No human perception message received in a long time")
         self.perception_msg=False #to alert that human perception system is not publishing 
         
-    def human_pose_global(self,dist,area,r_pos_x,r_pos_y,r_pos_theta):
-        #################################################################################################################
-        #assuming human global pose is always aligned to the robot orientation but with an offset equal to the distance
-        #################################################################################################################
-        #To compensate the thorvald dimensions and the lidars/cameras locations (local frame)
-        #dist=dist+1 #because of extra 1m used to compute distance in virtual_picker_simulation.py
-        #######################################################################################################
+    def human_pose_global(self,orientation,area,r_pos_x,r_pos_y,r_pos_theta,h_local_x,h_local_y):
         #assuming the local x-axis is aligned to the robot orientation
         if area<=4: #if human was detected in front of the robot (areas 0 to 4)
             new_theta=r_pos_theta 
+            pos_y=(sin(new_theta)*h_local_x+cos(new_theta)*h_local_y)+r_pos_y
+            pos_x=(cos(new_theta)*h_local_x-sin(new_theta)*h_local_y)+r_pos_x
         elif area>=5:
             new_theta=r_pos_theta+pi
-        pos_y=(sin(new_theta)*dist)+r_pos_y
-        pos_x=(cos(new_theta)*dist)+r_pos_x
-        return pos_x,pos_y
+            pos_y=(-sin(new_theta)*h_local_x-cos(new_theta)*h_local_y)+r_pos_y
+            pos_x=(-cos(new_theta)*h_local_x+sin(new_theta)*h_local_y)+r_pos_x
+        if orientation==0:
+            pos_theta=new_theta+pi
+        else:
+            pos_theta=new_theta
+        return pos_x,pos_y,pos_theta
 
 class map_class:
     def __init__(self): #It is done only the first iteration
@@ -131,6 +137,9 @@ class map_class:
         
 class hri_class:
     def __init__(self): #It is done only the first iteration
+        self.pos_global_x=0
+        self.pos_global_y=0
+        self.pos_global_theta=0
         self.status=0 #initial condition 
         self.audio_message=0 #initial condition 
         self.safety_action=7 #initial condition     
@@ -142,7 +151,7 @@ class hri_class:
         self.operation=rospy.get_param("/hri_safety_system/operation_mode","logistics") #it can be "UVC" or "logistics"
         self.safe_cond=False #True if the human is static and facing the robot, False if not satisfying this safety condition     
 
-    def critical_human_selection(self,polytunnel,posture,dist,area,sensor,orientation,motion,current_goal,final_goal,r_pos_x,r_pos_y,r_pos_theta):  
+    def critical_human_selection(self,polytunnel,posture,dist,area,sensor,orientation,motion,current_goal,final_goal,r_pos_x,r_pos_y,r_pos_theta,h_pos_x,h_pos_y):  
         ##################################################################################################################
         #assuming aligned condition. Inside the polytunnel includes areas 2 and 7, and outside polytunnel includes 1,2,3 and 6,7,8
         #critical human selection logic is: 1st human within 1.2m, 2nd human performing gesture, 3rd human centered, 4rd closest human   
@@ -161,25 +170,25 @@ class hri_class:
                 centered_old=True
         if dist[critical_index]<=collision_risk_dist[1] and aligned_old==True:
             danger_old=True 
-        if (sensor[critical_index]!=1 and posture[critical_index]==8 and danger_old==False and aligned_old==True):  #rigth_forearm_sideways
+        if (sensor[critical_index]!=1 and posture[critical_index]==8 and orientation[critical_index]==0 and danger_old==False and aligned_old==True):  #rigth_forearm_sideways
             gesture_old=True
             if polytunnel==True:
                 command_old=1 #approach (approching to picker inside polytunnels)
             else:
                 command_old=4 #move forwards (move towards the human at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==10 and aligned_old==True): #both_hands_front
+        elif (sensor[critical_index]!=1 and posture[critical_index]==10 and orientation[critical_index]==0  and aligned_old==True): #both_hands_front
             gesture_old=True
             command_old=3 # stop (make the robot stop and wait for new command inside and outside polytunnels)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==4 and aligned_old==True): #left_forearm_sideways
+        elif (sensor[critical_index]!=1 and posture[critical_index]==4 and orientation[critical_index]==0  and aligned_old==True): #left_forearm_sideways
             gesture_old=True
             if polytunnel==True:
                 command_old=2 #move away (move away from picker inside polytunnel)
             else:
                 command_old=5 #move backwards (move away from human at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==7 and aligned_old==True and polytunnel==False): #right_arm_sideways
+        elif (sensor[critical_index]!=1 and posture[critical_index]==7  and orientation[critical_index]==0 and aligned_old==True and polytunnel==False): #right_arm_sideways
             gesture_old=True
             command_old=6 #move right (only valid at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==3 and aligned_old==True and polytunnel==False): #left_arm_sideways
+        elif (sensor[critical_index]!=1 and posture[critical_index]==3 and orientation[critical_index]==0 and aligned_old==True and polytunnel==False): #left_arm_sideways
             gesture_old=True
             command_old=7 #move left (only valid at footpaths)
             
@@ -196,25 +205,25 @@ class hri_class:
                     centered_new=True
             if dist[k]<=collision_risk_dist[1] and aligned_new==True:
                 danger_new=True 
-            if (sensor[k]!=1 and posture[k]==8 and danger_new==False and aligned_new==True): #rigth_forearm_sideways
+            if (sensor[k]!=1 and posture[k]==8  and orientation[k]==0  and danger_new==False and aligned_new==True): #rigth_forearm_sideways
                 gesture_new=True
                 if polytunnel==True:
                     command_new=1 #approach (approching to picker inside polytunnels)
                 else:
                     command_new=4 #move forwards (move towards the human at footpaths)
-            elif (sensor[k]!=1 and posture[k]==10 and aligned_new==True): #both_hands_front
+            elif (sensor[k]!=1 and posture[k]==10  and orientation[k]==0 and aligned_new==True): #both_hands_front
                 gesture_new=True
                 command_new=3 # stop (make the robot stop and wait for new command inside and outside polytunnels)
-            elif (sensor[k]!=1 and posture[k]==4 and aligned_new==True): #left_forearm_sideways
+            elif (sensor[k]!=1 and posture[k]==4  and orientation[k]==0 and aligned_new==True): #left_forearm_sideways
                 gesture_new=True
                 if polytunnel==True:
                     command_new=2 #move away (move away from picker inside polytunnel)
                 else:
                     command_new=5 #move backwards (move away from human at footpaths)
-            elif (sensor[k]!=1 and posture[k]==7 and aligned_new==True and polytunnel==False): #right_arm_sideways
+            elif (sensor[k]!=1 and posture[k]==7  and orientation[k]==0 and aligned_new==True and polytunnel==False): #right_arm_sideways
                 gesture_new=True
                 command_new=6 #move right (only valid at footpaths)
-            elif (sensor[k]!=1 and posture[k]==3 and aligned_new==True and polytunnel==False): #left_arm_sideways
+            elif (sensor[k]!=1 and posture[k]==3  and orientation[k]==0 and aligned_new==True and polytunnel==False): #left_arm_sideways
                 gesture_new=True
                 command_new=7 #move left (only valid at footpaths)
             #############################################################
@@ -282,8 +291,11 @@ class hri_class:
         aligned=aligned_old
         human_command=command_old
         critical_dist=dist[critical_index]
+        h_local_x=h_pos_x[critical_index]
+        h_local_y=h_pos_y[critical_index]
+        
         #HUMAN GLOBAL POSITION
-        [h_global_x,h_global_y]=human.human_pose_global(critical_dist,area[critical_index],r_pos_x,r_pos_y,r_pos_theta)
+        [h_global_x,h_global_y,h_global_theta]=human.human_pose_global(orientation[critical_index],area[critical_index],r_pos_x,r_pos_y,r_pos_theta,h_local_x,h_local_y)
         
         #RISK INFERENCE
         if self.operation=="logistics": #if robot operation is logistics
@@ -301,7 +313,9 @@ class hri_class:
         self.human_command=human_command
         self.risk=risk
         self.safe_cond=safe_cond
-        return h_global_y
+        self.pos_global_x=h_global_x
+        self.pos_global_y=h_global_y
+        self.pos_global_theta=h_global_theta
     
     def risk_analysis(self,area,sensor,orientation,motion,h_global_y,h_global_x,aligned,final_goal,r_pos_y,r_pos_x):
         #################################################################################################################
@@ -372,6 +386,8 @@ class hri_class:
     
     def decision_making(self):
         #HUMAN INFO
+        h_pos_x=human.pos_x
+        h_pos_y=human.pos_y
         sensor=human.sensor
         motion=human.motion
         posture=human.posture
@@ -442,7 +458,7 @@ class hri_class:
             ## IN CASE OF HUMAN DETECTION, UPDATING ROBOT ACTION     
             if detection==True: #execute only if at least a human is detected     
                 #Critical human selection
-                h_global_y=self.critical_human_selection(polytunnel,posture,dist,area,sensor,orientation,motion,current_goal,final_goal,r_pos_x,r_pos_y,r_pos_theta)
+                self.critical_human_selection(polytunnel,posture,dist,area,sensor,orientation,motion,current_goal,final_goal,r_pos_x,r_pos_y,r_pos_theta,h_pos_x,h_pos_y)
                 print("DISTANCE TO CRITICAL HUMAN",self.critical_dist)
                 ###UV-C treatment#######################################
                 if self.operation!="logistics": #during UV-C treatment
@@ -487,7 +503,7 @@ class hri_class:
                     if self.human_command==1: #sensor[self.critical_index]!=1 and posture[self.critical_index]==1:# and polytunnel==True and self.critical_dist>1.2 and self.aligned==True: #picker is ordering the robot to approach (using both arms)
                         self.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
                         self.safety_action=1 # to make the robot approach to the picker
-                        self.new_goal=self.find_new_goal(h_global_y,r_pos_y,current_goal_info)
+                        self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
                     #In case the picker wants the robot to stop 
                     elif self.human_command==3:
                         self.audio_message=2 # start a message to ask the picker for a new order to approach/move away or move to a new goal
@@ -497,7 +513,7 @@ class hri_class:
                     elif self.human_command==2:
                         self.audio_message=5 #message moving away
                         self.safety_action=2 # to make the robot move away from the picker
-                        self.new_goal=self.find_new_goal(h_global_y,r_pos_y,current_goal_info)
+                        self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
                     #In case the picker wants to control the robot velocities by performing gestures (only valid at footpaths)
                     elif self.human_command>=4 and self.human_command<=7:
                         self.audio_message=10 #alet of gesture control
@@ -649,7 +665,20 @@ if __name__ == '__main__':
         if robot.polytunnel==True:
             safety_msg.action_mode = "polytunnel"
         else:
-            safety_msg.action_mode = "footpath"
+            safety_msg.action_mode = "footpath"          
         pub_safety.publish(safety_msg)
+        
+        pose_msg.header.seq = 1
+        pose_msg.header.stamp = rospy.Time.now()
+        pose_msg.header.frame_id = "map"
+        pose_msg.pose.position.x = hri.pos_global_x
+        pose_msg.pose.position.y = hri.pos_global_y
+        pose_msg.pose.position.z = 0.0
+        quater = quaternion_from_euler(0, 0, hri.pos_global_theta, 'ryxz')
+        pose_msg.pose.orientation.x = quater[0]
+        pose_msg.pose.orientation.y = quater[1]
+        pose_msg.pose.orientation.z = quater[2]
+        pose_msg.pose.orientation.w = quater[3]
+        pub_pose.publish(pose_msg)
    
         rate.sleep() #to keep fixed the publishing loop rate

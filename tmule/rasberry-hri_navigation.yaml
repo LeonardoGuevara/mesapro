@@ -165,7 +165,10 @@ init_cmd: |
   fi
   export_default STARTUP_SLACKEROS false
 
-  export_default RVIZ_CONFIG $(rospack find rasberry_bringup)/resources/row_traversal_action.rviz
+  ################################################################################################# To show the pose of the critical human detected
+  #export_default RVIZ_CONFIG $(rospack find rasberry_bringup)/resources/row_traversal_action.rviz
+  export_default RVIZ_CONFIG $(rospack find mesapro)/config/row_traversal_action_sim.rviz
+  #################################################################################################
 
   
   # Home GUI

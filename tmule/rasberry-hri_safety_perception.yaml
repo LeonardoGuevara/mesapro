@@ -33,6 +33,7 @@ init_cmd: |
   export_default USE_LEG_DETECTOR false #if "false", Lidar based leg_detector is not launched
   export_default USE_VISUAL_ALERTS false # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
+  export_default USE_VISUALIZATION true # if "true", visualization window is activated
   export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
@@ -93,6 +94,6 @@ windows:
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization
   panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG
+  - if $USE_VISUALIZATION ; then roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG ; fi
 #############################################################################################
 

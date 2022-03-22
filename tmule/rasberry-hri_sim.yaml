@@ -227,9 +227,6 @@ windows:
 ######################################################################################### Emulating human perception
 - name: hri_perception
   panes:
-  - rostopic pub /hedge_pos_a marvelmind_nav/hedge_pos_a -- '1' '0' '7.9' '4.6' '0.0' '0'
-  - rostopic pub /hedge_pos_a marvelmind_nav/hedge_pos_a -- '2' '0' '7.5' '-2' '0.0' '0'
-  - rosrun rasberry_people_perception simple_marvel_localiser.py
   - roslaunch mesapro ds4_driver.launch
   - rosrun mesapro virtual_picker_simulation.py
 - name: hri_safety_system
