@@ -29,7 +29,7 @@ from threading import Lock
 #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
 #########################################################################################################
 from mesapro.msg import hri_msg, robot_msg
-import geometry_msgs.msg
+from std_msgs.msg import Bool
 #from topological_navigation_msgs.msg import NavRoute
 from math import * #to avoid prefix math.
 import threading # Needed for Timer
@@ -168,16 +168,15 @@ class TopologicalNavServer(object):
         self.hri_safety_action_past=self.hri_safety_action # past safety action already taken
         self.op_mode="logistics"              # assuming logistics as operation mode, it can also be "UV-C" mode
         self.current_target="Unknown"        # current closest node in the route plan, initial condition "Unknown"
-        rospy.Subscriber('human_safety_info',hri_msg,self.safety_callback)  
-        rospy.Subscriber('/teleop_joy/cmd_vel', geometry_msgs.msg.Twist, self.teleop_callback)
+        self.teleop_lock=False                   #flag to know if teleoperation is required, "False" means no command have been received from joystick
         #Safety Timer
         self.time_without_msg=rospy.get_param("/topological_navigation/time_without_msg",5) # Maximum time without receiving safety messages or teleop commands
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
         self.no_safety_action=False             #flag to know if safety_system is working or not, "False" means "safety system working" 
-        #Teleop Timer
-        self.timer_teleop = threading.Timer(self.time_without_msg,self.teleop_timeout) # If "n" seconds elapse, call teleop_timeout()
-        self.teleop_lock=False                   #flag to know if teleoperation is required, "False" means no command have been received from joystick
+        rospy.Subscriber('human_safety_info',hri_msg,self.safety_callback)  
+        rospy.Subscriber('/teleop_joy/joy_priority', Bool, self.teleop_callback)
+        
         ##########################################################################################################
         #########################################################################################################
         
@@ -1042,13 +1041,19 @@ class TopologicalNavServer(object):
         self.hri_goal=safety_info.new_goal
         self.op_mode=safety_info.operation_mode
         if self.teleop_lock==False: #only consider safety actions if teleroperation is not required
-            if self.hri_safety_action!=5: # continue only if the safety system is not in "teleoperation mode"
+            if self.robot_action==5:  #If it comes from teleoperation mode
+                self.robot_action=4 #wait for a new command
+                self.preemptCallback() #to stop current navigation_action
+            if self.hri_safety_action!=5: # continue only if the safety system is not in "teleoperation mode" anymore
                 #Only update the robot_action if new safety action is required or new hri_goal is required.
                 if (self.hri_safety_action!=self.robot_action and self.hri_safety_action!=7) or (self.robot_action==self.hri_safety_action and self.goal!=self.hri_goal): 
                     self.robot_action=self.hri_safety_action
                     self.preemptCallback() #to stop current navigation_action
-    
-        publish=False #to unactivate publishing in the main loop
+        else:
+            if self.robot_action!=5: #If it comes from autonomous mode
+                self.robot_action=5 #teleoperation mode
+                self.preemptCallback() #to stop current navigation_action
+        publish=False #to deactivate publishing in the main loop
         #Publish current robot operation
         pub_robot = rospy.Publisher('robot_info',robot_msg,queue_size=1)#small queue means priority to new data
         rob_msg = robot_msg()
@@ -1058,7 +1063,9 @@ class TopologicalNavServer(object):
             parent=self.current_target
         else:
             parent="Unknown"    
-        print("Robot ACTION", self.robot_action)
+        print("CURRENT ACTION", self.robot_action)
+        print("PAST ACTION", self.past_action)
+        print("TELEOP",self.teleop_lock)
         rob_msg.current_node=parent #current goal in the route
         rob_msg.action=self.robot_action
         rob_msg.goal_node=self.goal #final goal in the route
@@ -1105,20 +1112,11 @@ class TopologicalNavServer(object):
                 self.navigation_activated = False
             
     def teleop_callback(self,msg):
-        if abs(msg.linear.x)!=0 or abs(msg.angular.z)!=0: #if there is any command made by joystick
+        if msg.data: # if joystick_priority==True
             self.teleop_lock=True #to let the safety system know that teleoperation is required
-            self.robot_action=5 #teleoperation mode
-            self.preemptCallback() #to stop current navigation_action
-            self.timer_teleop.cancel()
-            self.timer_teleop = threading.Timer(self.time_without_msg,self.teleop_timeout) # If "n" seconds elapse, call teleop_timeout()
-            self.timer_teleop.start()           
+        else: #then autonomous mode has priority
+            self.teleop_lock=False #to stop teleoperation mode
             
-    def teleop_timeout(self):
-        print("No teleoperation command received in a long time")
-        self.teleop_lock=False  #to let the safety system know that teleoperation is not longer required as the initial condition
-        self.robot_action=3 # to leave the robot in pause
-        self.preemptCallback() #to stop current navigation_action
-        
     def safety_timeout(self):
         global publish
         print("No safety message received in a long time")
@@ -1141,7 +1139,7 @@ if __name__ == "__main__":
     while not rospy.is_shutdown():	
         #print("ROBOT OPERATION MAIN",server.robot_action)
         server.robot_update_action()         
-        if publish==True: #only if publishing in the main loop was activated
+        if publish==True: #only if publishing in the main loop was activated (it is necessary when safety system callback is not called)
             #Publish current robot operation
             pub_robot = rospy.Publisher('robot_info',robot_msg,queue_size=1)#small queue means priority to new data
             rob_msg = robot_msg()

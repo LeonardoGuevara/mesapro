@@ -26,6 +26,7 @@ init_cmd: |
   export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
   export_default USE_CAMERA_DETECTOR true #if "false", the rgbd+thermal human detector is not launched
   export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
+  export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
   export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
   export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
   export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
@@ -72,7 +73,7 @@ windows:
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
+  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization
   panes:

@@ -103,7 +103,7 @@ if __name__ == '__main__':
     #aux=1
     while not rospy.is_shutdown():
         audio_index=hri.current_audio
-        if audio_index!=0 and hri.new_goal!="Unknown": #if there is a message to be reproduced
+        if audio_index!=0 and hri.new_goal!="Unknown": #if there is a message to be reproduced, and only after first robot goal was assigned
             if hri.change_audio==True or hri.repeat_audio==True:
                 if hri.change_audio==True:
                     version=0 #always start with the english version

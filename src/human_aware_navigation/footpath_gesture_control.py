@@ -134,9 +134,9 @@ if __name__ == '__main__':
             cmd_vel.linear.y = robot.vel[1]
             cmd_vel.angular.z = robot.vel[2]
             cmd_pub.publish(cmd_vel)     
-        elif hri.safety_action==3 or hri.safety_action==4: #if safety action is make the robot stop
-            cmd_vel.linear.x = 0
-            cmd_vel.linear.y = 0
-            cmd_vel.angular.z = 0
-            cmd_pub.publish(cmd_vel)  
+        #elif hri.safety_action==3 or hri.safety_action==4: #if safety action is make the robot stop
+        #    cmd_vel.linear.x = 0
+        #    cmd_vel.linear.y = 0
+        #    cmd_vel.angular.z = 0
+        #    cmd_pub.publish(cmd_vel)  
         rate.sleep() #to keep fixed the publishing loop rate

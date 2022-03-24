@@ -19,7 +19,8 @@ class hri_class:
         self.time_without_msg=rospy.get_param("/hri_visual_alerts/time_without_msg",5) # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
-        self.problem=False #Flag to know if safety system or human perception have problems
+        self.problem_perception=False #Flag to know if human perception system has problems
+        self.problem_safety=False #Flag to know if safety system has problems
         self.teleop=False #Flag to know if teleoperation mode is activated
         
     def safety_callback(self,safety_info):
@@ -28,17 +29,20 @@ class hri_class:
         self.new_goal=safety_info.new_goal   
         self.audio_message=safety_info.audio_message
         if self.audio_message==8:
-             self.problem=True #to alert that human perception system is not publishing 
+             self.problem_perception=True #to alert that human perception system is not publishing 
+        else:
+             self.problem_perception=False
         if self.audio_message==9:
              self.teleop=True #to alert that robot is in teleoperation     
         print("Safety message received")
         self.timer_safety.cancel()
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
+        self.problem_safety=False
         
     def safety_timeout(self):
         print("No safety message received in a long time")
-        self.problem=True #to alert that safety system is not publishing 
+        self.problem_safety=True #to alert that safety system is not publishing 
         
     def activate_alerts(self):
         if self.status==1:
@@ -49,11 +53,11 @@ class hri_class:
             self.current_alert="red" #means dangerous interaction
         elif self.status==0: 
             self.current_alert="yellow_blink" #means that the safety system and human perception are running, but no human is detected
-        if self.problem==True: 
-            self.current_alert="red_blink" # means that there are problems with the safety system or human perception system
         if self.new_goal=="Unknown":
-            self.current_alert="none" #means robot is not moving autonomously yet or teleoperation is activated
-        if self.teleop==True:
+            self.current_alert="none" #means the first robot goal hasn't been assigned yet
+        if (self.problem_safety==True or self.problem_perception==True) and self.new_goal!="Unknown": 
+            self.current_alert="red_blink" # means that there are problems with the safety system or human perception system
+        if self.teleop==True and self.new_goal!="Unknown":
            self.current_alert="green_blink" #means robot is moving in teleoperation mode
         
 ###############################################################################################

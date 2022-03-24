@@ -31,6 +31,7 @@ init_cmd: |
   export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
   export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
   export_default USE_LEG_DETECTOR false #if "false", Lidar based leg_detector is not launched
+  export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
   export_default USE_VISUAL_ALERTS false # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
   export_default USE_VISUALIZATION true # if "true", visualization window is activated
@@ -51,8 +52,10 @@ init_cmd: |
   source $CATKIN_WORKSPACE/devel/setup.bash
   #########################################################################################
   #Set up ROS MASTER AND ROS IP
-  export_default ROS_IP "192.168.0.224" #Zotac IP address
-  export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
+  #export_default ROS_IP "192.168.0.224" #Zotac IP address, using ethernet
+  #export_default ROS_MASTER "192.168.0.101" #NUC IP address,using ethernet, as MASTER
+  export_default ROS_IP "10.101.12.50" #Zotac IP address, using wifi
+  export_default ROS_MASTER "10.101.12.112" #NUC IP address, using wifi, as MASTER
   export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
   export ROS_IP=$ROS_IP  
   
@@ -89,7 +92,7 @@ windows:
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
+  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
   - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization

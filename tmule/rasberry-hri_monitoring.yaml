@@ -30,13 +30,13 @@ init_cmd: |
   source $CATKIN_WORKSPACE/devel/setup.bash
   #########################################################################################
   #Set up ROS MASTER AND ROS IP
-  export_default ROS_IP "" #My laptop IP address
-  export_default ROS_MASTER "10.101.12.112" #NUC IP address, as MASTER
+  export_default ROS_IP "10.101.12.100" #My laptop IP address, connected to Rasberry wifi
+  export_default ROS_MASTER "10.101.12.112" #NUC IP address, using wifi, as MASTER
   export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
   export ROS_IP=$ROS_IP  
   
-  #export ROS_MASTER_URI="http://192.168.0.224:11311/"
-  #export ROS_IP=192.168.0.224 #Zotac IP address
+  #export ROS_MASTER_URI="http://10.101.12.100:11311/"
+  #export ROS_IP=10.101.12.100 #My laptop IP address
   #############################################################################################
 
 ##############################################################################################

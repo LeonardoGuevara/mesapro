@@ -27,6 +27,7 @@ init_cmd: |
   export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
   export_default USE_VISUAL_ALERTS false # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
+  export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
   #########################################################################################
   # Source ROS
   # source "/opt/ros/$(rosversion -d)/setup.bash"
@@ -231,7 +232,7 @@ windows:
   - rosrun mesapro virtual_picker_simulation.py
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
+  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
   - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS
 - name: hri_visualization
   panes:

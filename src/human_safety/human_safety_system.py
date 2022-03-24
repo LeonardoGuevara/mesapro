@@ -150,6 +150,7 @@ class hri_class:
         self.new_goal="none" #name of the new final goal
         self.operation=rospy.get_param("/hri_safety_system/operation_mode","logistics") #it can be "UVC" or "logistics"
         self.safe_cond=False #True if the human is static and facing the robot, False if not satisfying this safety condition     
+        self.gesture_control=rospy.get_param("/hri_safety_system/gesture_control",True) # Flag to activate or not gesture control
 
     def critical_human_selection(self,polytunnel,posture,dist,area,sensor,orientation,motion,current_goal,final_goal,r_pos_x,r_pos_y,r_pos_theta,h_pos_x,h_pos_y):  
         ##################################################################################################################
@@ -499,26 +500,29 @@ class hri_class:
                     else: #if human is within 1.2m
                         self.status=3 # dangerous HRI
                     ##IN CASE THE HUMAN PERFORMS BODY GESTURES
-                    #In case the picker wants the robot to approch to him/her , only valid inside polytunnels and above 1.2m 
-                    if self.human_command==1: #sensor[self.critical_index]!=1 and posture[self.critical_index]==1:# and polytunnel==True and self.critical_dist>1.2 and self.aligned==True: #picker is ordering the robot to approach (using both arms)
-                        self.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
-                        self.safety_action=1 # to make the robot approach to the picker
-                        self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
-                    #In case the picker wants the robot to stop 
-                    elif self.human_command==3:
-                        self.audio_message=2 # start a message to ask the picker for a new order to approach/move away or move to a new goal
-                        self.safety_action=4 # make the robot stop and wait for a new command to restart operation
-                        self.new_goal=final_goal # the current goal is not changed
-                    #In case the picker wants the robot to move away, only valid inside polytunnels
-                    elif self.human_command==2:
-                        self.audio_message=5 #message moving away
-                        self.safety_action=2 # to make the robot move away from the picker
-                        self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
-                    #In case the picker wants to control the robot velocities by performing gestures (only valid at footpaths)
-                    elif self.human_command>=4 and self.human_command<=7:
-                        self.audio_message=10 #alet of gesture control
-                        self.safety_action=6 # to make the robot activate the gesture control at footpaths
-                        self.new_goal=final_goal # the current goal is not changed
+                    if self.gesture_control==True:
+                        #In case the picker wants the robot to approch to him/her , only valid inside polytunnels and above 1.2m 
+                        if self.human_command==1: #sensor[self.critical_index]!=1 and posture[self.critical_index]==1:# and polytunnel==True and self.critical_dist>1.2 and self.aligned==True: #picker is ordering the robot to approach (using both arms)
+                            self.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
+                            self.safety_action=1 # to make the robot approach to the picker
+                            self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
+                        #In case the picker wants the robot to stop  (polytunnel and footpath)
+                        elif self.human_command==3:
+                            self.audio_message=2 # start a message to ask the picker for a new order to approach/move away or move to a new goal
+                            self.safety_action=4 # make the robot stop and wait for a new command to restart operation
+                            self.new_goal=final_goal # the current goal is not changed
+                        #In case the picker wants the robot to move away, only valid inside polytunnels
+                        elif self.human_command==2:
+                            self.audio_message=5 #message moving away
+                            self.safety_action=2 # to make the robot move away from the picker
+                            self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
+                        #In case the picker wants to control the robot velocities by performing gestures (only valid at footpaths)
+                        elif self.human_command>=4 and self.human_command<=7:
+                            self.audio_message=10 #alet of gesture control
+                            self.safety_action=6 # to make the robot activate the gesture control at footpaths
+                            self.new_goal=final_goal # the current goal is not changed
+                    else:
+                        self.human_command==0 #assuming no gesture detected
                        
                     if action==0 or action==2: #if robot is moving to an original goal or moving away from the picker
                         if self.status==1: #if human is above 3.6m and robot is on normal operation
