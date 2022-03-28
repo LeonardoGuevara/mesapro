@@ -34,7 +34,7 @@ time_change=0 #initial counter value
 avoid_area=0.05 #percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
 search_area=0.3 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
 ##MODEL FOR POSTURE RECOGNITION
-default_post_class_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v5.joblib"
+default_post_class_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v6.joblib"
 posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model",default_post_class_model) #you have to change /hri_camera_detector/ if the node is not named like this
 model_rf = joblib.load(posture_classifier_model)   
 ##OPENPOSE INITIALIZATION 

@@ -1,7 +1,7 @@
 directories_config:
   open_pose_python: '/home/leo/rasberry_ws/src/openpose/build/python'
   open_pose_models: "/home/leo/rasberry_ws/src/openpose/models"
-  gesture_classifier_model: "/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v5.joblib"
+  gesture_classifier_model: "/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v6.joblib"
   training_set: '/home/leo/Documents/mesapro/bags/training/'
   testing_set: '/home/leo/Documents/mesapro/bags/testing/' 
 ###############################################  

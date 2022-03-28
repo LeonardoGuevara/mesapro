@@ -43,7 +43,7 @@ params["model_folder"] = openpose_models
 if performance=="normal":
     params["net_resolution"] = "-1x368" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
 else:
-    params["net_resolution"] = "-1x464" #High performance
+    params["net_resolution"] = "-1x448" #High performance
 #params["maximize_positives"] = True
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
@@ -52,7 +52,7 @@ datum = op.Datum()
 #VISUALIZATION PARAMETERS
 openpose_visual=True  #to show or not a window with the human detection delivered by openpose
 #TRAINING PARAMETERS
-mode=1 # it can be 0 for training or 1 for testing 
+mode=0 # it can be 0 for training or 1 for testing 
 topic_list=['/camera/camera1/color/image_raw','/camera1/color/image_raw','/camera/camera1/aligned_depth_to_color/image_raw','/camera1/aligned_depth_to_color/image_raw'] #name of topics (old and new) to be extracted from bag files
 X=np.zeros([1,len(dist)+len(angles)])#.flatten()
 Y=np.zeros([1,1]).flatten()
@@ -337,7 +337,7 @@ if mode==0:
     #Train the model using the training sets y_pred=clf.predict(X_test)
     clf.fit(np.array(X),Y)
     #Exporting the model
-    joblib.dump(clf, config_direct+"/classifier_model_3D_v5.joblib")    
+    joblib.dump(clf, config_direct+"/classifier_model_3D_v6.joblib")    
     
 
 
