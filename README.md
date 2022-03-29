@@ -4,9 +4,9 @@ This repository contains a ROS package that allows the Thorvald to detect and sa
 
 [![Overal_system](/Human_perception_and_safety_system_new.png)](https://www.youtube.com/watch?v=vIdlauwlmKo)
 
-HOW THE HUMAN DETECTION SYSTEM WORKS:
+HOW THE HUMAN DETECTION WORKS:
 
-HOW THE SAFETY SYSTEM WORKS:
+HOW THE DECISION MAKING WORKS:
 
 HOW TO USE THE MESAPRO PACKAGE:
 
