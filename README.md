@@ -12,7 +12,9 @@ HOW TO USE THE MESAPRO PACKAGE:
 
 * To run the human detection and safety system on the Thorvald robots. You have to launch the config files into the folder "tmule". There are 3 config files that must be launched in order to run everything shown on the system architecture scheme. If implementing it on the Thorvald-014 (the one used during the whole MeSAPro project), the rasberry-hri_navigation.yaml is launched on the NUC (computer without GPU, used as master), the rasberry-hri_safety_perception.yaml is launched on the ZOTAC (computer with GPU), and the rasberry-hri_monitoring.yaml can be launched in any laptop in order to visualize and monitor the robot localization, human detections and safety actions.
 
-* To test the human detection and safety system in simulation, you can launch the config file rasberry-hri_sim.yaml.
+* To test the safety system in simulation (GAZEBO), you can launch the config file rasberry-hri_sim.yaml .
+* To test the human detection system (based only on camera data) using bag files, you can launch the config file rasberry-hri_camera_detector.yaml .
+* To test the human detection system (based only on LiDAR data) using bag files, you can launch the config file rasberry-hri_leg_detector.yaml .
 
 NOTES: 
 * The creation of this package was motivated by the MeSAPro project which aims to ensure autonomy of agricultural robots in scenarios that involve human-robot interactions. The decision-making and safety policies of the current version of the safety system are designed to be implemented mainly during logistics operations at polytunnels, but can also be used during UV-C treatment operations.
