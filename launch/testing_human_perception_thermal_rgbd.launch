@@ -4,13 +4,13 @@
     <arg name="openpose_models" default="/home/leo/rasberry_ws/src/openpose/models" />
     <arg name="posture_classifier_model" default="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v6.joblib" />    
     <arg name="config_direct" default="/home/leo/rasberry_ws/src/mesapro/config/" /> 
-    <arg name="bag_file" default="/home/leo/Documents/mesapro/bags/testing/all_gestures.bag" /> 
+    <arg name="bag_file" default="/home/leo/Documents/mesapro/bags/training/left_hand_front/without_cart_left_hand_front_5.bag" /> 
     <arg name="visual_mode" default="1" />   
-    <arg name="thermal_info" default="False" />
+    <arg name="thermal_info" default="True" />
     <arg name="image_rotation" default="270" />
     <arg name="operation_mode" default="logistics" />  
     <arg name="n_cameras" default="1" />
-    <arg name="openpose_visual" default="False" />   
+    <arg name="openpose_visual" default="True" />   
     <arg name="time_without_msg" default="5"/>
  
     

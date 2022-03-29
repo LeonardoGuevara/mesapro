@@ -79,15 +79,7 @@ class human_class:
     def rgb_thermal_1_callback(self,rgb_front, therm_front):
         ##################################################################################33
         #Front cameras info extraction
-        therm_image_front = ros_numpy.numpify(therm_front)
-        if image_rotation==90:
-            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
-            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
-        else: #0 degrees
-            img_t_rot_front=therm_image_front
-        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
-        
+        #Color image
         color_image = ros_numpy.numpify(rgb_front)
         color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
@@ -96,12 +88,35 @@ class human_class:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
-        img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #to match the thermal field of view
-        img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
-        self.image_size = img_rgb_rz_front.shape
+        self.image_size = img_rgb_rot_front.shape
+        #Creating a black image with the same size than the RGB image
+        black_image = np.zeros((self.image_size[0],self.image_size[1]), np.uint8) 
+            
+        #Thermal image
+        therm_image_front = ros_numpy.numpify(therm_front)
+        if image_rotation==90:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==270:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_front=therm_image_front
+        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
+        #Merging thermal image with black image
+        img_t_rz_front=black_image
+        img_t_rz_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]=img_t_rot_front
+            
         ##################################################################################
         #Back cameras emulation
+        #Color image
+        color_image_back=color_image_front
+        if image_rotation==90:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==270:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_back=color_image_back            
+        #Thermal image
         therm_image_back=therm_image_front
         if image_rotation==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
@@ -110,21 +125,14 @@ class human_class:
         else: #0 degrees
             img_t_rot_back=therm_image_back
         img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
-        
-        color_image_back=color_image_front
-        if image_rotation==90:
-            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
-            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
-        else: #0 degrees
-            img_rgb_rot_back=color_image_back            
-        img_rgb_rz_back=np.zeros((img_t_rot_back.shape[0],img_t_rot_back.shape[1],3),np.uint8)
-        img_rgb_rz_back=img_rgb_rot_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1],:]
+        #Merging thermal image with black image
+        img_t_rz_back=black_image
+        img_t_rz_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1]]=img_t_rot_back
         
         ##############################################################################################
         #Here the images from two cameras has to be merged in a single image (front image left, back image back)
-        color_image=np.append(img_rgb_rz_front,img_rgb_rz_back,axis=1) 
-        therm_array=np.append(img_t_rot_front,img_t_rot_back,axis=1)
+        color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
+        therm_array=np.append(img_t_rz_front,img_t_rz_back,axis=1)
         intensity_image=cv2.cvtColor(therm_array,cv2.COLOR_GRAY2RGB)
         color_image = cv2.addWeighted(color_image,0.7,intensity_image,0.7,0)      
         self.image=color_image
@@ -161,15 +169,7 @@ class human_class:
     def rgb_thermal_2_callback(self,rgb_front, therm_front,rgb_back, therm_back):
         ##################################################################################33
         #Front cameras info extraction
-        therm_image_front = ros_numpy.numpify(therm_front)
-        if image_rotation==90:
-            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
-            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
-        else: #0 degrees
-            img_t_rot_front=therm_image_front
-        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
-        
+        #Color image
         color_image = ros_numpy.numpify(rgb_front)
         color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
@@ -178,21 +178,27 @@ class human_class:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front                  
-        img_rgb_rz_front=np.zeros((img_t_rot_front.shape[0],img_t_rot_front.shape[1],3),np.uint8) #to match the thermal field of view
-        img_rgb_rz_front=img_rgb_rot_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1],:]   
         
-        self.image_size = img_rgb_rz_front.shape
+        self.image_size = img_rgb_rot_front.shape
+        #Creating a black image with the same size than the RGB image
+        black_image = np.zeros((self.image_size[0],self.image_size[1]), np.uint8) 
+            
+        #Thermal image
+        therm_image_front = ros_numpy.numpify(therm_front)
+        if image_rotation==90:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==270:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_front=therm_image_front
+        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
+        #Merging thermal image with black image
+        img_t_rz_front=black_image
+        img_t_rz_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]=img_t_rot_front
+            
         ##################################################################################
         #Back cameras info extraction
-        therm_image_back = ros_numpy.numpify(therm_back)
-        if image_rotation==90:
-            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
-            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
-        else: #0 degrees
-            img_t_rot_back=therm_image_back
-        img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
-        
+        #Color image
         color_image = ros_numpy.numpify(rgb_back)
         color_image_back = color_image[...,[2,1,0]].copy() #from bgr to rgb
         if image_rotation==90:
@@ -201,13 +207,23 @@ class human_class:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_back=color_image_back            
-        img_rgb_rz_back=np.zeros((img_t_rot_back.shape[0],img_t_rot_back.shape[1],3),np.uint8)
-        img_rgb_rz_back=img_rgb_rot_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1],:]
+        #Thermal image
+        therm_image_back = ros_numpy.numpify(therm_back)
+        if image_rotation==90:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif image_rotation==270:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_back=therm_image_back
+        img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
+        #Merging thermal image with black image
+        img_t_rz_back=black_image
+        img_t_rz_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1]]=img_t_rot_back
         
         ##############################################################################################
         #Here the images from two cameras has to be merged in a single image (front image left, back image back)
-        color_image=np.append(img_rgb_rz_front,img_rgb_rz_back,axis=1) 
-        therm_array=np.append(img_t_rot_front,img_t_rot_back,axis=1)
+        color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
+        therm_array=np.append(img_t_rz_front,img_t_rz_back,axis=1)
         intensity_image=cv2.cvtColor(therm_array,cv2.COLOR_GRAY2RGB)
         color_image = cv2.addWeighted(color_image,0.7,intensity_image,0.7,0)      
         self.image=color_image

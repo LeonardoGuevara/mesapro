@@ -20,7 +20,7 @@ init_cmd: |
   export_default OPENPOSE_PYTHON "$CATKIN_WORKSPACE/src/openpose/build/python" #assuming OpenPose is inside the RASBERRY_WS folder
   export_default OPENPOSE_MODELS "$CATKIN_WORKSPACE/src/openpose/models" #assuming OpenPose is inside the RASBERRY_WS folder
   export_default POSTURE_CLASSIFIER_MODEL "$(rospack find mesapro)/config/classifier_model_3D_v6.joblib" #model of the human gesture classifier
-  export_default BAG_FILE "$HOME/Documents/mesapro/bags/testing/all_gestures.bag" #full name of the bag file to be reproduced 
+  export_default BAG_FILE "$HOME/Documents/mesapro/bags/testing/all_gestures_3.bag" #full name of the bag file to be reproduced 
  
   export_default VISUAL_MODE 1 # "1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
   export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
