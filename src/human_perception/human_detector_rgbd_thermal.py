@@ -24,8 +24,8 @@ config_direct=rospy.get_param("/hri_camera_detector/config_direct",default_confi
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 #FEATURE EXTRACTION PARAMETERS
-n_joints=parsed_yaml_file.get("action_recog_config").get("n_joints",19) #19 body joints from openpose output (25 available)
-n_features=parsed_yaml_file.get("action_recog_config").get("n_features",36) #19 distances + 17 angles = 36 features
+n_joints=parsed_yaml_file.get("action_recog_config").get("n_joints") #19 body joints from openpose output (25 available)
+n_features=parsed_yaml_file.get("action_recog_config").get("n_features") #19 distances + 17 angles = 36 features
 joints_min=7 #minimum number of joints to consider a detection
 performance="normal" #OpenPose performance, can be "normal" or "high", "normal" as initial condition
 dist_performance_change = 3.6 # distance (m) where performance change from "normal" to "high"
@@ -68,12 +68,10 @@ thermal_info=rospy.get_param("/hri_camera_detector/thermal_info",True) #you have
 temp_thresh=100 #threshold to determine if the temperature if a pixel is considered as higher as human temperature
 detection_thresh=0.1 #percentage of pixels in the thermal image which have to satisfy the temp_thresh in order to rise the thermal_detection flag
 image_rotation=rospy.get_param("/hri_camera_detector/image_rotation",270) #it can be 0,90,270 measured clockwise        
-resize_param=parsed_yaml_file.get("matching_config").get(str(image_rotation)+"_param",[105,125,285,380]) #parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y]
+resize_param=parsed_yaml_file.get("matching_config").get(str(image_rotation)+"_param") #parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y,y_init_up,x_init_left,n_pixels_x,n_pixels_y]
 #RGBD CAMERA INTRINSIC,DISTORTION PARAMETERS
-default_intr_param=[384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] #[fx cx fy cy] for realsense D455
-default_dist_param=[-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] #[k1 k2 t1 t2 k3] for realsense D455
-intr_param=parsed_yaml_file.get("camera_config").get("intr_param",default_intr_param) #camera intrinsic parameters
-dist_param=parsed_yaml_file.get("camera_config").get("dist_param",default_dist_param) #camera distortion parameters
+intr_param=parsed_yaml_file.get("camera_config").get("intr_param") #camera intrinsic parameters
+dist_param=parsed_yaml_file.get("camera_config").get("dist_param") #camera distortion parameters
 mtx =  np.array([[intr_param[0], 0, intr_param[1]],
                  [0, intr_param[2], intr_param[3]],
                  [0, 0, 1]])
@@ -316,10 +314,10 @@ class human_class:
                 img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_t_rot_back=therm_image_back
-            img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
+            img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[6],resize_param[7]))        
             #Merging thermal image with black image
             img_t_rz_back=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
-            img_t_rz_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1]]=img_t_rot_back
+            img_t_rz_back[resize_param[4]:resize_param[4]+img_t_rot_back.shape[0],resize_param[5]:resize_param[5]+img_t_rot_back.shape[1]]=img_t_rot_back
                    
             ##############################################################################################
             #Here the images from two cameras has to be merged in a single image (front image left, back image back)
