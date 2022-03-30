@@ -1,9 +1,7 @@
 # Human Detection System and Robot Safety System for Thorvald robots
 
 This repository contains a ROS package that allows the Thorvald rbotos to detect and safely interact with humans during logistic operations at polytunnels. The package includes a human detection system based on 2D LiDARs, RGB-D, and thermal cameras. The human information extracted from these sensors (humans position, motion, orientation, gesture) is used as input for a safety system that can perform safety actions such as 1) modify the robot's current goal (the goals are nodes in a topological map of the field) according to human commands (i.e. activated by gesture recognition),  2) controlling/modulating the robot velocities according to gesture recognition and/or the distance between the robot and human (when the robot is moving towards the human) 3) stop completely any operation when a human is detected within unsafe distance respect to the robot (in the case of UV-C treatment a safety distance is 7m, in the case of logistics it is 1.2m), 4) Activate audiovisual alerts in order to warn the human about the robot's current action and potential danger (critical during UV-C treatment). The components and overall system architecture are shown in the following scheme. 
-<center>
 <img src=/images/Human_perception_and_safety_system_new.png width="900">
-</center>
 A video with a demo can be found in https://www.youtube.com/watch?v=vIdlauwlmKo
 
 # How the Human Detetion works:
@@ -13,10 +11,9 @@ A video with a demo can be found in https://www.youtube.com/watch?v=vIdlauwlmKo
 * The name of the labels corresponding to the human motion are: "not_defined","mostly_static", "moving".
 * The name of the labels corresponding to the human orientation are: "facing_the_robot", "giving_the_back", "left_side", "right_side".
 * The following figures illustrate the distribution of the areas around the robot (used for sensor fusion and safety purposes) and show samples of the body gestures mentioned above.
-<center>
 <img src=/images/area_distribution.png width="300">
 <img src=/images/gesture_examples.png width="600">
-</center>
+
 # How the Decision Making works:
 * The decision-making controls the behavior of the safety system based on safety policies (determined during a Hazard Analysis stage) and information delivered by the human detection system and the Thorvald navigation system.
 * The safety system must always be publishing messages, even if no safety action is required. If the safety topics stop being published for a specific period of time (e.g. if the safety system node stopped suddenly), the decision-making makes the current robot action stop and activates audiovisual alerts to warn the human know that the safety system is not running. When the safety system starts publishing again, the previous robot action is resumed.
