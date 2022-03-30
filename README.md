@@ -11,7 +11,7 @@ This repository contains a ROS package that allows the Thorvald rbotos to detect
 * The name of the labels corresponding to the human motion are: "not_defined","mostly_static", "moving".
 * The name of the labels corresponding to the human orientation are: "facing_the_robot", "giving_the_back", "left_side", "right_side".
 * The following figures illustrate the distribution of the areas around the robot (used for sensor fusion and safety purposes) and show samples of the body gestures mentioned above.
-![area_distribution](/images/area_distribution.png width="100" height="100")
+<img src=/images/area_distribution.png width="100" height="100">
 ![gesture_examples](/images/gesture_examples.png)
 
 # How the Decision Making works:
