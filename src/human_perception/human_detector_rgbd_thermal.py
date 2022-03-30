@@ -51,7 +51,7 @@ except ImportError as e:
 params = dict()
 params["model_folder"] = openpose_models
 if performance=="normal":
-    net_resolution= "-1x464" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+    net_resolution= "-1x400" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
 else:
     net_resolution= "-1x480" #High performance 480
 #params["maximize_positives"] = True
@@ -129,8 +129,6 @@ class human_class:
                 img_d_rot_front=depth_array_front            
 
             self.image_size = img_rgb_rot_front.shape          
-            #Creating a black image with the same size than the RGB image
-            black_image = np.zeros((self.image_size[0],self.image_size[1]), np.uint8) 
             #Thermal image 
             therm_image_front = ros_numpy.numpify(therm_front) #replacing cv_bridge
             if image_rotation==90:
@@ -141,7 +139,7 @@ class human_class:
                 img_t_rot_front=therm_image_front
             img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
             #Merging thermal image with black image
-            img_t_rz_front=black_image
+            img_t_rz_front=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
             img_t_rz_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]=img_t_rot_front
             ##################################################################################
             #Back cameras emulation
@@ -171,7 +169,7 @@ class human_class:
                 img_t_rot_back=therm_image_back
             img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
             #Merging thermal image with black image
-            img_t_rz_back=black_image
+            img_t_rz_back=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
             img_t_rz_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1]]=img_t_rot_back
             
             
@@ -275,8 +273,6 @@ class human_class:
                 img_d_rot_front=depth_array_front            
             
             self.image_size = img_rgb_rot_front.shape
-            #Creating a black image with the same size than the RGB image
-            black_image = np.zeros((self.image_size[0],self.image_size[1]), np.uint8) 
             #Thermal image
             therm_image_front = ros_numpy.numpify(therm_front) #replacing cv_bridge
             if image_rotation==90:
@@ -287,7 +283,7 @@ class human_class:
                 img_t_rot_front=therm_image_front
             img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #resize to match the rgbd field of view
             #Merging thermal image with black image
-            img_t_rz_front=black_image
+            img_t_rz_front=np.zeros((self.image_size[0],self.image_size[1]), np.uint8) 
             img_t_rz_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]=img_t_rot_front
             
             ##################################################################################
@@ -322,7 +318,7 @@ class human_class:
                 img_t_rot_back=therm_image_back
             img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
             #Merging thermal image with black image
-            img_t_rz_back=black_image
+            img_t_rz_back=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
             img_t_rz_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1]]=img_t_rot_back
                    
             ##############################################################################################

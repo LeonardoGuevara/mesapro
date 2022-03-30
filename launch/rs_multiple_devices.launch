@@ -1,7 +1,7 @@
 <launch>
   <arg name="rs_serial_n2"    		default="146222253484"/> 	<!-- Note: Replace with actual serial number camera back -->
   <arg name="rs_serial_n1"    		default="146222254714"/> 	<!-- Note: Replace with actual serial number camera front -->
-  <arg name="num_cam"                   default="1" />                  <!-- number of cameras, 1 or 2-->
+  <arg name="num_cam"                   default="2" />                  <!-- number of cameras, 1 or 2-->
   <arg name="camera1"              	default="camera1"/>		<!-- Note: Replace with camera name -->
   <arg name="camera2"              	default="camera2"/>		<!-- Note: Replace with camera name -->
   <arg name="tf_prefix_camera1"         default="$(arg camera1)"/>

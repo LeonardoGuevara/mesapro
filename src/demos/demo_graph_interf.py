@@ -90,8 +90,6 @@ class human_class:
             img_rgb_rot_front=color_image_front            
         
         self.image_size = img_rgb_rot_front.shape
-        #Creating a black image with the same size than the RGB image
-        black_image = np.zeros((self.image_size[0],self.image_size[1]), np.uint8) 
             
         #Thermal image
         therm_image_front = ros_numpy.numpify(therm_front)
@@ -103,7 +101,7 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
         #Merging thermal image with black image
-        img_t_rz_front=black_image
+        img_t_rz_front=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
         img_t_rz_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]=img_t_rot_front
             
         ##################################################################################
@@ -126,7 +124,7 @@ class human_class:
             img_t_rot_back=therm_image_back
         img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
         #Merging thermal image with black image
-        img_t_rz_back=black_image
+        img_t_rz_back=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
         img_t_rz_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1]]=img_t_rot_back
         
         ##############################################################################################
@@ -180,8 +178,6 @@ class human_class:
             img_rgb_rot_front=color_image_front                  
         
         self.image_size = img_rgb_rot_front.shape
-        #Creating a black image with the same size than the RGB image
-        black_image = np.zeros((self.image_size[0],self.image_size[1]), np.uint8) 
             
         #Thermal image
         therm_image_front = ros_numpy.numpify(therm_front)
@@ -193,7 +189,7 @@ class human_class:
             img_t_rot_front=therm_image_front
         img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
         #Merging thermal image with black image
-        img_t_rz_front=black_image
+        img_t_rz_front=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
         img_t_rz_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]=img_t_rot_front
             
         ##################################################################################
@@ -217,7 +213,7 @@ class human_class:
             img_t_rot_back=therm_image_back
         img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
         #Merging thermal image with black image
-        img_t_rz_back=black_image
+        img_t_rz_back=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
         img_t_rz_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1]]=img_t_rot_back
         
         ##############################################################################################
