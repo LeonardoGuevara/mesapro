@@ -13,8 +13,25 @@ HOW THE HUMAN DETECTION WORKS:
 * The following figures illustrate the distribution of the areas around the robot (used for sensor fusion and safety purposes) and show samples of the body gestures mentioned above.
 
 HOW THE DECISION MAKING WORKS:
+* The decision-making controls the behavior of the safety system based on safety policies (determined during a Hazard Analysis stage) and information delivered by the human detection system and the Thorvald navigation system.
+* The safety system must always be publishing messages, even if no safety action is required. If the safety topics stop being published for a specific period of time (e.g. if the safety system node stopped suddenly), the decision-making makes the current robot action stop and activates audiovisual alerts to warn the human know that the safety system is not running. When the safety system starts publishing again, the previous robot action is resumed.
+* Similar to the safety system, the human detection system is always publishing messages, even if no human is detected. Thus, If human information is not being published for a while, the safety system makes the current robot action stop and activates audiovisual alerts to warn the human that the robot perception is not running. The robot can resume the previous action only when the human detection system is running again.
+* If teleoperation mode is activated, then, any robot's autonomous action is stopped (as the standard behavior of Thorvald robots) and audiovisual alerts indicate to the human that the robot is being controlled by the joystick. When the autonomous mode is activated again, the previous action is not resumed and the robot keeps on pause, till the human gives a new command/goal.
+* The information being published by the safety system include safety action label, voice message label, human command label, risk level label, operation mode label, action mode label, topological goal label, critical human detected index. 
+* The name of the labels corresponding to the safety actions published by the safety system are: "move_to_goal","approach_to_human","move_away_from_human","pause","wait_for_new_human_command","teleoperation","gesture_control","no_safety_action".
+* The name of the labels corresponding to the audio/voice messages are: "no_message","alert_UVC_danger","ask_for_next_action","ask_for_free_space","alert_approaching","alert_moving_away","alert_moving_to_goal","safety_system_error","human_perception_error","teleoperation_mode","gesture_control_mode".
+* The name of the labels corresponding to human commands performed by body gesture are:
+"no_command","approach","move_away","stop","move_forwards","move_backwards","move_right","move_left".
+* The name of the labels corresponding to the level of risk during the Human-Robot Interaction (HRI) are:
+"no_human","safety_hri","risky_hri","dangerous_hri".
+* The operation mode labels can be only "logistics" or "UV-C_treatment". Depending on which operation is selected, the safety system behavior will be different since the safety policies for each application are different.
+* The action mode labels can be "polytunnel" or "footpath". They are updated depending if the robot is navigating outside the polytunnel or along a row inside the polytunnel. If the action mode is "polytunnel" it means that the human gestures are limited to commands that make the robot stop, approach him/her, or make the robot move away. If the action mode is "footpaths" it means that the human gestures can also control the robot's motion in any direction outside the polytunnel, including moving sideways. The robot action activated by a gesture outside the polytunnel is valid only while the gesture is being detected. On the other hand, any robot action activated by a gesture inside the polytunnel is still valid after the human stop performing that gesture.
+* The topological goal can be set as the standard Thorlvald navigation, i.e. by using rviz interface (clicking on a node). However, when the safety system is being used, this goal can be modified in some situations. For instance, if the robot is navigating in "polytunnel" mode, and the human performs gestures to make the robot move away or approach him/her, then the robot's goal is updated in order to make the robot move in the proper direction according to the human command.
+* The human critical index corresponds to the index of the element in the human detected list which represent the most critical human to be tracked. This is critical when more than one human is detected at the same time. The selection of the most critical human to be tracked depends on the area in which the humans are located, the distance between them and the robot, and if they are performing body gestures or not.
 
-The
+SAFETY POLICIES:
+In order to minimize the risk of getting human injuries during HRIs, the following safety policies were considered for the decision-making:
+
 
 HOW TO USE THE MESAPRO PACKAGE:
 
