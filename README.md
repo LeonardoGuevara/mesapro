@@ -4,7 +4,7 @@ This repository contains a ROS package that allows the Thorvald rbotos to detect
 
 [![Overal_system](/Human_perception_and_safety_system_new.png)](https://www.youtube.com/watch?v=vIdlauwlmKo)
 
-HOW THE HUMAN DETECTION WORKS:
+# HOW THE HUMAN DETECTION WORKS:
 * The human detection system is based on information taken from two 2D LiDARs (the same used for robot localization), two RGBD cameras (realsense D455) one aligned to the robot's local x-axis (to detect a human in front of the robot), and the other one in the opposite direction (to detect a human in the back of the robot). Moreover, a thermal camera (FLIR Lepton 3.5) was mounted together with each RBGD camera using a 3D printed base in order to match the images extracted from both cameras.
 * To start publishing human information, the detection system requires to be subscribed to topics published by 2D LiDARs nodes or RGBD cameras nodes, or both in the best case (for sensor fusion). When only LiDAR data is available, the human information contains only (x,y) position, a label with the motion estimation (if the human is static or not static), and the number of the area around the robot in which the human is being detected (there is a total of 10 areas around the robot, 5 correspond to the front of the robot and 5 to the back). When the RGBD data is available, then apart from the information above, the detection system delivers a human orientation label (if the human is facing or not the robot), a human posture label (if the human is performing a specific body gesture). If Thermal cameras are also publishing data (it is not mandatory), then, this information is used to robustify the human detection ( based only on RBD images) and remove false positives.  The thermal information is also valuable for UV-C treatment scenarios when even if a human skeleton is not detected, but If a certain percentage of the pixel on the thermal image is higher than a threshold, then a thermal detection label is activated to alert the safety system that the robot must pause operation.
 * The name of the labels corresponding to the human body gestures that can be interpreted by the robot are: "no_gesture","left_arm_up","left_hand_front","left_arm_sideways","left_forearm_sideways","right_arm_up","right_hand_front","right_arm_sideways","right_forearm_sideways","both_arms_up","both_hands_front","crouched_down","picking".
@@ -12,7 +12,7 @@ HOW THE HUMAN DETECTION WORKS:
 * The name of the labels corresponding to the human orientation are: "facing_the_robot", "giving_the_back", "left_side", "right_side".
 * The following figures illustrate the distribution of the areas around the robot (used for sensor fusion and safety purposes) and show samples of the body gestures mentioned above.
 
-HOW THE DECISION MAKING WORKS:
+# HOW THE DECISION MAKING WORKS:
 * The decision-making controls the behavior of the safety system based on safety policies (determined during a Hazard Analysis stage) and information delivered by the human detection system and the Thorvald navigation system.
 * The safety system must always be publishing messages, even if no safety action is required. If the safety topics stop being published for a specific period of time (e.g. if the safety system node stopped suddenly), the decision-making makes the current robot action stop and activates audiovisual alerts to warn the human know that the safety system is not running. When the safety system starts publishing again, the previous robot action is resumed.
 * Similar to the safety system, the human detection system is always publishing messages, even if no human is detected. Thus, If human information is not being published for a while, the safety system makes the current robot action stop and activates audiovisual alerts to warn the human that the robot perception is not running. The robot can resume the previous action only when the human detection system is running again.
@@ -33,7 +33,7 @@ SAFETY POLICIES:
 In order to minimize the risk of getting human injuries during HRIs, the following safety policies were considered for the decision-making:
 
 
-HOW TO USE THE MESAPRO PACKAGE:
+# HOW TO USE THE MESAPRO PACKAGE:
 
 * To run the human detection and safety system on the Thorvald robots. You have to launch the config files into the folder "tmule". There are 3 config files that must be launched in order to run everything shown on the system architecture scheme. If implementing it on the Thorvald-014 (the one used during the whole MeSAPro project), the rasberry-hri_navigation.yaml is launched on the NUC (computer without GPU, used as master), the rasberry-hri_safety_perception.yaml is launched on the ZOTAC (computer with GPU), and the rasberry-hri_monitoring.yaml can be launched in any laptop in order to visualize and monitor the robot localization, human detections and safety actions.
 * The config files have several parameters that can be modified in case some features of the human detection or safety system are not required for certain tests. For instance, the leg detection can be disabled to test only camera detections, the thermal information can be disable, audio or visual alerts can be disabled if neccesary, etc.
@@ -41,7 +41,7 @@ HOW TO USE THE MESAPRO PACKAGE:
 * To test the human detection system (based only on camera data) using bag files, you can launch the config file rasberry-hri_camera_detector.yaml .
 * To test the human detection system (based only on LiDAR data) using bag files, you can launch the config file rasberry-hri_leg_detector.yaml .
 
-NOTES: 
+# NOTES: 
 * The creation of this package was motivated by the MeSAPro project which aims to ensure autonomy of agricultural robots in scenarios that involve human-robot interactions. The decision-making and safety policies of the current version of the safety system are designed to be implemented mainly during logistics operations at polytunnels, but can also be used during UV-C treatment operations.
 * To use the mesapro package, it is required to also have all the packages into the LCAS/RASberry repository which includes among others, the topological navigation package which is used to make the Thorvald robots navigate in an autonomous way at polytunnels (Note: The RASberry repository is private, so make sure you have access to it).
 * To launch any config file into the tmule folder, it is necesary to install "tmule".
