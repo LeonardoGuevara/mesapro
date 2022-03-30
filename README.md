@@ -30,8 +30,17 @@ This repository contains a ROS package that allows the Thorvald rbotos to detect
 * The human critical index corresponds to the index of the element in the human detected list which represent the most critical human to be tracked. This is critical when more than one human is detected at the same time. The selection of the most critical human to be tracked depends on the area in which the humans are located, the distance between them and the robot, and if they are performing body gestures or not.
 
 SAFETY POLICIES:
+
 In order to minimize the risk of getting human injuries during HRIs, the following safety policies were considered for the decision-making:
 
+* The distances "d_log" used to classify the risk of collisions during logistics operations are: 0<d_log<1.2m (dangerous_hri), 1.2m<d_log<3.6m (risky_hri), d_log>3.6m (safety_hri).
+* The distances "d_uvc" used to classify the risk of getting human injuries during UV-C treatment are: 0<d_uvc<7m (dangerous_hri) , 7m<d_uvc<10m (risky_hri), d_uvc>10m (safety_hri).
+* The robot must always stop any action in any operation (logistics or UV-C treatment) if the risk label is "dangerous_hri".
+* If the robot is in "logistics" operation, inside or outside polytunnels, and the human is performing gestures to command the robot to approach to him/her, then the robot speed must be reduce proportionally to the distance between them and stop completaly when the risk becomes "dangerous_hri".
+* If the robot is in "logistics" operation, outside polytunnels (footpahts), and the human is performing gestures to command the robot to approach him/her, then before the robot starts moving towards the human, it must be reoriented and approach the human always facing it directly (this includes moving forwards or backward towards the human).
+* If the robot is in "logistics" operation, inside or outside polytunnels, and moving to a current goal but a human is detected occluding the path, then the robot action must be "paused" and can be resumed only when the human is no longer detected or when is no longer in "risky_hri". However, the "pause" safety action is only valid if the human is occluding the robot's path, i.e. a "pause" is not activated if the human is in "risky_hri" but is located on the back of the robot when the robot is moving forwards, or when the human is in front of the robot and the robot is moving backward. Moreover, If one or more humans are detected but are located at areas [0,4,5,9], they do not activate "pause" safety action since humans walking in another row or at the side of the robot are not considered critical.
+* If the robot is in "logistics" operation, inside or outside polytunnels, and a human detected is performing a body gesture which correspond to a command, such command is only valid if the human orientation label is "facing_the_robot". 
+* If the robot is in "logistics" operation, inside polytunnels, and is performing actions to move towards a human, the robot must stop inmediatly if the human motion label is "moving" or if the human orientation label is not "facing_the_robot".
 
 # How to use de MeSAPro package:
 
