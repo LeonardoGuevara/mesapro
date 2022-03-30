@@ -12,7 +12,7 @@ This repository contains a ROS package that allows the Thorvald rbotos to detect
 * The name of the labels corresponding to the human orientation are: "facing_the_robot", "giving_the_back", "left_side", "right_side".
 * The following figures illustrate the distribution of the areas around the robot (used for sensor fusion and safety purposes) and show samples of the body gestures mentioned above.
 
-[![gesture_examples](/images/gesture_examples.png)]
+![gesture_examples](/images/gesture_examples.png)
 
 # How the Decision Making works:
 * The decision-making controls the behavior of the safety system based on safety policies (determined during a Hazard Analysis stage) and information delivered by the human detection system and the Thorvald navigation system.
