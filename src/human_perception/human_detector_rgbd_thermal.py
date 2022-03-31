@@ -670,10 +670,10 @@ class human_class:
                             centroid_3d[kk,0] = distance[kk,0] #z-axis in camera 3d world is the positive x-axis of robot frame
                             #MAP CENTROID COORDINATES FROM THE ROTATED IMAGE TO THE ORIGINAL IMAGE (UNDISTORTED)
                             orig_centroid_y=centroid[kk,0]
-                            if resize_param[4]==270:
+                            if resize_param[4]==270 or resize_param[9]==90:
                                 centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame
-                            elif resize_param[4]==90:
-                                centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame
+                            #elif resize_param[4]==90:
+                            #    centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame
                             else: #rotation==0
                                 centroid_3d[kk,1] = -(orig_centroid_y - intr_param[1]) * distance[kk,0]  / intr_param[0] #y-axis in camera 3d world is the negative y-axis of the robot frame   
                         else:#camera back
@@ -682,10 +682,10 @@ class human_class:
                             centroid_3d[kk,0] = -distance[kk,0] #z-axis in camera 3d world is the negative x-axis of robot frame
                             #MAP CENTROID COORDINATES FROM THE ROTATED IMAGE TO THE ORIGINAL IMAGE (UNDISTORTED) which is the one aligned to the robot x-axis
                             orig_centroid_y=centroid[kk,0]-width
-                            if resize_param[9]==270:
+                            if resize_param[9]==270 or resize_param[9]==90:
                                 centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * distance[kk,0] / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame  
-                            elif resize_param[9]==90:
-                                centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame  
+                            #elif resize_param[9]==90:
+                            #    centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame  
                             else: #rotation==0
                                 centroid_3d[kk,1] = (orig_centroid_y - intr_param[1]) * distance[kk,0] / intr_param[0] #y-axis in camera 3d world is the positive y-axis of the robot frame                       
                         
