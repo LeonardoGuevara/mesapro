@@ -7,7 +7,7 @@
     <arg name="bag_file" default="/home/leo/Documents/mesapro/bags/testing/all_gestures_3.bag" />
     <arg name="visual_mode" default="1" />   
     <arg name="thermal_info" default="True" />
-    <arg name="image_rotation" default="270" />
+    <arg name="image_rotation" default="270_90" />
     <arg name="operation_mode" default="logistics" />  
     <arg name="n_cameras" default="1" />
     <arg name="openpose_visual" default="True" />   
@@ -29,7 +29,7 @@
         <param name="posture_classifier_model" value="$(arg posture_classifier_model)"/>
         <param name="config_direct" value="$(arg config_direct)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
-        <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
+        <param name="image_rotation" value="$(arg image_rotation)"/>
         <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
         <param name="openpose_visual" type="bool" value="$(arg openpose_visual)"/>
     </node>
@@ -41,7 +41,7 @@
     <node pkg="mesapro" type="demo_graph_interf.py" name="hri_visualization"> 
 	<param name="visual_mode" type="int" value="$(arg visual_mode)"/>
         <param name="config_direct" value="$(arg config_direct)"/>
-        <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
+        <param name="image_rotation" value="$(arg image_rotation)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
         <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
         <param name="time_without_msg" value="$(arg time_without_msg)"/>

@@ -32,11 +32,11 @@ init_cmd: |
   export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
   export_default USE_LEG_DETECTOR false #if "false", Lidar based leg_detector is not launched
   export_default USE_GESTURE_CONTROL false # if "true", gesture detection is used to control robot actions
-  export_default USE_VISUAL_ALERTS false # if "true", colored beacon is activated
+  export_default USE_VISUAL_ALERTS true # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
   export_default USE_VISUALIZATION true # if "true", visualization window is activated
-  export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
-  export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
+  export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
+  export_default IMAGE_ROTATION "270_90" # cameras orientation, "270_90" means that the frontal camera is rotated 270 degrees and the back one 90 degrees
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
   export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected 
   export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera back

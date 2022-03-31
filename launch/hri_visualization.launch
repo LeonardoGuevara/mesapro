@@ -2,7 +2,7 @@
 <launch>
     <arg name="visual_mode" default="1" />   
     <arg name="config_direct" default="/home/leo/rasberry_ws/src/mesapro/config/" /> 
-    <arg name="image_rotation" default="270" /> 
+    <arg name="image_rotation" default="270_90" /> 
     <arg name="thermal_info" default="True" /> 
     <arg name="n_cameras" default="1" />
     <arg name="time_without_msg" default="5"/>
@@ -11,7 +11,7 @@
     <node pkg="mesapro" type="demo_graph_interf.py" name="hri_visualization"> 
 	<param name="visual_mode" type="int" value="$(arg visual_mode)"/>
         <param name="config_direct" value="$(arg config_direct)"/>
-        <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
+        <param name="image_rotation" value="$(arg image_rotation)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
         <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
         <param name="time_without_msg" value="$(arg time_without_msg)"/>

@@ -16,7 +16,7 @@
         <param name="posture_classifier_model" value="$(arg posture_classifier_model)"/>
         <param name="config_direct" value="$(arg config_direct)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
-        <param name="image_rotation" type="int" value="$(arg image_rotation)"/>
+        <param name="image_rotation" value="$(arg image_rotation)"/>
         <param name="n_cameras" type="int" value="$(arg n_cameras)"/>
         <param name="openpose_visual" type="bool" value="$(arg openpose_visual)"/>
     </node>

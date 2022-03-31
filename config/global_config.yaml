@@ -10,9 +10,9 @@ camera_config: #for depth image of realsense D455
   dist_param: [-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] #[k1 k2 t1 t2 k3]
 ##################################################
 matching_config: #for camera D455 + FLIR lepton
-  270_param: [105,125,285,380,110,145,285,380]  #[y_init_up,x_init_left,n_pixels_x,n_pixels_y, "THE SAME 4 PARAM FOR BACK IMAGE"] when image is rotated 270 degrees
-  90_param: [120,105,285,380,120,105,285,380]  #when image is rotated 90 degrees NOT WELL CALIBRATED*****
-  0_param: [120,130,380,285,120,130,380,285]   #when image is rotated 0 degrees NOT WELL CALIBRATED*****
+  270_90_param: [105,125,285,380,270,125,105,285,380,90]  #[y_init_up,x_init_left,n_pixels_x,n_pixels_y,rotation "THE SAME 5 PARAM FOR BACK IMAGE"] when frontal image is rotated 270 degrees and back 90 degrees
+  90_90_param: [120,105,285,380,90,120,105,285,380,90]  #when both images are rotated 90 degrees NOT WELL CALIBRATED*****
+  0_0_param: [120,130,380,285,0,120,130,380,285,0]   #when both images are rotated 0 degrees NOT WELL CALIBRATED*****
 ##################################################
 action_recog_config:
   n_joints: 19       #19 body joints from openpose output (25 available)

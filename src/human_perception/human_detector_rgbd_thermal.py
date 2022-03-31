@@ -67,8 +67,8 @@ thermal_info=rospy.get_param("/hri_camera_detector/thermal_info",True) #you have
 #PARAMETERS TO MATCH RGBD + THERMAL IMAGES 
 temp_thresh=100 #threshold to determine if the temperature if a pixel is considered as higher as human temperature
 detection_thresh=0.1 #percentage of pixels in the thermal image which have to satisfy the temp_thresh in order to rise the thermal_detection flag
-image_rotation=rospy.get_param("/hri_camera_detector/image_rotation",270) #it can be 0,90,270 measured clockwise        
-resize_param=parsed_yaml_file.get("matching_config").get(str(image_rotation)+"_param") #parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y,y_init_up,x_init_left,n_pixels_x,n_pixels_y]
+image_rotation=rospy.get_param("/hri_camera_detector/image_rotation","270_90") #it can be 0,90,270 measured clockwise        
+resize_param=parsed_yaml_file.get("matching_config").get(image_rotation+"_param") #parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y,y_init_up,x_init_left,n_pixels_x,n_pixels_y]
 #RGBD CAMERA INTRINSIC,DISTORTION PARAMETERS
 intr_param=parsed_yaml_file.get("camera_config").get("intr_param") #camera intrinsic parameters
 dist_param=parsed_yaml_file.get("camera_config").get("dist_param") #camera distortion parameters
@@ -109,9 +109,9 @@ class human_class:
             color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
             color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
             color_image_front=cv2.undistort(color_image, mtx, distor) #undistort image 
-            if image_rotation==90:
+            if resize_param[4]==90:
                 img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[4]==270:
                 img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_rgb_rot_front=color_image_front            
@@ -119,9 +119,9 @@ class human_class:
             depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
             depth_image_front=cv2.undistort(depth_image, mtx, distor) #undistort image 
             depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
-            if image_rotation==90:
+            if resize_param[4]==90:
                 img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[4]==270:
                 img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_d_rot_front=depth_array_front            
@@ -129,9 +129,9 @@ class human_class:
             self.image_size = img_rgb_rot_front.shape          
             #Thermal image 
             therm_image_front = ros_numpy.numpify(therm_front) #replacing cv_bridge
-            if image_rotation==90:
+            if resize_param[4]==90:
                 img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[4]==270:
                 img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_t_rot_front=therm_image_front
@@ -143,25 +143,25 @@ class human_class:
             #Back cameras emulation
             #Color image
             color_image_back=color_image_front
-            if image_rotation==90:
+            if resize_param[9]==90:
                 img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[9]==270:
                 img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_rgb_rot_back=color_image_back            
             #Depth image
             depth_array_back=depth_array_front
-            if image_rotation==90:
+            if resize_param[9]==90:
                 img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[9]==270:
                 img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_d_rot_back=depth_array_back            
             #Thermal image
             therm_image_back=therm_image_front
-            if image_rotation==90:
+            if resize_param[9]==90:
                 img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[9]==270:
                 img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_t_rot_back=therm_image_back
@@ -194,9 +194,9 @@ class human_class:
             color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
             color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
             color_image_front=cv2.undistort(color_image, mtx, distor) #undistort image 
-            if image_rotation==90:
+            if resize_param[4]==90:
                 img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[4]==270:
                 img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_rgb_rot_front=color_image_front            
@@ -204,9 +204,9 @@ class human_class:
             depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
             depth_image_front=cv2.undistort(depth_image, mtx, distor) #undistort image 
             depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
-            if image_rotation==90:
+            if resize_param[4]==90:
                 img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[4]==270:
                 img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_d_rot_front=depth_array_front            
@@ -215,17 +215,17 @@ class human_class:
             #Back cameras emulation
             #Color image
             color_image_back=color_image_front
-            if image_rotation==90:
+            if resize_param[9]==90:
                 img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[9]==270:
                 img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_rgb_rot_back=color_image_back            
             #Depth image
             depth_array_back=depth_array_front
-            if image_rotation==90:
+            if resize_param[9]==90:
                 img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[9]==270:
                 img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_d_rot_back=depth_array_back   
@@ -253,9 +253,9 @@ class human_class:
             color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
             color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
             color_image_front=cv2.undistort(color_image, mtx, distor) #undistort image 
-            if image_rotation==90:
+            if resize_param[4]==90:
                 img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[4]==270:
                 img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_rgb_rot_front=color_image_front            
@@ -263,9 +263,9 @@ class human_class:
             depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
             depth_image_front=cv2.undistort(depth_image, mtx, distor) #undistort image  
             depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
-            if image_rotation==90:
+            if resize_param[4]==90:
                 img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[4]==270:
                 img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_d_rot_front=depth_array_front            
@@ -273,9 +273,9 @@ class human_class:
             self.image_size = img_rgb_rot_front.shape
             #Thermal image
             therm_image_front = ros_numpy.numpify(therm_front) #replacing cv_bridge
-            if image_rotation==90:
+            if resize_param[4]==90:
                 img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[4]==270:
                 img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_t_rot_front=therm_image_front
@@ -290,9 +290,9 @@ class human_class:
             color_image = ros_numpy.numpify(rgb_back) #replacing cv_bridge
             color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
             color_image_back=cv2.undistort(color_image, mtx, distor) #undistort image 
-            if image_rotation==90:
+            if resize_param[9]==90:
                 img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[9]==270:
                 img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_rgb_rot_back=color_image_back            
@@ -300,24 +300,24 @@ class human_class:
             depth_image = ros_numpy.numpify(depth_back) #replacing cv_bridge
             depth_image_back=cv2.undistort(depth_image, mtx, distor) #undistort image 
             depth_array_back = np.array(depth_image_back, dtype=np.float32)/1000
-            if image_rotation==90:
+            if resize_param[9]==90:
                 img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[9]==270:
                 img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_d_rot_back=depth_array_back                       
             #Thermal image
             therm_image_back = ros_numpy.numpify(therm_back) #replacing cv_bridge
-            if image_rotation==90:
+            if resize_param[9]==90:
                 img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[9]==270:
                 img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_t_rot_back=therm_image_back
-            img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[6],resize_param[7]))        
+            img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[7],resize_param[8]))        
             #Merging thermal image with black image
             img_t_rz_back=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
-            img_t_rz_back[resize_param[4]:resize_param[4]+img_t_rot_back.shape[0],resize_param[5]:resize_param[5]+img_t_rot_back.shape[1]]=img_t_rot_back
+            img_t_rz_back[resize_param[5]:resize_param[5]+img_t_rot_back.shape[0],resize_param[6]:resize_param[6]+img_t_rot_back.shape[1]]=img_t_rot_back
                    
             ##############################################################################################
             #Here the images from two cameras has to be merged in a single image (front image left, back image back)
@@ -341,9 +341,9 @@ class human_class:
             color_image = ros_numpy.numpify(rgb_front) #replacing cv_bridge
             color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
             color_image_front=cv2.undistort(color_image, mtx, distor) #undistort image 
-            if image_rotation==90:
+            if resize_param[4]==90:
                 img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[4]==270:
                 img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_rgb_rot_front=color_image_front            
@@ -351,9 +351,9 @@ class human_class:
             depth_image = ros_numpy.numpify(depth_front) #replacing cv_bridge
             depth_image_front=cv2.undistort(depth_image, mtx, distor) #undistort image 
             depth_array_front = np.array(depth_image_front, dtype=np.float32)/1000
-            if image_rotation==90:
+            if resize_param[4]==90:
                 img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[4]==270:
                 img_d_rot_front=cv2.rotate(depth_array_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_d_rot_front=depth_array_front            
@@ -365,9 +365,9 @@ class human_class:
             color_image = ros_numpy.numpify(rgb_back) #replacing cv_bridge
             color_image = color_image[...,[2,1,0]].copy() #from bgr to rgb
             color_image_back =cv2.undistort(color_image, mtx, distor) #undistort image        
-            if image_rotation==90:
+            if resize_param[9]==90:
                 img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[9]==270:
                 img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_rgb_rot_back=color_image_back            
@@ -375,9 +375,9 @@ class human_class:
             depth_image = ros_numpy.numpify(depth_back) #replacing cv_bridge
             depth_image_back =cv2.undistort(depth_image, mtx, distor) #undistort image 
             depth_array_back = np.array(depth_image_back, dtype=np.float32)/1000
-            if image_rotation==90:
+            if resize_param[9]==90:
                 img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
-            elif image_rotation==270:
+            elif resize_param[9]==270:
                 img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_d_rot_back=depth_array_back   
@@ -670,8 +670,10 @@ class human_class:
                             centroid_3d[kk,0] = distance[kk,0] #z-axis in camera 3d world is the positive x-axis of robot frame
                             #MAP CENTROID COORDINATES FROM THE ROTATED IMAGE TO THE ORIGINAL IMAGE (UNDISTORTED)
                             orig_centroid_y=centroid[kk,0]
-                            if image_rotation==270:
+                            if resize_param[4]==270:
                                 centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame
+                            elif resize_param[4]==90:
+                                centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame
                             else: #rotation==0
                                 centroid_3d[kk,1] = -(orig_centroid_y - intr_param[1]) * distance[kk,0]  / intr_param[0] #y-axis in camera 3d world is the negative y-axis of the robot frame   
                         else:#camera back
@@ -680,8 +682,10 @@ class human_class:
                             centroid_3d[kk,0] = -distance[kk,0] #z-axis in camera 3d world is the negative x-axis of robot frame
                             #MAP CENTROID COORDINATES FROM THE ROTATED IMAGE TO THE ORIGINAL IMAGE (UNDISTORTED) which is the one aligned to the robot x-axis
                             orig_centroid_y=centroid[kk,0]-width
-                            if image_rotation==270:
-                                centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * distance[kk,0] / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame    
+                            if resize_param[9]==270:
+                                centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * distance[kk,0] / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame  
+                            elif resize_param[9]==90:
+                                centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame  
                             else: #rotation==0
                                 centroid_3d[kk,1] = (orig_centroid_y - intr_param[1]) * distance[kk,0] / intr_param[0] #y-axis in camera 3d world is the positive y-axis of the robot frame                       
                         

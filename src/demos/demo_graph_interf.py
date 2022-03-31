@@ -23,8 +23,8 @@ parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 ##############################################################################################################################
 #CAMERAS INFO
 thermal_info=rospy.get_param("/hri_visualization/thermal_info",True) #you have to change /hri_visualization/ if the node is not named like this
-image_rotation=rospy.get_param("/hri_visualization/image_rotation",270) #you have to change /hri_visualization/ if the node is not named like this
-resize_param=parsed_yaml_file.get("matching_config").get(str(image_rotation)+"_param") #parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y]
+image_rotation=rospy.get_param("/hri_visualization/image_rotation","270_90") #you have to change /hri_visualization/ if the node is not named like this
+resize_param=parsed_yaml_file.get("matching_config").get(image_rotation+"_param") #parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y]
 #################################################################################################################################
 #IMPORTING LABELS NAMES
 posture_labels=parsed_yaml_file.get("action_recog_config").get("posture_labels") # labels of the gestures used to train the gesture recognition model
@@ -82,9 +82,9 @@ class human_class:
         #Color image
         color_image = ros_numpy.numpify(rgb_front)
         color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
-        if image_rotation==90:
+        if resize_param[4]==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[4]==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
@@ -93,9 +93,9 @@ class human_class:
             
         #Thermal image
         therm_image_front = ros_numpy.numpify(therm_front)
-        if image_rotation==90:
+        if resize_param[4]==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[4]==270:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_t_rot_front=therm_image_front
@@ -108,17 +108,17 @@ class human_class:
         #Back cameras emulation
         #Color image
         color_image_back=color_image_front
-        if image_rotation==90:
+        if resize_param[9]==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[9]==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_back=color_image_back            
         #Thermal image
         therm_image_back=therm_image_front
-        if image_rotation==90:
+        if resize_param[9]==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[9]==270:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_t_rot_back=therm_image_back
@@ -140,9 +140,9 @@ class human_class:
         #Front camera info extraction
         color_image = ros_numpy.numpify(rgb_front)
         color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
-        if image_rotation==90:
+        if resize_param[4]==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[4]==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
@@ -151,9 +151,9 @@ class human_class:
         ##################################################################################
         #Back cameras emulation
         color_image_back=color_image_front
-        if image_rotation==90:
+        if resize_param[9]==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[9]==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_back=color_image_back            
@@ -170,9 +170,9 @@ class human_class:
         #Color image
         color_image = ros_numpy.numpify(rgb_front)
         color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
-        if image_rotation==90:
+        if resize_param[4]==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[4]==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front                  
@@ -181,9 +181,9 @@ class human_class:
             
         #Thermal image
         therm_image_front = ros_numpy.numpify(therm_front)
-        if image_rotation==90:
+        if resize_param[4]==90:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[4]==270:
             img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_t_rot_front=therm_image_front
@@ -197,24 +197,24 @@ class human_class:
         #Color image
         color_image = ros_numpy.numpify(rgb_back)
         color_image_back = color_image[...,[2,1,0]].copy() #from bgr to rgb
-        if image_rotation==90:
+        if resize_param[9]==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[9]==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_back=color_image_back            
         #Thermal image
         therm_image_back = ros_numpy.numpify(therm_back)
-        if image_rotation==90:
+        if resize_param[9]==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[9]==270:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_t_rot_back=therm_image_back
-        img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[6],resize_param[7]))        
+        img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[7],resize_param[8]))        
         #Merging thermal image with black image
         img_t_rz_back=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
-        img_t_rz_back[resize_param[4]:resize_param[4]+img_t_rot_back.shape[0],resize_param[5]:resize_param[5]+img_t_rot_back.shape[1]]=img_t_rot_back
+        img_t_rz_back[resize_param[5]:resize_param[5]+img_t_rot_back.shape[0],resize_param[6]:resize_param[6]+img_t_rot_back.shape[1]]=img_t_rot_back
         
         ##############################################################################################
         #Here the images from two cameras has to be merged in a single image (front image left, back image back)
@@ -229,9 +229,9 @@ class human_class:
         #Front camera info extraction
         color_image = ros_numpy.numpify(rgb_front)
         color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
-        if image_rotation==90:
+        if resize_param[4]==90:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[4]==270:
             img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_front=color_image_front            
@@ -241,9 +241,9 @@ class human_class:
         #Back camera info extraction
         color_image = ros_numpy.numpify(rgb_back)
         color_image_back = color_image[...,[2,1,0]].copy() #from bgr to rgb
-        if image_rotation==90:
+        if resize_param[9]==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif image_rotation==270:
+        elif resize_param[9]==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_back=color_image_back            
