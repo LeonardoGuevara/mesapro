@@ -33,7 +33,9 @@ class hri_class:
         else:
              self.problem_perception=False
         if self.audio_message==9:
-             self.teleop=True #to alert that robot is in teleoperation     
+             self.teleop=True #to alert that robot is in teleoperation    	
+        else:
+             self.teleop=False   
         print("Safety message received")
         self.timer_safety.cancel()
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()

@@ -413,18 +413,16 @@ class hri_class:
         self.human_command=0 #no human command
         self.critical_index=0 #by default
         self.critical_dist=100 #by default
+        self.new_goal=final_goal # the current goal is not changed
         if current_goal=="Unknown" or final_goal=="Unknown": #If the robot doesn't start moving yet
             self.safety_action=7 # no safety action 
             self.audio_message=0 # no message
-            self.new_goal=final_goal # the current goal is not changed
         elif perception==False: #If no human perception messages are being published
             self.safety_action=3 # to pause robot operation 
             self.audio_message=8 # to alert that human perception system is not working
-            self.new_goal=final_goal # the current goal is not changed
         elif action==5: #if robot operation is "teleoperation"
             self.safety_action=5 # teleoperation mode 
             self.audio_message=9 # to alert that robot is moving in teleoperation mode
-            self.new_goal=final_goal # the current goal is not changed
         else: #In any other case, continue with the decision making
             ##ASSUMING NO HUMAN DETECTION AS INITIAL ASUMPTION
             if self.operation=="logistics":
@@ -434,25 +432,19 @@ class hri_class:
                         self.audio_message=5 # alert robot moving away
                     else: #action=0
                         self.audio_message=6 # alert robot presence
-                    self.new_goal=final_goal # the current goal is not changed             
                 elif action==1: # robot was approaching
                     self.safety_action=4 # make it stop for safety purposes, waiting for a human order 
                     self.audio_message=2 # message to ask the human for new order
-                    self.new_goal=final_goal # the current goal is not changed
                 elif action==3: # if goal was paused while moving to a goal or moving away from the picker
                     self.audio_message=6 # alert robot presence
                     self.safety_action=0 # restart operation making the robot moving to the current goal
-                    self.new_goal=final_goal # the current goal is not changed
                 elif action==4: #if robot is waiting for human order
                     self.safety_action=7 # no safety action / keep the previous robot action
                     self.audio_message=2 # message to ask the human for new order
-                    self.new_goal=final_goal # the current goal is not changed   
                 elif action==6: #if robot was in gesture control mode at footpaths           
                     self.safety_action=4 # stop operation and wait till human gives the robot a new order 
                     self.audio_message=2 # message to ask the human for new order
-                    self.new_goal=final_goal # the current goal is not changed
             else: #UVC
-                self.new_goal=final_goal # the current goal is not changed
                 self.safety_action=7 # no safety action / keep the previous robot action
                 self.audio_message=0 #no message
         

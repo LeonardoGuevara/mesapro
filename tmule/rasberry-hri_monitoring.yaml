@@ -20,8 +20,8 @@ init_cmd: |
   
   export_default VISUAL_MODE 3 # "1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
   export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
-  export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
-  export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
+  export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
+  export_default IMAGE_ROTATION "270_90" # cameras orientation, "270_90" means that the frontal camera is rotated 270 degrees and the back one 90 degrees
   export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
   export_default RVIZ_CONFIG $(rospack find mesapro)/config/row_traversal_action_sim.rviz
   ##############################################################################################
