@@ -51,8 +51,11 @@ In order to minimize the risk of getting human injuries during HRIs, the followi
 * If the robot is in "logistics" operation, inside polytunnels, and is performing actions to move towards a human, the robot must stop immediately if the human motion label turns into "moving" or if the human orientation label is not "facing_the_robot".
 
 # How to use de MeSAPro package:
+HOW TO INSTALL EVERYTHING TOU NEED:
+The mesapro package requires several dependencies in order to be used in the Thorvald robots.
 
-* To run the human detection and safety system on the Thorvald robots. You have to launch the config files into the folder "tmule". There are 3 config files that must be launched in order to run everything shown on the system architecture scheme. If implementing it on the Thorvald-014 (the one used during the whole MeSAPro project), the rasberry-hri_navigation.yaml is launched on the NUC (computer without GPU, used as master), the rasberry-hri_safety_perception.yaml is launched on the ZOTAC (computer with GPU), and the rasberry-hri_monitoring.yaml can be launched in any laptop in order to visualize and monitor the robot localization, human detections and safety actions.
+HOW TO USE IT:
+* There are 3 important config files (into the folder "tmule") that must be launched in order to run everything shown on the system architecture scheme. If implementing it on the Thorvald-014 (the one used during the whole MeSAPro project), the rasberry-hri_navigation.yaml is launched on the NUC (computer without GPU, used as master), the rasberry-hri_safety_perception.yaml is launched on the ZOTAC (computer with GPU), and the rasberry-hri_monitoring.yaml can be launched in any laptop in order to visualize and monitor the robot localization, human detections and safety actions.
 * The config files have several parameters that can be modified in case some features of the human detection or safety system are not required for certain tests. For instance, the leg detection can be disabled to test only camera detections, the thermal information can be disable, audio or visual alerts can be disabled if neccesary, etc.
 * To test the safety system in simulation (GAZEBO), you can launch the config file rasberry-hri_sim.yaml . In this simulation, the human perception system is replaced by a node that is publishing the human information of two simulated people commanded by a joystick.
 * To test the human detection system (based only on camera data) using bag files, you can launch the config file rasberry-hri_camera_detector.yaml .
