@@ -55,7 +55,7 @@ INSTALL DEPENDENCIES:
 
 The mesapro package requires several dependencies in order to be used in the Thorvald robots:
 
-1. Install ROS Melodic following the steps shown here [http://wiki.ros.org/melodic/Installation/Ubuntu] 
+1. Install ROS Melodic following the steps shown [here](http://wiki.ros.org/melodic/Installation/Ubuntu).
 
 
 
