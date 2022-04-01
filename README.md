@@ -15,7 +15,7 @@ A video with a demo can be found in https://www.youtube.com/watch?v=vIdlauwlmKo
 
 * The name of the labels corresponding to the human motion are: "not_defined","mostly_static", "moving".
 * The name of the labels corresponding to the human orientation are: "facing_the_robot", "giving_the_back", "left_side", "right_side".
-* The following figure illustrates the distribution of the areas around the robot which are used for sensor fusion and safety purposes. The image illustrates a thorvald robot moving along polytunnels, however the same distribution is used outside polytunnels. The angle "a" is set by the user. Human detected in green areas are not considered critical, but humans in red areas are particulary critical.
+* The following figure illustrates the distribution of the areas around the robot which are used for sensor fusion and safety purposes. This image illustrates a thorvald robot moving along polytunnels where the areas from 0 to 4 correspond to frontal areas (x is positive) and from 5 to 9 correspond to back areas (x is negative). The angle "a" is a configuration parameter set by the user and the parameter "w" is chosen according to the distance between crop rows. Human detected in green areas are not considered critical, but humans in red areas are particulary critical. The same areas distribution is used when a robot navigates outside polytunnels, i.e. giving priority to humans detected directly in front or back to the robot over the ones detected sideways or walking next to it.
 
 <img src=/images/area_distribution.png width="300">
 
