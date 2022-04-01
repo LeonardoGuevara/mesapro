@@ -1,10 +1,9 @@
 # Human Detection System and Robot Safety System for Thorvald robots
 
-This repository contains a ROS package that allows the Thorvald rotos to detect and safely interact with humans during logistic operations at polytunnels. The package includes a human detection system based on 2D LiDARs, RGB-D, and thermal cameras. The human information extracted from these sensors (humans position, motion, orientation, gesture) is used as input for a safety system that can perform safety actions such as 1) modify the robot's current goal (the goals are nodes in a topological map of the field) according to human commands (i.e. activated by gesture recognition),  2) controlling/modulating the robot velocities according to gesture recognition and/or the distance between the robot and human (when the robot is moving towards the human) 3) stop completely any operation when a human is detected within unsafe distance respect to the robot (in the case of UV-C treatment a safety distance is 7m, in the case of logistics it is 1.2m), 4) Activate audiovisual alerts in order to warn the human about the robot's current action and potential danger (critical during UV-C treatment). The components and overall system architecture are shown in the following scheme. 
+This repository contains a ROS package that allows the Thorvald rotos to detect and safely interact with humans during logistic operations at polytunnels. The package includes a human detection system based on 2D LiDARs, RGB-D, and thermal cameras. The human information extracted from these sensors (humans position, motion, orientation, gesture) is used as input for a safety system that can perform safety actions such as 1) modify the robot's current goal (the goals are nodes in a topological map of the field) according to human commands (i.e. activated by gesture recognition),  2) controlling/modulating the robot velocities according to gesture recognition and/or the distance between the robot and human (when the robot is moving towards the human) 3) stop completely any operation when a human is detected within unsafe distance respect to the robot (in the case of UV-C treatment a safety distance is 7m, in the case of logistics it is 1.2m), 4) Activate audiovisual alerts in order to warn the human about the robot's current action and potential danger (critical during UV-C treatment). The components and overall system architecture are shown in the following scheme. A video with a demo can be found [here](https://www.youtube.com/watch?v=vIdlauwlmKo).
 
 <img src=/images/Human_perception_and_safety_system_new.png width="900">
 
-A video with a demo can be found in https://www.youtube.com/watch?v=vIdlauwlmKo
 
 # How the Human Detetion works:
 * The human detection system is based on information taken from two 2D LiDARs (the same used for robot localization), two RGBD cameras (realsense D455) one aligned to the robot's local x-axis (to detect a human in front of the robot), and the other one in the opposite direction (to detect a human in the back of the robot). Moreover, a thermal camera (FLIR Lepton 3.5) was mounted together with each RBGD camera using a 3D printed base in order to match the images extracted from both cameras.
@@ -56,7 +55,9 @@ INSTALL DEPENDENCIES:
 The mesapro package requires several dependencies in order to be used in the Thorvald robots:
 
 1. Install ROS Melodic following the steps shown [here](http://wiki.ros.org/melodic/Installation/Ubuntu).
-
+2. Assuming your ROS workspace is named ´rasberry_ws´ (the default name used for the Thorvald robots). Clone the LCAS/RASberry repository:
+`cd ~/<workspace name>/src
+git clone --recursive https://github.com/LCAS/RASberry.git`
 
 
 HOW TO USE IT:
@@ -67,6 +68,6 @@ HOW TO USE IT:
 * To test the human detection system (based only on LiDAR data) using bag files, you can launch the config file `rasberry-hri_leg_detector.yaml`.
 
 # Notes: 
-* The creation of this package was motivated by the MeSAPro project which aims to ensure autonomy of agricultural robots in scenarios that involve human-robot interactions. The decision-making and safety policies of the current version of the safety system are designed to be implemented mainly during logistics operations at polytunnels, but can also be used during UV-C treatment operations.
-* To use the mesapro package, it is required to also have all the packages into the LCAS/RASberry repository which includes among others, the topological navigation package which is used to make the Thorvald robots navigate in an autonomous way at polytunnels (Note: The RASberry repository is private, so make sure you have access to it).
-* To launch any config file into the `tmule` folder, it is necesary to install Tmule-TMux Launch Engine.
+* The creation of this package was motivated by the MeSAPro project which aims to ensure the autonomy of agricultural robots in scenarios that involve human-robot interactions. The decision-making and safety policies of the safety system were designed to be implemented mainly during logistics operations at polytunnels (especially the gesture control features), however, some of the safety features (audiovisual alerts and safety stops) are still relevant during UV-C treatment operations.
+* To use the mesapro package, it is required to also have all the packages into the LCAS/RASberry repository which includes among others, the topological navigation package which is used to make the Thorvald robots navigate in an autonomous way at polytunnels (Note that the RASberry repository is private, so make sure you have access to it).
+* To launch any config file into the `tmule` folder, it is necesary to install Tmule-TMux Launch Engine (source code [here](https://github.com/marc-hanheide/TMuLE))
