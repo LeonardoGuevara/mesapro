@@ -52,33 +52,20 @@ In order to minimize the risk of getting human injuries during HRIs, the followi
 # How to use de MeSAPro code:
 PREREQUISITES:
 
-The mesapro package requires the following dependencies in order to be used in the Thorvald robots:
+The mesapro package requires the following packages/dependencies in order to be used in the Thorvald robots. Make sure that all packages are cloned into the directory `~/<workspace name>/src` where `<workspace name>` is your workspace name (the default name used in the Thorvald robots is `rasberry_ws`).
 
 1. Install ROS Melodic following the steps shown [here](http://wiki.ros.org/melodic/Installation/Ubuntu).
-2. Clone the LCAS/RASberry repository and install all the dependencies. This repository contains the necessary packages to interface with the Thorvald robots and to make them navigate autonomously: 
-```
-cd ~/<workspace name>/src
-git clone --recursive https://github.com/LCAS/RASberry.git 
-cd ~/<workspace name>/
-rosdep install --from-paths src --ignore-src -r -y
-```
-replace `<workspace name>` with your actual workspace name (the default name used in the Thorvald robots is `rasberry_ws`). Note that the RASberry repository is private, so make sure you have access to it. A detailed installation guideline can be found [here](https://github.com/LCAS/RASberry/wiki/RASberry-Setup).  
-3. Clone the [CMU-Perceptual-Computing-Lab/openpose](https://github.com/CMU-Perceptual-Computing-Lab/openpose.git) repository into the directory `~/<workspace name>/src`. This repository contains the so-called Openpose framework used to extract human skeleton features based on RBD images. Make sure to download and install the OpenPose prerequisites for your particular operating system (e.g. cuda, cuDNN, OpenCV, Caffe, Python). Follow the instructions shown [here](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/installation/0_index.md).
-4. Clone the [LCAS/people-detection](https://github.com/LCAS/people-detection.git) repository into the directory `~/<workspace name>/src`. This repository contatins a LiDAR based leg detector. This repository is also private, so make sure you have access to it and follow the installation instructions shown [here](https://github.com/LCAS/people-detection.git).  
-5. Clone the flir_module_driver repository into the directory `~/<workspace name>/src`. This repository contains the drivers to interface with FLIR lepton cameras.
-6. Clone the [IntelRealSense/realsense-ros](https://github.com/IntelRealSense/realsense-ros) repository into the directory `~/<workspace name>/src`. This repository contains the necessary packages for using Intel RealSense cameras (D400 series SR300 camera and T265 Tracking Module) with ROS. Follow the installation instructions shown [here] (https://github.com/IntelRealSense/realsense-ros)
-7. Clone the [ds4_driver](https://github.com/naoki-mizuno/ds4_driver) repository into the directory `~/<workspace name>/src`. This repository contains the drivers to interface with a Ps4 joystick (this is only used for simulation purposes). To install it correctly, make sure you follow the instructions shown [here](https://github.com/naoki-mizuno/ds4_driver)
-8. Clone the [ros_numpy](https://github.com/eric-wieser/ros_numpy.git) repository into the directory `~/<workspace name>/src`. This repository contains a tools for converting ROS messages to and from numpy arrays. 
-9. Clone the [LCAS/topological_navigation](https://github.com/LCAS/topological_navigation) repository into the directory `~/<workspace name>/src`. This repository contains the basic packages used for the topological navigation of Thorvald robots.
+2. Clone the LCAS/RASberry repository and install all the dependencies. This repository contains the necessary packages to interface with the Thorvald robots and to make them navigate autonomously. Note that the RASberry repository is private, so make sure you have access to it. A detailed installation guideline can be found [here](https://github.com/LCAS/RASberry/wiki/RASberry-Setup).  
+3. Clone the [CMU-Perceptual-Computing-Lab/openpose](https://github.com/CMU-Perceptual-Computing-Lab/openpose.git) repository. This repository contains the so-called Openpose framework used to extract human skeleton features based on RBD images. Make sure to download and install the OpenPose prerequisites for your particular operating system (e.g. cuda, cuDNN, OpenCV, Caffe, Python). Follow the instructions shown [here](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/installation/0_index.md).
+4. Clone the [LCAS/people-detection](https://github.com/LCAS/people-detection.git) repository. This repository contatins a LiDAR based leg detector. This repository is also private, so make sure you have access to it and follow the installation instructions shown [here](https://github.com/LCAS/people-detection.git).  
+5. Clone the flir_module_driver repository. This repository contains the drivers to interface with FLIR lepton cameras. 
+6. Clone the [IntelRealSense/realsense-ros](https://github.com/IntelRealSense/realsense-ros) repository. This repository contains the necessary packages for using Intel RealSense cameras (D400 series SR300 camera and T265 Tracking Module) with ROS. Follow the installation instructions shown [here] (https://github.com/IntelRealSense/realsense-ros)
+7. Clone the [ds4_driver](https://github.com/naoki-mizuno/ds4_driver) repository. This repository contains the drivers to interface with a Ps4 joystick (this is only used for simulation purposes). To install it correctly, make sure you follow the instructions shown [here](https://github.com/naoki-mizuno/ds4_driver)
+8. Clone the [ros_numpy](https://github.com/eric-wieser/ros_numpy.git) repository. This repository contains a tools for converting ROS messages to and from numpy arrays. 
+9. Clone the [LCAS/topological_navigation](https://github.com/LCAS/topological_navigation) repository. This repository contains the basic packages used for the topological navigation of Thorvald robots.
 10. Install [rosserial_arduino](http://wiki.ros.org/rosserial_arduino/Tutorials/Arduino%20IDE%20Setup) to allows your Arduino to be a full fledged ROS node which can directly publish and subscribe to ROS messages. Follow the installation instructions shown [here](http://wiki.ros.org/rosserial_arduino/Tutorials/Arduino%20IDE%20Setup).
-11. Finally, clone the mesapro repository, and make sure to build and source the workspace:
-```
-cd ~/<workspace name>/src
-git clone https://github.com/LeonardoGuevara/mesapro.git
-cd ~/<workspace name>/
-catkin_make
-source devel/setup.bash
-```
+11. Finally, clone the mesapro repository, and make sure to build and source the workspace.
+
 
 HOW TO USE IT:
 * There are 3 important config files (into the `/mesapro/tmule` folder) that must be launched in order to run everything shown on the system architecture scheme. If implementing it on the Thorvald-014 (the one used during the whole MeSAPro project), the `rasberry-hri_navigation.yaml` is launched on the NUC (computer without GPU, used as master), the `rasberry-hri_safety_perception.yaml` is launched on the ZOTAC (computer with GPU), and the `rasberry-hri_monitoring.yaml` can be launched in any laptop in order to visualize and monitor the robot localization, human detections and safety actions.
