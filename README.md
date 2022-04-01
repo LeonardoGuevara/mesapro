@@ -73,7 +73,7 @@ HOW TO USE IT:
 * To test the safety system in simulation (GAZEBO), you can launch the config file `rasberry-hri_sim.yaml`. In this simulation, the human perception system is replaced by a node that is publishing the human information of two simulated people commanded by a joystick.
 * To test the human detection system (based only on camera data) using bag files, you can launch the config file `rasberry-hri_camera_detector.yaml`.
 * To test the human detection system (based only on LiDAR data) using bag files, you can launch the config file `rasberry-hri_leg_detector.yaml`.
-* To use for the first time the human gesture recognition feature it is necessary to uncompress the file with the model. This file is located in the `config` folder.
+* To use the human gesture recognition feature for first time, it is necessary to uncompress the file which contains the trained model. This file is located in the `config` folder.
 * To launch any config file into the `/mesapro/tmule` folder, it is necesary to install Tmule-TMux Launch Engine `pip install tmule` (source code [here](https://github.com/marc-hanheide/TMuLE)) 
 # Notes: 
 * The creation of this package was motivated by the MeSAPro project which aims to ensure the autonomy of agricultural robots in scenarios that involve human-robot interactions. The decision-making and safety policies of the safety system were designed to be implemented mainly during logistics operations at polytunnels (especially the gesture control features), however, some of the safety features (audiovisual alerts and safety stops) are still relevant during UV-C treatment operations.
