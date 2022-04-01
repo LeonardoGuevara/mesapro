@@ -79,11 +79,11 @@ HOW TO USE IT:
 roscd mesapro/tmule
 tmule -c <config_file_name>.yaml launch
 ```
-To terminate the execution of this tmule session, the following command must be executed in terminal:
+To terminate the execution of a specific tmule session:
 ```
 tmule -c <config_file_name>.yaml terminate
 ```
-To monitor the state of every panel launched for the current active tmule sessions, the following command should be executed in terminal:
+To monitor the state of every panel launched for the current active tmule sessions:
 ```
 tmux a
 ```
