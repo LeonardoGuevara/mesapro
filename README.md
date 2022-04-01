@@ -49,27 +49,36 @@ In order to minimize the risk of getting human injuries during HRIs, the followi
 * If the robot is in `"logistics"` operation, inside or outside polytunnels, and a human detected is performing a body gesture which correspond to a command, such command is only valid if the human orientation label is `"facing_the_robot"`. 
 * If the robot is in `"logistics"` operation, inside polytunnels, and is performing actions to move towards a human, the robot must stop immediately if the human motion label turns into `"moving"` or if the human orientation label is not `"facing_the_robot"`.
 
-# How to use de MeSAPro package:
+# How to use de MeSAPro code:
 INSTALL DEPENDENCIES:
 
-The mesapro package requires several dependencies in order to be used in the Thorvald robots:
+The mesapro package requires the following dependencies in order to be used in the Thorvald robots:
 
 1. Install ROS Melodic following the steps shown [here](http://wiki.ros.org/melodic/Installation/Ubuntu).
-2. Assuming your workspace name is `rasberry_ws` (the default name used for the Thorvald robots). Clone the LCAS/RASberry repository:
+2. Clone the LCAS/RASberry repository and install of the dependecies. The RASberry repository contains the necessary packages to interface with the Thorvald robots and to make them navigate autonomously: 
 ```
-cd ~/rasberry_ws/src
+cd ~/<workspace name>/src
 git clone --recursive https://github.com/LCAS/RASberry.git 
+cd ~/<workspace name>/
+rosdep install --from-paths src --ignore-src -r -y
 ```
-
+replace `<workspace name>` with your actual workspace name (the default name used in the Thorvald robots is `rasberry_ws`). Note that the RASberry repository is private, so make sure you have access to it.
+3. Clone the OpenPose repository:
+3. Finally, clone the mesapro repository, build and source the workspace:
+cd ~/<workspace name>/src
+git clone https://github.com/LeonardoGuevara/mesapro.git
+cd ~/<workspace name>/
+catkin_make
+source devel/setup.bash
 
 HOW TO USE IT:
-* There are 3 important config files (into the `tmule` folder) that must be launched in order to run everything shown on the system architecture scheme. If implementing it on the Thorvald-014 (the one used during the whole MeSAPro project), the `rasberry-hri_navigation.yaml` is launched on the NUC (computer without GPU, used as master), the `rasberry-hri_safety_perception.yaml` is launched on the ZOTAC (computer with GPU), and the `rasberry-hri_monitoring.yaml` can be launched in any laptop in order to visualize and monitor the robot localization, human detections and safety actions.
+* There are 3 important config files (into the `/mesapro/tmule` folder) that must be launched in order to run everything shown on the system architecture scheme. If implementing it on the Thorvald-014 (the one used during the whole MeSAPro project), the `rasberry-hri_navigation.yaml` is launched on the NUC (computer without GPU, used as master), the `rasberry-hri_safety_perception.yaml` is launched on the ZOTAC (computer with GPU), and the `rasberry-hri_monitoring.yaml` can be launched in any laptop in order to visualize and monitor the robot localization, human detections and safety actions.
 * The config files into `tmule` folder have several parameters that can be modified in case some features of the human detection or safety system are not required for certain tests. For instance, the leg detection can be disabled to test only camera detections, the thermal information can be disable, audio or visual alerts can be disabled if neccesary, etc.
 * To test the safety system in simulation (GAZEBO), you can launch the config file `rasberry-hri_sim.yaml`. In this simulation, the human perception system is replaced by a node that is publishing the human information of two simulated people commanded by a joystick.
 * To test the human detection system (based only on camera data) using bag files, you can launch the config file `rasberry-hri_camera_detector.yaml`.
 * To test the human detection system (based only on LiDAR data) using bag files, you can launch the config file `rasberry-hri_leg_detector.yaml`.
-
+* To use for the first time the human gesture recognition feature it is necessary to uncompress the file with the model. This file is located in the `config` folder.
+* To launch any config file into the `/mesapro/tmule` folder, it is necesary to install Tmule-TMux Launch Engine (source code [here](https://github.com/marc-hanheide/TMuLE))
 # Notes: 
 * The creation of this package was motivated by the MeSAPro project which aims to ensure the autonomy of agricultural robots in scenarios that involve human-robot interactions. The decision-making and safety policies of the safety system were designed to be implemented mainly during logistics operations at polytunnels (especially the gesture control features), however, some of the safety features (audiovisual alerts and safety stops) are still relevant during UV-C treatment operations.
-* To use the mesapro package, it is required to also have all the packages into the LCAS/RASberry repository which includes among others, the topological navigation package which is used to make the Thorvald robots navigate in an autonomous way at polytunnels (Note that the RASberry repository is private, so make sure you have access to it).
-* To launch any config file into the `tmule` folder, it is necesary to install Tmule-TMux Launch Engine (source code [here](https://github.com/marc-hanheide/TMuLE))
+
