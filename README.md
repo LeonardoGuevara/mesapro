@@ -51,7 +51,8 @@ In order to minimize the risk of getting human injuries during HRIs, the followi
 * If the robot is in "logistics" operation, inside polytunnels, and is performing actions to move towards a human, the robot must stop immediately if the human motion label turns into "moving" or if the human orientation label is not "facing_the_robot".
 
 # How to use de MeSAPro package:
-HOW TO INSTALL EVERYTHING TOU NEED:
+INSTALL DEPENDENCIES:
+
 The mesapro package requires several dependencies in order to be used in the Thorvald robots.
 
 HOW TO USE IT:
