@@ -56,7 +56,8 @@ The mesapro package requires several dependencies in order to be used in the Tho
 
 1. Install ROS Melodic following the steps shown [here](http://wiki.ros.org/melodic/Installation/Ubuntu).
 2. Assuming your workspace name is `rasberry_ws` (the default name used for the Thorvald robots). Clone the LCAS/RASberry repository:
-```cd ~/rasberry_ws/src
+```
+cd ~/rasberry_ws/src
 git clone --recursive https://github.com/LCAS/RASberry.git 
 ```
 
