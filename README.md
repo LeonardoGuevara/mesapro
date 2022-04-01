@@ -10,7 +10,7 @@ This repository contains a ROS package that allows the Thorvald rotos to detect 
 * To start publishing human information, the detection system requires to be subscribed to topics published by 2D LiDARs nodes or RGBD cameras nodes, or both in the best case (for sensor fusion). When only LiDAR data is available, the human information contains only (x,y) position, a label with the motion estimation (if the human is static or not static), and the number of the area around the robot in which the human is being detected (there is a total of 10 areas around the robot, 5 correspond to the front of the robot and 5 to the back). When the RGBD data is available, then apart from the information above, the detection system delivers a human orientation label (if the human is facing or not the robot), a human posture label (if the human is performing a specific body gesture). If Thermal cameras are also publishing data (it is not mandatory), then, this information is used to robustify the human detection ( based only on RBD images) and remove false positives.  The thermal information is also valuable for UV-C treatment scenarios when even if a human skeleton is not detected, but If a certain percentage of the pixel on the thermal image is higher than a threshold, then a thermal detection label is activated to alert the safety system that the robot must pause operation.
 * The name of the labels corresponding to the human body gestures that can be interpreted by the robot are: `"no_gesture","left_arm_up","left_hand_front","left_arm_sideways","left_forearm_sideways","right_arm_up","right_hand_front","right_arm_sideways","right_forearm_sideways","both_arms_up","both_hands_front","crouched_down","picking"`. The following figure shows examples of each gesture label.
 
-<img src=/images/gesture_examples.png width="600">
+<img src=/images/gesture_examples.png width="700">
 
 * The name of the labels corresponding to the human motion are: `"not_defined","mostly_static", "moving"`.
 * The name of the labels corresponding to the human orientation are: `"facing_the_robot", "giving_the_back", "left_side", "right_side"`.
@@ -50,22 +50,28 @@ In order to minimize the risk of getting human injuries during HRIs, the followi
 * If the robot is in `"logistics"` operation, inside polytunnels, and is performing actions to move towards a human, the robot must stop immediately if the human motion label turns into `"moving"` or if the human orientation label is not `"facing_the_robot"`.
 
 # How to use de MeSAPro code:
-INSTALL DEPENDENCIES:
+PREREQUISITES:
 
 The mesapro package requires the following dependencies in order to be used in the Thorvald robots:
 
 1. Install ROS Melodic following the steps shown [here](http://wiki.ros.org/melodic/Installation/Ubuntu).
-2. Clone the LCAS/RASberry repository and install of the dependencies. The RASberry repository contains the necessary packages to interface with the Thorvald robots and to make them navigate autonomously: 
+2. Clone the LCAS/RASberry repository and install all the dependencies. This repository contains the necessary packages to interface with the Thorvald robots and to make them navigate autonomously: 
 ```
 cd ~/<workspace name>/src
 git clone --recursive https://github.com/LCAS/RASberry.git 
 cd ~/<workspace name>/
 rosdep install --from-paths src --ignore-src -r -y
 ```
-replace `<workspace name>` with your actual workspace name (the default name used in the Thorvald robots is `rasberry_ws`). Note that the RASberry repository is private, so make sure you have access to it.
-3. Clone the OpenPose repository:
-Clone the P
-3. Finally, clone the mesapro repository, build and source the workspace:
+replace `<workspace name>` with your actual workspace name (the default name used in the Thorvald robots is `rasberry_ws`). Note that the RASberry repository is private, so make sure you have access to it. A detailed installation guideline can be found [here](https://github.com/LCAS/RASberry/wiki/RASberry-Setup).  
+3. Clone the [CMU-Perceptual-Computing-Lab/openpose](https://github.com/CMU-Perceptual-Computing-Lab/openpose.git) repository into the directory `~/<workspace name>/src`. This repository contains the so-called Openpose framework used to extract human skeleton features based on RBD images. Make sure to download and install the OpenPose prerequisites for your particular operating system (e.g. cuda, cuDNN, OpenCV, Caffe, Python). Follow the instructions shown [here](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/installation/0_index.md).
+4. Clone the [LCAS/people-detection](https://github.com/LCAS/people-detection.git) repository into the directory `~/<workspace name>/src`. This repository contatins a LiDAR based leg detector. This repository is also private, so make sure you have access to it and follow the installation instructions shown [here](https://github.com/LCAS/people-detection.git).  
+5. Clone the flir_module_driver repository into the directory `~/<workspace name>/src`. This repository contains the drivers to interface with FLIR lepton cameras.
+6. Clone the [IntelRealSense/realsense-ros](https://github.com/IntelRealSense/realsense-ros) repository into the directory `~/<workspace name>/src`. This repository contains the necessary packages for using Intel RealSense cameras (D400 series SR300 camera and T265 Tracking Module) with ROS. Follow the installation instructions shown [here] (https://github.com/IntelRealSense/realsense-ros)
+7. Clone the [ds4_driver](https://github.com/naoki-mizuno/ds4_driver) repository into the directory `~/<workspace name>/src`. This repository contains the drivers to interface with a Ps4 joystick (this is only used for simulation purposes). To install it correctly, make sure you follow the instructions shown [here](https://github.com/naoki-mizuno/ds4_driver)
+8. Clone the [ros_numpy](https://github.com/eric-wieser/ros_numpy.git) repository into the directory `~/<workspace name>/src`. This repository contains a tools for converting ROS messages to and from numpy arrays. 
+9. Clone the [LCAS/topological_navigation](https://github.com/LCAS/topological_navigation) repository into the directory `~/<workspace name>/src`. This repository contains the basic packages used for the topological navigation of Thorvald robots.
+10. Install [rosserial_arduino](http://wiki.ros.org/rosserial_arduino/Tutorials/Arduino%20IDE%20Setup) to allows your Arduino to be a full fledged ROS node which can directly publish and subscribe to ROS messages. Follow the installation instructions shown [here](http://wiki.ros.org/rosserial_arduino/Tutorials/Arduino%20IDE%20Setup).
+11. Finally, clone the mesapro repository, and make sure to build and source the workspace:
 ```
 cd ~/<workspace name>/src
 git clone https://github.com/LeonardoGuevara/mesapro.git
@@ -76,7 +82,7 @@ source devel/setup.bash
 
 HOW TO USE IT:
 * There are 3 important config files (into the `/mesapro/tmule` folder) that must be launched in order to run everything shown on the system architecture scheme. If implementing it on the Thorvald-014 (the one used during the whole MeSAPro project), the `rasberry-hri_navigation.yaml` is launched on the NUC (computer without GPU, used as master), the `rasberry-hri_safety_perception.yaml` is launched on the ZOTAC (computer with GPU), and the `rasberry-hri_monitoring.yaml` can be launched in any laptop in order to visualize and monitor the robot localization, human detections and safety actions.
-* The config files into `tmule` folder have several parameters that can be modified in case some features of the human detection or safety system are not required for certain tests. For instance, the leg detection can be disabled to test only camera detections, the thermal information can be disable, audio or visual alerts can be disabled if neccesary, etc.
+* The config files into `tmule` folder have several parameters that can be modified in case some features of the human detection or safety system are not required for certain tests. For instance, the leg detection can be disabled to test only camera detections, the thermal information can be disable, audio or visual alerts can be disabled if neccesary, etc. Moreover, the directories of important packages or files can be modified which include the bag files directory, the workspace directory, the anaconda directory, the OpenPose directory, etc.
 * To test the safety system in simulation (GAZEBO), you can launch the config file `rasberry-hri_sim.yaml`. In this simulation, the human perception system is replaced by a node that is publishing the human information of two simulated people commanded by a joystick.
 * To test the human detection system (based only on camera data) using bag files, you can launch the config file `rasberry-hri_camera_detector.yaml`.
 * To test the human detection system (based only on LiDAR data) using bag files, you can launch the config file `rasberry-hri_leg_detector.yaml`.
