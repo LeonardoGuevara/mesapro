@@ -40,8 +40,8 @@ SAFETY POLICIES:
 
 In order to minimize the risk of getting human injuries during HRIs, the following safety policies were considered for the decision-making:
 
-* The distances "d_log" used to classify the risk of collisions during logistics operations are: 0<d_log<1.2m (`dangerous_hri`), 1.2m<d_log<3.6m (`risky_hri`), d_log>3.6m (`safety_hri`).
-* The distances "d_uvc" used to classify the risk of getting human injuries during UV-C treatment are: 0<d_uvc<7m (`dangerous_hri`) , 7m<d_uvc<10m (`risky_hri`), d_uvc>10m (`safety_hri`).
+* The distances "d_log" used to classify the risk of collisions during logistics operations are: 0<d_log<1.2m (`"dangerous_hri"`), 1.2m<d_log<3.6m (`"risky_hri"`), d_log>3.6m (`"safety_hri"`).
+* The distances "d_uvc" used to classify the risk of getting human injuries during UV-C treatment are: 0<d_uvc<7m (`"dangerous_hri"`) , 7m<d_uvc<10m (`"risky_hri"`), d_uvc>10m (`"safety_hri"`).
 * The robot must always stop any action in any operation (`"logistics"` or `"UV-C_treatment"`) if the risk label is `"dangerous_hri"`.
 * If the robot is in `"logistics"` operation, inside or outside polytunnels, and the human is performing gestures to command the robot to approach to him/her, then the robot speed must be reduce proportionally to the distance between them and stop completaly when the risk becomes `"dangerous_hri"`.
 * If the robot is in `"logistics"` operation, outside polytunnels (`"footpahts"`), and the human is performing gestures to command the robot to approach him/her, then before the robot starts moving towards the human, it must be reoriented and approach the human always facing it directly (this includes moving forwards or backward towards the human).
