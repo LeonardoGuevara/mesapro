@@ -1150,6 +1150,10 @@ if __name__ == "__main__":
             else:
                 parent="Unknown"      
             rob_msg.current_node=parent #current goal in the route
+            if server.teleop_lock==False: 
+                server.robot_action=3 #pause the current robot action
+            else:
+                server.robot_action=5 #teleoperation mode
             rob_msg.action=server.robot_action
             rob_msg.goal_node=server.goal #final goal in the route
             pub_robot.publish(rob_msg)

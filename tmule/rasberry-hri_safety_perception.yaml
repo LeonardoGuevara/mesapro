@@ -90,10 +90,10 @@ windows:
 - name: hri_safety_system
   panes:
   - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
-  - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS
+  - sleep 10 ; roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization
   panes:
-  - if $USE_VISUALIZATION ; then roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG ; fi
+  - sleep 10 ; if $USE_VISUALIZATION ; then roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG ; fi
 #############################################################################################
 

@@ -47,20 +47,21 @@ class hri_class:
         self.problem_safety=True #to alert that safety system is not publishing 
         
     def activate_alerts(self):
-        if self.status==1:
+        #Priority order is: 1st - failere modes, 2nd - telep_mode, 3rd - status, and 4th goal="unknown" 
+        if (self.problem_safety==True or self.problem_perception==True):# and self.new_goal!="Unknown": 
+            self.current_alert="red_blink" # means that there are problems with the safety system or human perception system
+        elif self.teleop==True: # and self.new_goal!="Unknown":
+           self.current_alert="green_blink" #means robot is moving in teleoperation mode
+        elif self.status==1:
             self.current_alert="green" #means safety interaction
         elif self.status==2:
             self.current_alert="yellow" #means critical interaction
         elif self.status==3:
             self.current_alert="red" #means dangerous interaction
-        elif self.status==0: 
-            self.current_alert="yellow_blink" #means that the safety system and human perception are running, but no human is detected
-        if self.new_goal=="Unknown":
-            self.current_alert="none" #means the first robot goal hasn't been assigned yet
-        if (self.problem_safety==True or self.problem_perception==True) and self.new_goal!="Unknown": 
-            self.current_alert="red_blink" # means that there are problems with the safety system or human perception system
-        if self.teleop==True and self.new_goal!="Unknown":
-           self.current_alert="green_blink" #means robot is moving in teleoperation mode
+        elif self.status==0 and self.new_goal!="Unknown": 
+            self.current_alert="yellow_blink" #means no human is detected, but safety system and human perception are working properly
+        elif self.status==0 and self.new_goal=="Unknown":
+            self.current_alert="none" #means no human is detected, and thre first robot goal hasn't been assigned yet, is used as initial condition
         
 ###############################################################################################
 # Main Script

@@ -7,7 +7,7 @@ from geometry_msgs.msg import PoseArray
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 import time
-from mesapro.msg import human_msg, human_detector_msg
+from mesapro.msg import human_msg, human_detector_msg, hri_msg 
 import threading # Needed for Timer
 ##########################################################################################
 #GENERAL PURPUSES VARIABLES
@@ -40,10 +40,14 @@ pub_hz=0.01 #main loop frequency
 class robot_class:
     def __init__(self): #It is done only the first iteration
         self.speed=0 #absolute value of the robot linear velocity
+        self.action_mode="footpath" #it can be "footpath" or "polytunnel", by default is "footpath"
     
-    def robot_callback(self,rob):
+    def robot_speed_callback(self,rob):
         self.speed=abs(rob.linear.x)
-
+ 
+    def robot_action_callback(self,safety_info):
+        self.action_mode=safety_info.action_mode 
+        
 class human_class:
     def __init__(self): #It is done only the first iteration
         #General purposes variables
@@ -186,6 +190,7 @@ class human_class:
         orientation_new=self.orientation
         distance_new=self.distance
         rob_speed=robot.speed
+        action_mode=robot.action_mode
         ##############################################################################################################################################
         #TO MERGE NEW HUMAN DETECTION WITH TRACKED LIST, OR TO ADD NEW DETECTION TO THE TRACKING LIST, OR TO REMOVE OLD DETECTIONS OR FALSE POSITIVES FROM THE LIST
         
@@ -211,14 +216,14 @@ class human_class:
                             angle=angle-2*np.pi
                         if angle<-np.pi:
                             angle=angle+2*np.pi
-                        area_new[kk,0]=self.area_inference(angle,position_lidar_new[kk,1],position_lidar_new[kk,0])                     
+                        area_new[kk,0]=self.area_inference(angle,position_lidar_new[kk,1],position_lidar_new[kk,0],action_mode)                     
                         ###############################################################################################################################
                         #Determine if a new data match with the k-th human tracked
                         if sensor[k]==2: #if previous data is from camera
                             error_threshold=meter_threshold[1] #meters                
                         else:
                             error_threshold=meter_threshold[0] #meters 
-                        if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]:# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
+                        if diff[k,kk]<error_threshold and ((area[k,0]==area_new[kk,0] and action_mode=="polytunnel") or (abs(area[k,0]-area_new[kk,0])<=1 and action_mode!="polytunnel")):# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk                           
                             #Updating speed,motion and time_track
                             dist_lidar=np.sqrt(position_lidar_new[new_index,0]**2+position_lidar_new[new_index,1]**2)
@@ -361,9 +366,9 @@ class human_class:
                             angle=angle-2*np.pi
                         if angle<-np.pi:
                             angle=angle+2*np.pi
-                        area_new[kk,0]=self.area_inference(angle,position_cam_new[kk,1],position_cam_new[kk,0])                     
+                        area_new[kk,0]=self.area_inference(angle,position_cam_new[kk,1],position_cam_new[kk,0],action_mode)                     
                         
-                        if diff[k,kk]<error_threshold and area[k,0]==area_new[kk,0]: #and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
+                        if diff[k,kk]<error_threshold and ((area[k,0]==area_new[kk,0] and action_mode=="polytunnel") or (abs(area[k,0]-area_new[kk,0])<=1 and action_mode!="polytunnel")): #and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk
                             #Updating posture
                             if counter_posture[k]<n_samples_gest: #while the recorded data is less than n_points 
@@ -517,7 +522,7 @@ class human_class:
                             error_threshold=meter_threshold[1] #meters                
                         else:
                             error_threshold=meter_threshold[0] #meters 
-                        if dist_diff<=error_threshold and area[k,0]==area[i,0]: 
+                        if dist_diff<=error_threshold and ((area[k,0]==area[i,0] and action_mode=="polytunnel") or (abs(area[k,0]-area[i,0])<=1 and action_mode!="polytunnel")):   
                             #print('Repeated human in track_list, merged')
                             if min(counter_old[k,:])<=min(counter_old[i,:]):
                                 repeated_index[i]=1
@@ -682,29 +687,53 @@ class human_class:
         result[0,1]=prob
         return result,counter_posture
 
-    def area_inference(self,angle,pos_y,pos_x):
-        #Front
-        if (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=angle_area*(np.pi/180) and angle<=np.pi/2) or (pos_y>(3/2)*row_width and pos_x>0): #if belongs to 0
-            area=0
-        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=0 and angle<=angle_area*(np.pi/180): # if belongs to area 1
-            area=1
-        elif pos_y>=-row_width/2 and pos_y<=row_width/2 and pos_x>=0: # if belongs to area 2
-            area=2
-        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=0 and angle>=-angle_area*(np.pi/180): # if belongs to area 3
-            area=3
-        elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=-angle_area*(np.pi/180) and angle>=-np.pi/2) or (pos_y<=-(3/2)*row_width and pos_x>0): #if belongs to 4   
-            area=4
-        #Back
-        elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-np.pi+angle_area*(np.pi/180) and angle<=-np.pi/2) or (pos_y<=-(3/2)*row_width and pos_x<0): #if belongs to 5   
-            area=5
-        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-np.pi and angle<=-np.pi+angle_area*(np.pi/180): # if belongs to area 6
-            area=6
-        elif pos_y>= -row_width/2 and pos_y<=row_width/2 and pos_x<=0: # if belongs to area 7
-            area=7
-        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=np.pi and angle>=np.pi-angle_area*(np.pi/180): # if belongs to area 8
-            area=8
-        elif (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=np.pi-angle_area*(np.pi/180) and angle>=np.pi/2) or (pos_y>=(3/2)*row_width and pos_x<0): #if belongs to 9
-            area=9
+    def area_inference(self,angle,pos_y,pos_x,action_mode):
+        if action_mode=="polytunnel":                    
+            #Front
+            if (pos_y>=0 and pos_y<=(3/2)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or (pos_y>(3/2)*row_width and pos_x>0): #if belongs to 0
+                area=0
+            elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=0 and angle<=angle_area*(pi/180): # if belongs to area 1
+                area=1
+            elif pos_y>=-row_width/2 and pos_y<=row_width/2  and pos_x>=0: # if belongs to area 2 
+                area=2
+            elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=0 and angle>=-angle_area*(pi/180): # if belongs to area 3
+                area=3
+            elif (pos_y>=-(3/2)*row_width and pos_y<=0 and angle<=-angle_area*(pi/180) and angle>=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x>0): #if belongs to 4   
+                area=4
+            #Back
+            elif (pos_y>=-(3/2)*row_width and pos_y<=0 and angle>=-pi+angle_area*(pi/180) and angle<=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x<0): #if belongs to 5   
+                area=5
+            elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi and angle<=-pi+angle_area*(pi/180): # if belongs to area 6
+                area=6
+            elif pos_y>= -row_width/2 and pos_y<=row_width/2 and  pos_x<=0: # if belongs to area 7 
+                area=7
+            elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
+                area=8
+            elif (pos_y>=0 and pos_y<=(3/2)*row_width and angle<=pi-angle_area*(pi/180) and angle>=pi/2) or (pos_y>=(3/2)*row_width and pos_x<0): #if belongs to 9
+                area=9
+        else: #"footpath"
+             #Front
+            if (pos_y>=0 and pos_y<=(3)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or (pos_y>(5/2)*row_width and pos_x>0): #if belongs to 0
+                area=0
+            elif pos_y>=row_width and pos_y<=(3)*row_width and angle>=0 and angle<=angle_area*(pi/180): # if belongs to area 1
+                area=1
+            elif pos_y>=-row_width and pos_y<=row_width and pos_x>=0: # if belongs to area 2
+                area=2
+            elif pos_y>=-(3)*row_width and pos_y<=-row_width and angle<=0 and angle>=-angle_area*(pi/180): # if belongs to area 3
+                area=3
+            elif (pos_y>=-(3)*row_width and pos_y<=0 and angle<=-angle_area*(pi/180) and angle>=-pi/2) or (pos_y<=-(3)*row_width and pos_x>0): #if belongs to 4   
+                area=4
+            #Back
+            elif (pos_y>=-(3)*row_width and pos_y<=0 and angle>=-pi+angle_area*(pi/180) and angle<=-pi/2) or (pos_y<=-(3)*row_width and pos_x<0): #if belongs to 5   
+                area=5
+            elif pos_y>=-(3)*row_width and pos_y<=-row_width and angle>=-pi and angle<=-pi+angle_area*(pi/180): # if belongs to area 6
+                area=6
+            elif pos_y>= -row_width and pos_y<=row_width and pos_x<=0: # if belongs to area 7
+                area=7
+            elif pos_y>=row_width and pos_y<=(3)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
+                area=8
+            elif (pos_y>=0 and pos_y<=(3)*row_width and angle<=pi-angle_area*(pi/180) and angle>=pi/2) or (pos_y>=(3)*row_width and pos_x<0): #if belongs to 9
+                area=9
         
         return area
     
@@ -723,9 +752,10 @@ if __name__ == '__main__':
     robot=robot_class()
     rospy.init_node('human_perception_system',anonymous=True)
     # Setup and call subscription
-    rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,robot.robot_callback) 
+    rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,robot.robot_speed_callback) 
     rospy.Subscriber('/people_tracker/pose_array',PoseArray,human.lidar_callback) 
     rospy.Subscriber('/human_info_camera',human_detector_msg,human.camera_callback)  
+    rospy.Subscriber('human_safety_info',hri_msg,robot.robot_action_callback) 
     #Rate setup
     rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz
     while not rospy.is_shutdown():	

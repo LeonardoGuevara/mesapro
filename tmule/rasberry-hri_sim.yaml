@@ -21,7 +21,7 @@ init_cmd: |
   export_default VISUAL_MODE 2 #"1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
   export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
   export_default THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
-  export_default IMAGE_ROTATION 270 # cameras orientation, it can be "0", "90", or "270"
+  export_default IMAGE_ROTATION "270_90" # cameras orientation, "270_90" means that the frontal camera is rotated 270 degrees and the back one 90 degrees
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected 
   export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
@@ -233,10 +233,10 @@ windows:
 - name: hri_safety_system
   panes:
   - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
-  - roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS
+  - sleep 10 ; roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS
 - name: hri_visualization
   panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG
+  - sleep 10 ; roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG
 #############################################################################################
 - name: localisation_prelims_aditional
   panes:

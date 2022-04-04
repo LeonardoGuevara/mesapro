@@ -8,7 +8,7 @@ from geometry_msgs.msg import Pose
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
-from mesapro.msg import human_msg
+from mesapro.msg import human_msg, hri_msg 
 from geometry_msgs.msg import PoseStamped
 import time
 
@@ -64,7 +64,7 @@ class human_class:
         #print("PICKER",pose)
         distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
         #to include the thorlvard dimensions
-        distance_new=distance_new-1
+        distance_new=distance_new#-1
         if distance_new<0:
             distance_new=0
          
@@ -101,7 +101,7 @@ class human_class:
         self.position[0,0]=pos_x
         self.position[0,1]=pos_y
         #Area
-        self.area[0]=area_inference_lidar(pos_y,pos_x)
+        self.area[0]=area_inference(pos_y,pos_x,robot.action_mode)
         #Orientation
         if self.area[0]>=0 and self.area[0]<=4:
             if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
@@ -134,7 +134,7 @@ class human_class:
         time_new=time.time()-time_init
         distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
         #to include the thorlvard dimensions
-        distance_new=distance_new-1
+        distance_new=distance_new#-1
         if distance_new<0:
            distance_new=0
         #self.speed[1,0]= abs((distance_new-self.distance[1,0])/(time_new-self.time[1]))-abs(robot.input[1])
@@ -167,7 +167,7 @@ class human_class:
         self.position[1,0]=pos_x
         self.position[1,1]=pos_y
         #Area
-        self.area[1]=area_inference_lidar(pos_y,pos_x)
+        self.area[1]=area_inference(pos_y,pos_x,robot.action_mode)
         #Orientation
         if self.area[1]>=0 and self.area[1]<=4:
             if pose[2]<=robot.position[2]+pi/2 and pose[2]>=robot.position[2]-pi/2:
@@ -191,6 +191,7 @@ class robot_class:
         self.input=np.zeros([2,1]) #w,v control signals
         self.speed=0 #absolute value of speed
         self.time=0 #time of data received from odometry
+        self.action_mode="footpath" #it can be "footpath" or "polytunnel"
 
     def robot_callback_pos(self,pose):
         #print("ROBOTS NEW DATA")
@@ -213,8 +214,9 @@ class robot_class:
         self.input[0] = rob.angular.z
         self.speed=abs(robot.input[1])
         #new_data[4]=1
-       
-
+    
+    def robot_action_callback(self,safety_info):
+        self.action_mode=safety_info.action_mode    
 
 def joy_callback(data):
     #print("JOY NEW DATA")
@@ -307,7 +309,7 @@ def joy_callback(data):
                 if human.posture[0,0]!=0:
                     human.posture[0,0]=0 #to reset human gesture
     
-def area_inference_lidar(pos_y,pos_x):
+def area_inference(pos_y,pos_x,action_mode):
     row_width=1.3 #in meters
     angle_area=60 # in degrees mesuared from the local x-axis robot frame
     angle=atan2(pos_y,pos_x)# local x-axis is aligned to the robot orientation
@@ -315,29 +317,52 @@ def area_inference_lidar(pos_y,pos_x):
         angle=angle-2*pi
     if angle<-pi:
         angle=angle+2*pi
-                        
-    #Front
-    if (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or (pos_y>(3/2)*row_width and pos_x>0): #if belongs to 0
-        area=0
-    elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=0 and angle<=angle_area*(pi/180): # if belongs to area 1
-        area=1
-    elif pos_y>=-row_width/2 and pos_y<=row_width/2 and pos_x>=0: # if belongs to area 2
-        area=2
-    elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=0 and angle>=-angle_area*(pi/180): # if belongs to area 3
-        area=3
-    elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=-angle_area*(pi/180) and angle>=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x>0): #if belongs to 4   
-        area=4
-    #Back
-    elif (pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi+angle_area*(pi/180) and angle<=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x<0): #if belongs to 5   
-        area=5
-    elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi and angle<=-pi+angle_area*(pi/180): # if belongs to area 6
-        area=6
-    elif pos_y>= -row_width/2 and pos_y<=row_width/2 and pos_x<=0: # if belongs to area 7
-        area=7
-    elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
-        area=8
-    elif (pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi-angle_area*(pi/180) and angle>=pi/2) or (pos_y>=(3/2)*row_width and pos_x<0): #if belongs to 9
-        area=9
+    if action_mode=="polytunnel":                    
+        #Front
+        if (pos_y>=0 and pos_y<=(3/2)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or (pos_y>(3/2)*row_width and pos_x>0): #if belongs to 0
+            area=0
+        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=0 and angle<=angle_area*(pi/180): # if belongs to area 1
+            area=1
+        elif pos_y>=-row_width/2 and pos_y<=row_width/2  and pos_x>=0: # if belongs to area 2 
+            area=2
+        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=0 and angle>=-angle_area*(pi/180): # if belongs to area 3
+            area=3
+        elif (pos_y>=-(3/2)*row_width and pos_y<=0 and angle<=-angle_area*(pi/180) and angle>=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x>0): #if belongs to 4   
+            area=4
+        #Back
+        elif (pos_y>=-(3/2)*row_width and pos_y<=0 and angle>=-pi+angle_area*(pi/180) and angle<=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x<0): #if belongs to 5   
+            area=5
+        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi and angle<=-pi+angle_area*(pi/180): # if belongs to area 6
+            area=6
+        elif pos_y>= -row_width/2 and pos_y<=row_width/2 and  pos_x<=0: # if belongs to area 7 
+            area=7
+        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
+            area=8
+        elif (pos_y>=0 and pos_y<=(3/2)*row_width and angle<=pi-angle_area*(pi/180) and angle>=pi/2) or (pos_y>=(3/2)*row_width and pos_x<0): #if belongs to 9
+            area=9
+    else: #"footpath"
+         #Front
+        if (pos_y>=0 and pos_y<=(3)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or (pos_y>(5/2)*row_width and pos_x>0): #if belongs to 0
+            area=0
+        elif pos_y>=row_width and pos_y<=(3)*row_width and angle>=0 and angle<=angle_area*(pi/180): # if belongs to area 1
+            area=1
+        elif pos_y>=-row_width and pos_y<=row_width and pos_x>=0: # if belongs to area 2
+            area=2
+        elif pos_y>=-(3)*row_width and pos_y<=-row_width and angle<=0 and angle>=-angle_area*(pi/180): # if belongs to area 3
+            area=3
+        elif (pos_y>=-(3)*row_width and pos_y<=0 and angle<=-angle_area*(pi/180) and angle>=-pi/2) or (pos_y<=-(3)*row_width and pos_x>0): #if belongs to 4   
+            area=4
+        #Back
+        elif (pos_y>=-(3)*row_width and pos_y<=0 and angle>=-pi+angle_area*(pi/180) and angle<=-pi/2) or (pos_y<=-(3)*row_width and pos_x<0): #if belongs to 5   
+            area=5
+        elif pos_y>=-(3)*row_width and pos_y<=-row_width and angle>=-pi and angle<=-pi+angle_area*(pi/180): # if belongs to area 6
+            area=6
+        elif pos_y>= -row_width and pos_y<=row_width and pos_x<=0: # if belongs to area 7
+            area=7
+        elif pos_y>=row_width and pos_y<=(3)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
+            area=8
+        elif (pos_y>=0 and pos_y<=(3)*row_width and angle<=pi-angle_area*(pi/180) and angle>=pi/2) or (pos_y>=(3)*row_width and pos_x<0): #if belongs to 9
+            area=9
     
     return area
 ############################################################################################
@@ -354,7 +379,8 @@ if __name__ == '__main__':
     rospy.Subscriber('/picker01/posestamped',PoseStamped, human.actor00_callback)
     rospy.Subscriber('/picker02/posestamped',PoseStamped, human.actor01_callback)
     rospy.Subscriber('/robot_pose', Pose, robot.robot_callback_pos) 
-    rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,robot.robot_callback_vel)    
+    rospy.Subscriber('/nav_vel',geometry_msgs.msg.Twist,robot.robot_callback_vel)   
+    rospy.Subscriber('human_safety_info',hri_msg,robot.robot_action_callback) 
     #Rate setup
     rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz
     while not rospy.is_shutdown():
