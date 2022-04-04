@@ -75,7 +75,7 @@ HOW TO USE IT:
 * To test the human detection system (based only on LiDAR data) using bag files, you can launch the config file `rasberry-hri_leg_detector.yaml`.
 * To use the human gesture recognition feature for first time, it is necessary to uncompress the file which contains the trained model. This file is located in the `~/mesapro/config/` directory. In the `config` folder, you will also find a global config file named `global_config.yaml` which contains important parameters, directories, and dictionaries used for the human detection system and safety system. Make sure to modify the directories according to your system.
 
-To launch any config file into the `/mesapro/tmule` folder, it is necessary to first install Tmule-TMux Launch Engine with `pip install tmule` (source code [here](https://github.com/marc-hanheide/TMuLE)), and execute the following commands in terminal:
+To launch any config file into the `~/mesapro/tmule/` directory, it is necessary to first install Tmule-TMux Launch Engine with `pip install tmule` (source code [here](https://github.com/marc-hanheide/TMuLE)), and execute the following commands in terminal:
 ```
 roscd mesapro/tmule
 tmule -c <config_file_name>.yaml launch
