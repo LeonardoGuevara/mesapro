@@ -34,14 +34,11 @@ time_change=0 #initial counter value
 avoid_area=0.05 #percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
 search_area=0.3 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
 ##MODEL FOR POSTURE RECOGNITION
-default_post_class_model="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v6.joblib"
-posture_classifier_model=rospy.get_param("/hri_camera_detector/posture_classifier_model",default_post_class_model) #you have to change /hri_camera_detector/ if the node is not named like this
+posture_classifier_model=parsed_yaml_file.get("directories_config").get("gesture_classifier_model") 
 model_rf = joblib.load(posture_classifier_model)   
 ##OPENPOSE INITIALIZATION 
-default_openpose_python='/home/leo/rasberry_ws/src/openpose/build/python'
-default_openpose_models="/home/leo/rasberry_ws/src/openpose/models"
-openpose_python=rospy.get_param("/hri_camera_detector/openpose_python",default_openpose_python) #you have to change /hri_camera_detector/ if the node is not named like this
-openpose_models=rospy.get_param("/hri_camera_detector/openpose_models",default_openpose_models) #you have to change /hri_camera_detector/ if the node is not named like this
+openpose_python=parsed_yaml_file.get("directories_config").get("open_pose_python") 
+openpose_models=parsed_yaml_file.get("directories_config").get("open_pose_models") 
 try:
     sys.path.append(openpose_python);
     from openpose import pyopenpose as op
@@ -165,10 +162,10 @@ class human_class:
                 img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
             else: #0 degrees
                 img_t_rot_back=therm_image_back
-            img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[2],resize_param[3]))        
+            img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[7],resize_param[8]))        
             #Merging thermal image with black image
             img_t_rz_back=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
-            img_t_rz_back[resize_param[0]:resize_param[0]+img_t_rot_back.shape[0],resize_param[1]:resize_param[1]+img_t_rot_back.shape[1]]=img_t_rot_back
+            img_t_rz_back[resize_param[5]:resize_param[5]+img_t_rot_back.shape[0],resize_param[6]:resize_param[6]+img_t_rot_back.shape[1]]=img_t_rot_back
             
             
             ##############################################################################################
@@ -662,7 +659,6 @@ class human_class:
                     #Only continue if the human is not detected in between the two images merged
                     width=self.image_size[1]                       
                     if centroid[kk,0]<=width-width*avoid_area or centroid[kk,0]>=width+width*avoid_area: 
-                        index_to_keep=index_to_keep+[kk]   
                         #CAMERA ID
                         if centroid[kk,0]<=width: #camera front
                             camera_id[kk]=0
@@ -688,8 +684,9 @@ class human_class:
                             #    centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame  
                             else: #rotation==0
                                 centroid_3d[kk,1] = (orig_centroid_y - intr_param[1]) * distance[kk,0] / intr_param[0] #y-axis in camera 3d world is the positive y-axis of the robot frame                       
+                        if n_cameras==2 or (camera_id[kk]==0 and n_cameras==1): #to consider only detections from frontal image when second image is a copy of the frontal image
+                            index_to_keep=index_to_keep+[kk]   
                         
-
         #return features,posture,orientation,distance,centroid,camera_id
         if index_to_keep!=[]:
             self.features=features[np.array(index_to_keep)]

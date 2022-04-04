@@ -1,8 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="openpose_python" default="/home/leo/rasberry_ws/src/openpose/build/python" />
-    <arg name="openpose_models" default="/home/leo/rasberry_ws/src/openpose/models" />
-    <arg name="posture_classifier_model" default="/home/leo/rasberry_ws/src/mesapro/config/classifier_model_3D_v6.joblib" />    
     <arg name="config_direct" default="/home/leo/rasberry_ws/src/mesapro/config/" /> 
     <arg name="bag_file" default="/home/leo/Documents/mesapro/bags/testing/all_gestures_3.bag" />
     <arg name="visual_mode" default="1" />   
@@ -24,9 +21,6 @@
     </node>
 
     <node pkg="mesapro" type="human_detector_rgbd_thermal.py" name="hri_camera_detector">
-        <param name="openpose_python" value="$(arg openpose_python)"/>
-        <param name="openpose_models" value="$(arg openpose_models)"/>
-        <param name="posture_classifier_model" value="$(arg posture_classifier_model)"/>
         <param name="config_direct" value="$(arg config_direct)"/>
         <param name="thermal_info" type="bool" value="$(arg thermal_info)"/>
         <param name="image_rotation" value="$(arg image_rotation)"/>
