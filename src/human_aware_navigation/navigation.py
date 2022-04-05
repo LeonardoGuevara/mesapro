@@ -347,6 +347,8 @@ class TopologicalNavServer(object):
                     self.robot_action=0 # change action to "moving to a rviz goal"
                     self.goal=goal.target #save new goal given by clicking rviz
                     self.past_action=3 #to not update the new rviz goal with the hri_goal    
+            elif self.teleop_lock==True:
+                self.goal=goal.target #save new goal given by clicking rviz
             ###########################################################################################################
             ###########################################################################################################
         else:
@@ -1042,7 +1044,7 @@ class TopologicalNavServer(object):
         self.op_mode=safety_info.operation_mode
         if self.teleop_lock==False: #only consider safety actions if teleroperation is not required
             if self.robot_action==5:  #If it comes from teleoperation mode
-                self.robot_action=4 #wait for a new command
+                self.robot_action=3 #to stop action, but can be resumed later
                 self.preemptCallback() #to stop current navigation_action
             if self.hri_safety_action!=5: # continue only if the safety system is not in "teleoperation mode" anymore
                 #Only update the robot_action if new safety action is required or new hri_goal is required.
