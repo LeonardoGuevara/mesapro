@@ -16,7 +16,7 @@ This repository contains a ROS package that allows the Thorvald rotos to detect 
 * The name of the labels corresponding to the human orientation are: `"facing_the_robot", "giving_the_back", "left_side", "right_side"`.
 * The following figures illustrate the distribution of the areas around the robot which are used for both sensor fusion (when LiDAR+RGD data is used) and safety purposes. The figure on the left illustrates a Thorvald robot moving along polytunnels where the areas from 0 to 4 correspond to frontal areas (x is positive) and from 5 to 9 correspond to back areas (x is negative). The angle `a` is a configuration parameter set by the user and the parameter `w` is chosen according to the distance between crop rows. Humans detected in green areas (pickers moving in other rows) are not considered critical, but humans in red areas (pickers working in the same row as the robot) are particularly critical. According to the figure on the right, a similar area distribution is used when a robot navigates outside polytunnels, however, the main difference is that more areas are considered critical (areas 1,2,6,8 are now red). Moreover, at footpaths, the parameters `a` and `w` can be scaled by using `n,m` factors in order to make the red areas cover more space.
 
-<img src=/images/area_distribution.png width="700">
+<img src=/images/area_distribution.png width="800">
 
 # How the Decision Making works:
 * The decision-making controls the behavior of the safety system based on safety policies (determined during a Hazard Analysis stage) and information delivered by the human detection system and the Thorvald navigation system.
