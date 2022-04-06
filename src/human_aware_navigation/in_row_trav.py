@@ -99,10 +99,15 @@ class inRowTravServer(object):
         self.ang_row_detection_bias = 0.2       # Weight given to the angular reference given by row detection
         self.ang_path_following_bias = 0.8      # Weight given to the angular refernce given by path following
         self.minimum_turning_speed = 0.01       # Minimum turning speed
-        self.emergency_clearance_x = 0.22       # Clearance from corner frames to trigger emergency stop in x
-        self.emergency_clearance_y = 0.22       # Clearance from corner frames to trigger emergency stop in y
+        ###############################################################################################################
+        #########################################################################################################    
+        #### CHANGES NEEDED FOR HUMAN AWARE NAVIGATION ##########################################################
+        self.emergency_clearance_x = 0.002     # Clearance from corner frames to trigger emergency stop in x
+        self.emergency_clearance_y = 0.002     # Clearance from corner frames to trigger emergency stop in y
+        self.forward_speed= 0.5                 # Forward moving speed
+        ###############################################################################################################
+        ###############################################################################################################
         self.goal_tolerance_radius = 0.2        # Goal tolerance Radius in metres
-        self.forward_speed= 0.8                 # Forward moving speed
         self.quit_on_timeout=False              # SHould the robot cancel when it meets an obstacle?
         self.time_to_quit=10.0                  # Time until the action is cancelled since collision detected
         self.simultaneous_alignment=False       # Wether to align heading and Y axis simultaneusly or not
