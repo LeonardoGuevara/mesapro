@@ -84,8 +84,8 @@ windows:
   check: "rostopic list | grep -q /people_tracker/pose_array || ! $USE_LEG_DETECTOR" 
 - name: hri_cameras_perception
   panes:
-  - if $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL; fi
-  - roslaunch mesapro hri_perception_system.launch time_without_msg:=$TIME_WITHOUT_MSG
+  - sleep 5 ; if $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL; fi
+  - sleep 5 ; roslaunch mesapro hri_perception_system.launch time_without_msg:=$TIME_WITHOUT_MSG
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
