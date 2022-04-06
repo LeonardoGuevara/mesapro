@@ -25,7 +25,7 @@ init_cmd: |
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected 
   export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
-  export_default USE_VISUAL_ALERTS false # if "true", colored beacon is activated
+  export_default USE_VISUAL_ALERTS true # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
   export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
   #########################################################################################

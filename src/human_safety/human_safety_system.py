@@ -38,7 +38,6 @@ class robot_class:
         self.current_goal_info="Unknown"   #initial condition
         self.polytunnel=False #to know if robot is moving inside the polytunnel or not, by default is "False"
         self.final_goal="Unknown" #name of final robot goal
-        self.teleop=False #to know if robot is in teleop_mode or not, by default is "False"
         
     def robot_info_callback(self,robot_info):
         if robot_info.current_node!="Unknown":
@@ -49,10 +48,6 @@ class robot_class:
                     polytunnel = True # If at least an edge is connected with the polytunnels nodes, then the human commands are allowed
                     break
             self.action=robot_info.action
-            if self.action==5: ##if robot action is teleoperation
-                self.teleop=True
-            else:
-                self.teleop=False
             self.polytunnel=polytunnel
             self.current_goal=robot_info.current_node
             self.current_goal_info=parent
@@ -411,7 +406,6 @@ class hri_class:
         final_goal=robot.final_goal
         polytunnel=robot.polytunnel
         current_goal_info=robot.current_goal_info
-        teleop=robot.teleop
          
         ## IN CASE OF HUMAN DETECTION 
         if detection==True: #execute only if at least a human is detected   
@@ -606,7 +600,7 @@ class hri_class:
             self.safety_action=3 # to pause robot operation 
             self.audio_message=8 # to alert that human perception system is not working
             self.human_command=0 #no human command
-        elif teleop==True: #if robot operation is "teleoperation"
+        elif action==5: #if robot operation is "teleoperation"
             self.safety_action=5 # teleoperation mode 
             self.audio_message=9 # to alert that robot is moving in teleoperation mode
             self.human_command=0 #no human command
