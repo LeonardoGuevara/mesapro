@@ -47,11 +47,11 @@ class robot_class:
                 if edge["action"]=="row_traversal":
                     polytunnel = True # If at least an edge is connected with the polytunnels nodes, then the human commands are allowed
                     break
-            self.action=robot_info.action
             self.polytunnel=polytunnel
             self.current_goal=robot_info.current_node
             self.current_goal_info=parent
             self.final_goal=robot_info.goal_node
+        self.action=robot_info.action
             
     
     def robot_pose_callback(self,pose):
