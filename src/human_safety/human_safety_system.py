@@ -107,12 +107,12 @@ class human_class:
         self.perception_msg=False #to alert that human perception system is not publishing 
         
     def human_pose_global(self,orientation,area,r_pos_x,r_pos_y,r_pos_theta,h_local_x,h_local_y):
-        #assuming the local x-axis is aligned to the robot orientation
+        #assuming the human orientation is aligned to the robot orientation (facing to it or giving the back)
         if area<=4: #if human was detected in front of the robot (areas 0 to 4)
             new_theta=r_pos_theta 
             pos_y=(sin(new_theta)*h_local_x+cos(new_theta)*h_local_y)+r_pos_y
             pos_x=(cos(new_theta)*h_local_x-sin(new_theta)*h_local_y)+r_pos_x
-        elif area>=5:
+        elif area>=5: #if human was detected at the back of the robot (areas 5 to 9)
             new_theta=r_pos_theta+pi
             pos_y=(-sin(new_theta)*h_local_x-cos(new_theta)*h_local_y)+r_pos_y
             pos_x=(-cos(new_theta)*h_local_x+sin(new_theta)*h_local_y)+r_pos_x
@@ -145,19 +145,20 @@ class hri_class:
         self.human_command=0 #initial condition 
         self.critical_index=0 #index of the human considered as critical during interaction (it is not neccesary the same than the closest human or the goal human)
         self.critical_dist=0 #distance of the critical human
-        self.risk=False #it is true if the detected human is considered in risk, used to avoid unnecesary stops with human who is not occluding the robot path
+        self.safe_cond_occlusion=False #it is true if the detected human is considered in risk during autonomous navigation (occluding the robot path), used to avoid unnecesary stops with human who is not occluding the current robot path
         self.new_goal="none" #name of the new final goal
         self.operation=rospy.get_param("/hri_safety_system/operation_mode","logistics") #it can be "UVC" or "logistics"
-        self.safe_cond=False #True if the human is static and facing the robot, False if not satisfying this safety condition     
+        self.safe_cond_approach=False #True if the human is static and facing the robot, False if not satisfying this safety condition, used to stop the robot during approaching maneuvers inside polytunnels
+        self.safe_cond_critic_area=False #True if the human is located at critical areas, False if is not located at critical areas, used to determine if a human is critical to be tracked or not
         self.gesture_control=rospy.get_param("/hri_safety_system/gesture_control",True) # Flag to activate or not gesture control
 
-    def critical_human_selection(self,polytunnel,posture,dist,area,sensor,orientation,motion,current_goal,final_goal,r_pos_x,r_pos_y,r_pos_theta,h_pos_x,h_pos_y):  
+    def critical_human_selection(self,polytunnel,posture,dist,area,sensor,orientation,motion,final_goal,r_pos_x,r_pos_y,r_pos_theta,h_pos_x,h_pos_y,action):  
         ##################################################################################################################
-        #assuming aligned condition. Inside the polytunnel includes areas 2 and 7, and outside polytunnel includes 1,2,3 and 6,7,8
+        #Critical areas distribution: Inside the polytunnel includes areas 2 and 7, and outside polytunnel includes 1,2,3 and 6,7,8
         #critical human selection logic is: 1st human within 1.2m, 2nd human performing gesture, 3rd human centered, 4rd closest human   
         ######################################################################################################################
         n_human=len(dist)
-        aligned_old=False #initial value
+        critical_area_old=False #initial value
         gesture_old=False #initial value
         danger_old=False #initial value
         centered_old=False #initial value
@@ -165,65 +166,65 @@ class hri_class:
         critical_index=0 #initial value
         
         if ((area[critical_index]==2 or area[critical_index]==7) and polytunnel==True) or (((area[critical_index]>=1 and area[critical_index]<=3) or (area[critical_index]>=6 and area[critical_index]<=8)) and polytunnel==False):
-            aligned_old=True
+            critical_area_old=True
             if area[critical_index]==2 or area[critical_index]==7:
                 centered_old=True
-        if dist[critical_index]<=collision_risk_dist[1] and aligned_old==True:
+        if dist[critical_index]<=collision_risk_dist[1] and critical_area_old==True:
             danger_old=True 
-        if (sensor[critical_index]!=1 and posture[critical_index]==8 and orientation[critical_index]==0 and danger_old==False and aligned_old==True):  #rigth_forearm_sideways
+        if (sensor[critical_index]!=1 and posture[critical_index]==8 and orientation[critical_index]==0 and danger_old==False and critical_area_old==True):  #rigth_forearm_sideways
             gesture_old=True
             if polytunnel==True:
                 command_old=1 #approach (approching to picker inside polytunnels)
             else:
                 command_old=4 #move forwards (move towards the human at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==10 and orientation[critical_index]==0  and aligned_old==True): #both_hands_front
+        elif (sensor[critical_index]!=1 and posture[critical_index]==10 and orientation[critical_index]==0  and critical_area_old==True): #both_hands_front
             gesture_old=True
             command_old=3 # stop (make the robot stop and wait for new command inside and outside polytunnels)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==4 and orientation[critical_index]==0  and aligned_old==True): #left_forearm_sideways
+        elif (sensor[critical_index]!=1 and posture[critical_index]==4 and orientation[critical_index]==0  and critical_area_old==True): #left_forearm_sideways
             gesture_old=True
             if polytunnel==True:
                 command_old=2 #move away (move away from picker inside polytunnel)
             else:
                 command_old=5 #move backwards (move away from human at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==7  and orientation[critical_index]==0 and aligned_old==True and polytunnel==False): #right_arm_sideways
+        elif (sensor[critical_index]!=1 and posture[critical_index]==7  and orientation[critical_index]==0 and critical_area_old==True and polytunnel==False): #right_arm_sideways
             gesture_old=True
             command_old=6 #move right (only valid at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==3 and orientation[critical_index]==0 and aligned_old==True and polytunnel==False): #left_arm_sideways
+        elif (sensor[critical_index]!=1 and posture[critical_index]==3 and orientation[critical_index]==0 and critical_area_old==True and polytunnel==False): #left_arm_sideways
             gesture_old=True
             command_old=7 #move left (only valid at footpaths)
             
         for k in range(0,n_human):  
             update=False
-            aligned_new=False #initial value
+            critical_area_new=False #initial value
             gesture_new=False #initial value
             danger_new=False #initial value
             centered_new=False #initial value
             command_new=0 #initial value
             if ((area[k]==2 or area[k]==7) and polytunnel==True) or (((area[k]>=1 and area[k]<=3) or (area[k]>=6 and area[k]<=8)) and polytunnel==False):
-                aligned_new=True
+                critical_area_new=True
                 if area[k]==2 or area[k]==7:
                     centered_new=True
-            if dist[k]<=collision_risk_dist[1] and aligned_new==True:
+            if dist[k]<=collision_risk_dist[1] and critical_area_new==True:
                 danger_new=True 
-            if (sensor[k]!=1 and posture[k]==8  and orientation[k]==0  and danger_new==False and aligned_new==True): #rigth_forearm_sideways
+            if (sensor[k]!=1 and posture[k]==8  and orientation[k]==0  and danger_new==False and critical_area_new==True): #rigth_forearm_sideways
                 gesture_new=True
                 if polytunnel==True:
                     command_new=1 #approach (approching to picker inside polytunnels)
                 else:
                     command_new=4 #move forwards (move towards the human at footpaths)
-            elif (sensor[k]!=1 and posture[k]==10  and orientation[k]==0 and aligned_new==True): #both_hands_front
+            elif (sensor[k]!=1 and posture[k]==10  and orientation[k]==0 and critical_area_new==True): #both_hands_front
                 gesture_new=True
                 command_new=3 # stop (make the robot stop and wait for new command inside and outside polytunnels)
-            elif (sensor[k]!=1 and posture[k]==4  and orientation[k]==0 and aligned_new==True): #left_forearm_sideways
+            elif (sensor[k]!=1 and posture[k]==4  and orientation[k]==0 and critical_area_new==True): #left_forearm_sideways
                 gesture_new=True
                 if polytunnel==True:
                     command_new=2 #move away (move away from picker inside polytunnel)
                 else:
                     command_new=5 #move backwards (move away from human at footpaths)
-            elif (sensor[k]!=1 and posture[k]==7  and orientation[k]==0 and aligned_new==True and polytunnel==False): #right_arm_sideways
+            elif (sensor[k]!=1 and posture[k]==7  and orientation[k]==0 and critical_area_new==True and polytunnel==False): #right_arm_sideways
                 gesture_new=True
                 command_new=6 #move right (only valid at footpaths)
-            elif (sensor[k]!=1 and posture[k]==3  and orientation[k]==0 and aligned_new==True and polytunnel==False): #left_arm_sideways
+            elif (sensor[k]!=1 and posture[k]==3  and orientation[k]==0 and critical_area_new==True and polytunnel==False): #left_arm_sideways
                 gesture_new=True
                 command_new=7 #move left (only valid at footpaths)
             #############################################################
@@ -233,8 +234,8 @@ class hri_class:
                     update=True
             else: #danger_old=False
                 if danger_new==False:
-                    if aligned_old==True:
-                        if aligned_new==True:
+                    if critical_area_old==True:
+                        if critical_area_new==True:
                             if centered_old==True:
                                 if centered_new==True:
                                     if gesture_old==True:
@@ -270,10 +271,10 @@ class hri_class:
                                         else: #gesture_new=False
                                              if dist[critical_index]>=dist[k]:
                                                 update=True
-                    else: # aligned_old=False
-                        if aligned_new==True:
+                    else: # critical_area_old=False
+                        if critical_area_new==True:
                             update=True
-                        else: #aligned_new=False
+                        else: #critical_area_new=False
                             if dist[critical_index]>=dist[k]:
                                 update=True                            
                 else:#danger_new=True
@@ -282,13 +283,13 @@ class hri_class:
             
             if update==True:
                 critical_index=k
-                aligned_old=aligned_new
+                critical_area_old=critical_area_new
                 gesture_old=gesture_new
                 danger_old=danger_new
                 centered_old=centered_new
                 command_old=command_new                
         #######################################################################
-        aligned=aligned_old
+        critical_area=critical_area_old
         human_command=command_old
         critical_dist=dist[critical_index]
         h_local_x=h_pos_x[critical_index]
@@ -297,47 +298,45 @@ class hri_class:
         #HUMAN GLOBAL POSITION
         [h_global_x,h_global_y,h_global_theta]=human.human_pose_global(orientation[critical_index],area[critical_index],r_pos_x,r_pos_y,r_pos_theta,h_local_x,h_local_y)
         
-        #RISK INFERENCE
+        #RISK INFERENCE FOR TOPO NAV ACTIONS
+        safe_cond_occlusion=False #initial condition
+        safe_cond_approach=False #initial condition
         if self.operation=="logistics": #if robot operation is logistics
-            if current_goal=="Unknown" or final_goal=="Unknown": #if the robot doesn't start moving autonomously yet
-                risk=False
-                safe_cond=False
-            else: 
-                [risk,safe_cond]=self.risk_analysis(area[critical_index],sensor[critical_index],orientation[critical_index],motion[critical_index],h_global_y,h_global_x,aligned,final_goal,r_pos_y,r_pos_x) #risk:=occlusion
-        else: #for uv-c treatment
-            risk=True #(I'm not using it for UV-C treatment)
-            safe_cond=False #(I'm not using it for UV-C treatment)
-        
+            if final_goal!="Unknown": #execute only if the robot has a goal selected already
+                if action>=0 and action<=3: #If robot is "moving to current goal" or "approaching" or "moving away", or "pause" i.e. only for operations which require topological goals
+                    [safe_cond_occlusion,safe_cond_approach]=self.risk_analysis(area[critical_index],sensor[critical_index],orientation[critical_index],motion[critical_index],h_global_y,h_global_x,critical_area,final_goal,r_pos_y,r_pos_x) #risk:=occlusion
+                
         self.critical_index=critical_index
         self.critical_dist=critical_dist
         self.human_command=human_command
-        self.risk=risk
-        self.safe_cond=safe_cond
+        self.safe_cond_occlusion=safe_cond_occlusion
+        self.safe_cond_approach=safe_cond_approach
+        self.safe_cond_critic_area=critical_area
         self.pos_global_x=h_global_x
         self.pos_global_y=h_global_y
         self.pos_global_theta=h_global_theta
     
-    def risk_analysis(self,area,sensor,orientation,motion,h_global_y,h_global_x,aligned,final_goal,r_pos_y,r_pos_x):
+    def risk_analysis(self,area,sensor,orientation,motion,h_global_y,h_global_x,critical_area,final_goal,r_pos_y,r_pos_x):
         #################################################################################################################
-        #assuming that a human is in risk when he/she is aligned to the robot and closer to the current robot goal than the robot
+        #When robot is moving to a topological goal, it is assume a risk when he/she is in a critical area and closer to the current robot goal than the robot
         #################################################################################################################
         goal = topo_map.rsearch.get_node_from_tmap2(final_goal)
         g_y=goal["node"]["pose"]["position"]["y"]
         g_x=goal["node"]["pose"]["position"]["x"]
         h_dist=abs(h_global_y-g_y)+abs(h_global_x-g_x)
         r_dist=abs(r_pos_y-g_y)+abs(r_pos_x-g_x)
-        if aligned==True: 
+        if critical_area==True: 
             if h_dist<=r_dist:
-                risk=True
+                safe_cond_occlusion=True
             else:
-                risk=False
+                safe_cond_occlusion=False
         else: #if human is on the side of the robot 
-            risk=False
+            safe_cond_occlusion=False
         if motion==2 or (sensor!=1 and orientation==1): #In case the human is not static, or he/she is not facing the robot
-            safe_cond=False #not safe
+            safe_cond_approach=False #not safe
         else:
-            safe_cond=True    
-        return risk, safe_cond
+            safe_cond_approach=True    
+        return safe_cond_occlusion, safe_cond_approach
 
     def find_new_goal(self,h_global_y,r_pos_y,current_goal_info):
         #################################################################################################################
@@ -402,7 +401,6 @@ class hri_class:
         r_pos_y=robot.pos_y
         r_pos_theta=robot.pos_theta
         action=robot.action
-        current_goal=robot.current_goal
         final_goal=robot.final_goal
         polytunnel=robot.polytunnel
         current_goal_info=robot.current_goal_info
@@ -410,7 +408,7 @@ class hri_class:
         ## IN CASE OF HUMAN DETECTION 
         if detection==True: #execute only if at least a human is detected   
             #Critical human selection
-            self.critical_human_selection(polytunnel,posture,dist,area,sensor,orientation,motion,current_goal,final_goal,r_pos_x,r_pos_y,r_pos_theta,h_pos_x,h_pos_y)
+            self.critical_human_selection(polytunnel,posture,dist,area,sensor,orientation,motion,final_goal,r_pos_x,r_pos_y,r_pos_theta,h_pos_x,h_pos_y,action)
             print("DISTANCE TO CRITICAL HUMAN",self.critical_dist)
             ###UV-C treatment#######################################
             if self.operation!="logistics": #during UV-C treatment
@@ -432,19 +430,32 @@ class hri_class:
             ###LOGISTICS###############################################
             else:
                 ##RISK LEVEL
-                if self.risk==True: #if human is located at critical areas
-                    if self.critical_dist>collision_risk_dist[0]: #if human is above 3.6m and robot is on normal operation
+                if action>=0 and action<=3: #If robot is "moving to current goal" or "approaching" or "moving away", or "pause" i.e. only for operations which require topological goals
+                    if self.safe_cond_occlusion==True or final_goal=="Unknown": #if human is occluding the current robot path or if a goal hasn't been selected yet
+                        if self.critical_dist>collision_risk_dist[0]: #if human is above 3.6m and robot is on normal operation
+                            self.status=1 # safety HRI
+                        elif self.critical_dist>collision_risk_dist[1] and self.critical_dist<=collision_risk_dist[0]: #if human is between 1.2-3.6m
+                            self.status=2 # risky HRI
+                        else: #if human is within 1.2m
+                            self.status=3 # dangerous HRI
+                        if action==1 and self.safe_cond_approach==False: #if robot is "approaching" and picker is "moving" or "not facing the robot"
+                            self.status=3 # dangerous HRI
+                    else: #if human is not located at critical areas or is not occluding the robot path
                         self.status=1 # safety HRI
-                    elif self.critical_dist>collision_risk_dist[1] and self.critical_dist<=collision_risk_dist[0]: #if human is between 1.2-3.6m
-                        self.status=2 # risky HRI
-                    else: #if human is within 1.2m
-                        self.status=3 # dangerous HRI
-                else: #if human is not located at critical areas
-                    self.status=1 # safety HRI
+                else: #for operations which do not require topological goals, i.e. "waiting_for_new_human_command","teleoperation","gesture_control"
+                    if self.safe_cond_critic_area==True or final_goal=="Unknown": #if human is located at critical areas or if a goal hasn't been selected yet
+                        if self.critical_dist>collision_risk_dist[0]: #if human is above 3.6m and robot is on normal operation
+                            self.status=1 # safety HRI
+                        elif self.critical_dist>collision_risk_dist[1] and self.critical_dist<=collision_risk_dist[0]: #if human is between 1.2-3.6m
+                            self.status=2 # risky HRI
+                        else: #if human is within 1.2m
+                            self.status=3 # dangerous HRI    
+                    else: #if human is not located at critical areas 
+                         self.status=1 # safety HRI
                 ##IN CASE THE HUMAN PERFORMS BODY GESTURES
                 if self.gesture_control==True:
                     #In case the picker wants the robot to approch to him/her , only valid inside polytunnels and above 1.2m 
-                    if self.human_command==1: #sensor[self.critical_index]!=1 and posture[self.critical_index]==1:# and polytunnel==True and self.critical_dist>1.2 and self.aligned==True: #picker is ordering the robot to approach (using both arms)
+                    if self.human_command==1: #sensor[self.critical_index]!=1 and posture[self.critical_index]==1:# and polytunnel==True and self.critical_dist>1.2 and self.critical_area==True: #picker is ordering the robot to approach (using both arms)
                         self.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
                         self.safety_action=1 # to make the robot approach to the picker
                         self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
@@ -488,21 +499,11 @@ class hri_class:
                             self.new_goal=final_goal # the current goal is not changed
                             
                 elif action==1: #if robot is approaching to the picker
-                    if self.status==1: #if human is above 3.6m 
+                    if self.status==1 or self.status==2 : #if human is above 1.2m
                         if self.human_command==0: #if human is not performing any gesture
                             self.audio_message=4 # alert to make the picker aware of the robot approaching to him/her
                             self.safety_action=7 # keep it approaching to the picker
                             self.new_goal=final_goal # the current goal is not changed
-                    elif self.status==2: #if human is within 1.2m to 3.6m
-                        if self.human_command==0 : #if human is not performing any gesture 
-                            if self.safe_cond==False: # if safety condition is not safisfied
-                                self.safety_action=4 # stop operation and wait till human gives the robot a new order 
-                                self.audio_message=2 # message to ask the human for new order
-                                self.new_goal=final_goal # the current goal is not changed
-                            else: #if safety condition is satisfied 
-                                self.audio_message=4 # alert to make the picker aware of the robot approaching to him/her
-                                self.safety_action=7 # keep it approaching to the picker
-                                self.new_goal=final_goal # the current goal is not changed
                     else: #if human is within 1.2m  or moving or is not facig the robot
                         if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards (using both hands) 
                             self.safety_action=4 # stop operation and wait till human gives the robot a new order 
@@ -559,7 +560,7 @@ class hri_class:
                         self.audio_message=5 # alert robot moving away
                     else: #action=0
                         self.audio_message=6 # alert robot presence
-                elif action==1: # robot was approaching
+                elif action==1 or action==6: # if robot was approaching or it was in gesture control mode at footpaths  
                     self.safety_action=4 # make it stop for safety purposes, waiting for a human order 
                     self.audio_message=2 # message to ask the human for new order
                 elif action==3: # if goal was paused while moving to a goal or moving away from the picker
@@ -568,9 +569,7 @@ class hri_class:
                 elif action==4: #if robot is waiting for human order
                     self.safety_action=7 # no safety action / keep the previous robot action
                     self.audio_message=2 # message to ask the human for new order
-                elif action==6: #if robot was in gesture control mode at footpaths           
-                    self.safety_action=4 # stop operation and wait till human gives the robot a new order 
-                    self.audio_message=2 # message to ask the human for new order
+                
             else: #UVC
                 self.safety_action=7 # no safety action / keep the previous robot action
                 self.audio_message=0 #no message
@@ -584,7 +583,7 @@ class hri_class:
             self.safety_action=5 # teleoperation mode 
             self.audio_message=9 # to alert that robot is moving in teleoperation mode
             self.human_command=0 #no human command
-        elif current_goal=="Unknown" or final_goal=="Unknown": #If the robot doesn't start moving yet
+        elif final_goal=="Unknown": #If the robot doesn't have a goal yet
             self.safety_action=7 # no safety action 
             self.audio_message=0 # no message
             self.human_command=0 #no human command
@@ -614,8 +613,6 @@ if __name__ == '__main__':
         hri.decision_making()
         #print("status",hri.status)
         print("##############################################################")
-        print("risk",hri.risk)
-        #print("aligned",hri.aligned)
         print("critical_index",hri.critical_index)
         print("human_command",hri.human_command)
         print("safety_action",hri.safety_action)
