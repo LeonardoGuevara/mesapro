@@ -317,53 +317,60 @@ def area_inference(pos_y,pos_x,action_mode):
         angle=angle-2*pi
     if angle<-pi:
         angle=angle+2*pi
+    
+    a=angle_area*(pi/180)
+    w=row_width
+    n=2 #scaling factor for distance "w"
+    m=1 #scaling factor for angle "a"
     if action_mode=="polytunnel":                    
         #Front
-        if (pos_y>=0 and pos_y<=(3/2)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or (pos_y>(3/2)*row_width and pos_x>0): #if belongs to 0
+        if (pos_y>=0 and pos_y<=(3/2)*w and angle>=a and angle<=pi/2) or (pos_y>(3/2)*w and pos_x>0): #if belongs to 0
             area=0
-        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle>=0 and angle<=angle_area*(pi/180): # if belongs to area 1
+        elif pos_y>=w/2 and pos_y<=(3/2)*w and angle>=0 and angle<=a: # if belongs to area 1
             area=1
-        elif pos_y>=-row_width/2 and pos_y<=row_width/2  and pos_x>=0: # if belongs to area 2 
+        elif pos_y>=-w/2 and pos_y<=w/2  and pos_x>=0: # if belongs to area 2 
             area=2
-        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle<=0 and angle>=-angle_area*(pi/180): # if belongs to area 3
+        elif pos_y>=-(3/2)*w and pos_y<=-w/2 and angle<=0 and angle>=-a: # if belongs to area 3
             area=3
-        elif (pos_y>=-(3/2)*row_width and pos_y<=0 and angle<=-angle_area*(pi/180) and angle>=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x>0): #if belongs to 4   
+        elif (pos_y>=-(3/2)*w and pos_y<=0 and angle<=-a and angle>=-pi/2) or (pos_y<=-(3/2)*w and pos_x>0): #if belongs to 4   
             area=4
         #Back
-        elif (pos_y>=-(3/2)*row_width and pos_y<=0 and angle>=-pi+angle_area*(pi/180) and angle<=-pi/2) or (pos_y<=-(3/2)*row_width and pos_x<0): #if belongs to 5   
+        elif (pos_y>=-(3/2)*w and pos_y<=0 and angle>=-pi+a and angle<=-pi/2) or (pos_y<=-(3/2)*w and pos_x<0): #if belongs to 5   
             area=5
-        elif pos_y>=-(3/2)*row_width and pos_y<=-row_width/2 and angle>=-pi and angle<=-pi+angle_area*(pi/180): # if belongs to area 6
+        elif pos_y>=-(3/2)*w and pos_y<=-w/2 and angle>=-pi and angle<=-pi+a: # if belongs to area 6
             area=6
-        elif pos_y>= -row_width/2 and pos_y<=row_width/2 and  pos_x<=0: # if belongs to area 7 
+        elif pos_y>= -w/2 and pos_y<=w/2 and  pos_x<=0: # if belongs to area 7 
             area=7
-        elif pos_y>=row_width/2 and pos_y<=(3/2)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
+        elif pos_y>=w/2 and pos_y<=(3/2)*w and angle<=pi and angle>=pi-a: # if belongs to area 8
             area=8
-        elif (pos_y>=0 and pos_y<=(3/2)*row_width and angle<=pi-angle_area*(pi/180) and angle>=pi/2) or (pos_y>=(3/2)*row_width and pos_x<0): #if belongs to 9
+        elif (pos_y>=0 and pos_y<=(3/2)*w and angle<=pi-a and angle>=pi/2) or (pos_y>=(3/2)*w and pos_x<0): #if belongs to 9
             area=9
     else: #"footpath"
-         #Front
-        if (pos_y>=0 and pos_y<=(3)*row_width and angle>=angle_area*(pi/180) and angle<=pi/2) or (pos_y>(5/2)*row_width and pos_x>0): #if belongs to 0
+        a=m*a
+        w=n*w
+        #Front
+        if (pos_y>=w/2 and pos_y<=(3/2)*w and angle>=a and angle<=pi/2) or (pos_y>(3/2)*w and pos_x>0): #if belongs to 0
             area=0
-        elif pos_y>=row_width and pos_y<=(3)*row_width and angle>=0 and angle<=angle_area*(pi/180): # if belongs to area 1
+        elif pos_y>=w and pos_y<=(3/2)*w and angle>=0 and angle<=a: # if belongs to area 1
             area=1
-        elif pos_y>=-row_width and pos_y<=row_width and pos_x>=0: # if belongs to area 2
+        elif pos_y>=-w/2 and pos_y<=w/2 and pos_x>=0: # if belongs to area 2
             area=2
-        elif pos_y>=-(3)*row_width and pos_y<=-row_width and angle<=0 and angle>=-angle_area*(pi/180): # if belongs to area 3
+        elif pos_y>=-(3/2)*w and pos_y<=-w/2 and angle<=0 and angle>=-a: # if belongs to area 3
             area=3
-        elif (pos_y>=-(3)*row_width and pos_y<=0 and angle<=-angle_area*(pi/180) and angle>=-pi/2) or (pos_y<=-(3)*row_width and pos_x>0): #if belongs to 4   
+        elif (pos_y>=-(3/2)*w and pos_y<=-w/2 and angle<=-a and angle>=-pi/2) or (pos_y<=-(3/2)*w and pos_x>0): #if belongs to 4   
             area=4
         #Back
-        elif (pos_y>=-(3)*row_width and pos_y<=0 and angle>=-pi+angle_area*(pi/180) and angle<=-pi/2) or (pos_y<=-(3)*row_width and pos_x<0): #if belongs to 5   
+        elif (pos_y>=-(3/2)*w and pos_y<=-w/2 and angle>=-pi+a and angle<=-pi/2) or (pos_y<=-(3/2)*w and pos_x<0): #if belongs to 5   
             area=5
-        elif pos_y>=-(3)*row_width and pos_y<=-row_width and angle>=-pi and angle<=-pi+angle_area*(pi/180): # if belongs to area 6
+        elif pos_y>=-(3/2)*w and pos_y<=-w and angle>=-pi and angle<=-pi+a: # if belongs to area 6
             area=6
-        elif pos_y>= -row_width and pos_y<=row_width and pos_x<=0: # if belongs to area 7
+        elif pos_y>= -w/2 and pos_y<=w/2 and pos_x<=0: # if belongs to area 7
             area=7
-        elif pos_y>=row_width and pos_y<=(3)*row_width and angle<=pi and angle>=pi-angle_area*(pi/180): # if belongs to area 8
+        elif pos_y>=w/2 and pos_y<=(3/2)*w and angle<=pi and angle>=pi-a: # if belongs to area 8
             area=8
-        elif (pos_y>=0 and pos_y<=(3)*row_width and angle<=pi-angle_area*(pi/180) and angle>=pi/2) or (pos_y>=(3)*row_width and pos_x<0): #if belongs to 9
+        elif (pos_y>=w/2 and pos_y<=(3/2)*w and angle<=pi-a and angle>=pi/2) or (pos_y>=(3/2)*w and pos_x<0): #if belongs to 9
             area=9
-    
+                
     return area
 ############################################################################################
 # Main Script
