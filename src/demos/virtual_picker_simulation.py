@@ -232,18 +232,14 @@ def joy_callback(data):
                 human.posture[1,0]=10
             if buttons[2]>0: #circle is (move away)
                 human.posture[1,0]=4
-            #if buttons[9]>0: #option to change the human orientation to back
-            #    human.orientation[1]=1
-            #if buttons[8]>0: #start to change the human orientation to front
-            #    human.orientation[1]=0
-            if buttons[15]>0: #up to command the robot to (move right)
+            if buttons[15]>0: #up to command the robot to (rotate clockwise)
+                human.posture[1,0]=5
+            if buttons[17]>0: #down to command the robot to (rotate counterwise)
+                human.posture[1,0]=1
+            if buttons[16]>0: #right to command the robot to (move right)
                 human.posture[1,0]=7
-            if buttons[17]>0: #down to command the robot to (move left)
+            if buttons[14]>0: #left to command the robot to (move left)
                 human.posture[1,0]=3
-            #if buttons[17]>0: #down to change the human area to any (back)
-            #    human.area[1]=7
-            #if buttons[14]>0: #left to change the human area to 0 (on the side)
-            #    human.area[1]=0    
                 
             if np.shape(axes)[0]!=0:
                 #Picker01
@@ -273,20 +269,15 @@ def joy_callback(data):
                 human.posture[0,0]=10
             if buttons[2]>0: #circle is (move away)
                 human.posture[0,0]=4
-            #if buttons[9]>0: #option to change the human orientation to back
-            #    human.orientation[0]=1
-            #if buttons[8]>0: #start to change the human orientation to front
-            #    human.orientation[0]=0
-            if buttons[15]>0: #up to command the robot to move right
+            if buttons[15]>0: #up to command the robot to (rotate clockwise)
+                human.posture[0,0]=5
+            if buttons[17]>0: #down to command the robot to (rotate counterwise)
+                human.posture[0,0]=1
+            if buttons[16]>0: #right to command the robot to (move right)
                 human.posture[0,0]=7
-            if buttons[17]>0: #down to command the robot to move left
+            if buttons[14]>0: #left to command the robot to (move left)
                 human.posture[0,0]=3
-            #if buttons[15]>0: #up to change the human area to any (in front)
-            #    human.area[0]=2
-            #if buttons[17]>0: #down to change the human area to any (back)
-            #    human.area[0]=7
-            #if buttons[14]>0: #left to change the human area to 0 (on the side)
-            #    human.area[0]=0
+
                 
                 
             if np.shape(axes)[0]!=0:
@@ -456,14 +447,6 @@ if __name__ == '__main__':
             msg.thermal_detection=False
         pub_human.publish(msg)
         rate.sleep() #to keep fixed the control loop rate
-        #if new_data[1]==1:
-        #    new_data[1]=0
-        #if new_data[2]==1:
-        #    new_data[2]=0
-        #if new_data[3]==1:
-        #    new_data[3]=0
-        #if new_data[4]==1:
-        #    new_data[4]=0
         
         #setup publiser in ROS
         #Publish command for Picker 1
@@ -499,30 +482,9 @@ if __name__ == '__main__':
         msg.pose.orientation.w = quater[3]
         pub.publish(msg)
         
-        #print("PUBLISH ",human.position_global[0,:])
-        #pub=rospy.Publisher('/picker01/posestamped',PoseStamped)
-        #msg=PoseStamped()
-        #msg.header.frame_id = "map"
-        #msg.pose.position.x=human.position_global[0][0]
-        #msg.pose.position.y=human.position_global[0][1]
-        #msg.pose.orientation.z=2#human.position_global[0][2]
-        #msg.pose.orientation.x=0#human.position_global[0][2]
-        #msg.pose.orientation.y=0#human.position_global[0][2]
-        #msg.pose.orientation.w = 1.0
-        #pub.publish(msg)
-        #pub=rospy.Publisher('/picker02/posestamped',PoseStamped)
-        #msg=PoseStamped()
-        #msg.pose.position.x=human.position_global[1][0]
-        #msg.pose.position.y=human.position_global[1][1]
-        #msg.pose.orientation.z=human.position_global[1][2]
-        #pub.publish(msg)
-        
-        
-        #print('PICKER 2 -- X: %4.1f Y: %4.1f'%(human.position_global[1][0],human.position_global[1][1]))
+       
         rate.sleep() #to keep fixed the control loop rate
-        #if new_data[0]==1:    
-        #    new_data[0]=0
-                
+       
         
             
 

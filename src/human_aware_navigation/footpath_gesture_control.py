@@ -94,6 +94,10 @@ class hri_class:
             speed[1] = self.y_speed_limit
         if command==7: #execute if gesture command is "move left"
             speed[1] = -self.y_speed_limit
+        if command==8: #execute if gesture command is "rotate clockwise"
+            speed[2]=self.turning_speed_limit
+        if command==9: #execute if gesture command is "rotate counterclockwise"
+            speed[2]=-self.turning_speed_limit
         if backwards_mode==True: #In any case, if the robot is in backward mode, then change the linear speeds signs
             speed[0] = -speed[0]
             speed[1] = -speed[1]

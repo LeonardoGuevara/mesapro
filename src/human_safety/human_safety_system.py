@@ -192,6 +192,13 @@ class hri_class:
         elif (sensor[critical_index]!=1 and posture[critical_index]==3 and orientation[critical_index]==0 and critical_area_old==True and polytunnel==False): #left_arm_sideways
             gesture_old=True
             command_old=7 #move left (only valid at footpaths)
+        elif (sensor[critical_index]!=1 and posture[critical_index]==5 and orientation[critical_index]==0 and critical_area_old==True and polytunnel==False): #right_arm_up
+            gesture_old=True
+            command_old=8 #rotate clockwise (only valid at footpaths)
+        elif (sensor[critical_index]!=1 and posture[critical_index]==1 and orientation[critical_index]==0 and critical_area_old==True and polytunnel==False): #left_arm_up
+            gesture_old=True
+            command_old=9 #rotate counterclockwise (only valid at footpaths)
+            
             
         for k in range(0,n_human):  
             update=False
@@ -227,6 +234,12 @@ class hri_class:
             elif (sensor[k]!=1 and posture[k]==3  and orientation[k]==0 and critical_area_new==True and polytunnel==False): #left_arm_sideways
                 gesture_new=True
                 command_new=7 #move left (only valid at footpaths)
+            elif (sensor[k]!=1 and posture[k]==5  and orientation[k]==0 and critical_area_new==True and polytunnel==False): #right_arm_up
+                gesture_new=True
+                command_new=8 #rotate clockwise  (only valid at footpaths)
+            elif (sensor[k]!=1 and posture[k]==1  and orientation[k]==0 and critical_area_new==True and polytunnel==False): #left_arm_up
+                gesture_new=True
+                command_new=9 #rotate counterclockwise  (only valid at footpaths)
             #############################################################
             #THIS IS THE CORE OF THE CRITICAL HUMAN SELECTION
             if danger_old==True:
@@ -470,7 +483,7 @@ class hri_class:
                         self.safety_action=2 # to make the robot move away from the picker
                         self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
                     #In case the picker wants to control the robot velocities by performing gestures (only valid at footpaths)
-                    elif self.human_command>=4 and self.human_command<=7:
+                    elif self.human_command>=4 and self.human_command<=9:
                         self.audio_message=10 #alet of gesture control
                         self.safety_action=6 # to make the robot activate the gesture control at footpaths
                         self.new_goal=final_goal # the current goal is not changed
