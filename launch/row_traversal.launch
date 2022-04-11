@@ -10,6 +10,8 @@
   <arg name="time_without_msg" default="5"/>
   <!-- Directory to the mesapro global config file  -->
   <arg name="config_direct" default="/home/leo/rasberry_ws/src/mesapro/config/" /> 
+  <!-- If human aware navigation is activated  -->
+  <arg name="use_han" default="false"/>
 
   <arg name="site_name" default="riseholme" />
   <arg name="site_path" default="" />
@@ -35,12 +37,13 @@
     <arg name="enable_filtering" value="$(arg enable_filtering)" />
   </include>
 
-  <node pkg="mesapro" type="in_row_trav.py" name="row_traversal" output="screen">
+  <node pkg="polytunnel_navigation_actions" type="in_row_trav.py" name="row_traversal" output="screen">
     <rosparam file="$(arg traversal_config)" command="load"/>
     <param name="use_row_detector" value="$(arg use_row_detector)"/>
     <param name="pole_positions_path" value="$(arg pole_positions)"/>
     <param name="time_without_msg" value="$(arg time_without_msg)"/>
     <param name="config_direct" value="$(arg config_direct)"/>
+    <param name="use_han" value="$(arg use_han)"/>
     <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>

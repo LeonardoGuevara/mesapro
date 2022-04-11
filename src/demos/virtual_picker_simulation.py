@@ -44,10 +44,6 @@ class human_class:
         self.thermal_detection=False #initial condition
         
     def actor00_callback(self,p1):
-        #print("ACTOR00 NEW DATA")
-        #if new_data[1]==0:
-        #Sensor type, time, counter, centroid are not required for the demo, thus they are always 0
-        
         #Positions from virtual picker
         pos = p1.pose.position
         quat = p1.pose.orientation    
@@ -60,8 +56,6 @@ class human_class:
         self.position_global[0,:]=pose
         #Human Motion and distance
         time_new=time.time()-time_init
-        #print("ROBBOT",robot.position)
-        #print("PICKER",pose)
         distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
         #to include the thorlvard dimensions
         distance_new=distance_new#-1
@@ -69,9 +63,6 @@ class human_class:
             distance_new=0
          
         self.speed[0,0]=abs((distance_new-self.distance[0,0])/(time_new-self.time[0]))-abs(robot.speed)
-        #print("HUMAN SPEED",(distance_new-self.distance[0,0])/(time_new-self.time[0]))
-        #print("ROBOT SPEED",robot.input[1])
-        #print("ROBOT SPEED", robot.speed)
         
         k=0
         if self.counter_motion[k]<n_samples: #while the recorded data is less than n_points                
@@ -117,10 +108,6 @@ class human_class:
         #new_data[1]=1
 
     def actor01_callback(self,p2):
-        #print("ACTOR01 NEW DATA")
-        #if new_data[2]==0:
-        #Sensor type, time, counter, centroid are not required for the demo, thus they are always 0
-        
         #Positions from virtual picker
         pos = p2.pose.position
         quat = p2.pose.orientation    
@@ -137,7 +124,6 @@ class human_class:
         distance_new=distance_new#-1
         if distance_new<0:
            distance_new=0
-        #self.speed[1,0]= abs((distance_new-self.distance[1,0])/(time_new-self.time[1]))-abs(robot.input[1])
         self.speed[1,0]= abs((distance_new-self.distance[1,0])/(time_new-self.time[1]))-abs(robot.speed)
         k=1
         if self.counter_motion[k]<n_samples: #while the recorded data is less than n_points                

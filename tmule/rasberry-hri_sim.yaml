@@ -28,6 +28,7 @@ init_cmd: |
   export_default USE_VISUAL_ALERTS true # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
   export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
+  export_default USE_HAN true # if "false", safety system actions are not used for the navigation.py or in_row_trav.py 
   #########################################################################################
   # Source ROS
   # source "/opt/ros/$(rosversion -d)/setup.bash"
@@ -214,13 +215,13 @@ windows:
 ############################################################################################ launching modified scripts from mesapro package
 - name: topo_nav
   panes:
-  - if ! $USE_TEB_PLANNER; then roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/DWAPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS time_without_msg:=$TIME_WITHOUT_MSG; else roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/TebLocalPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS time_without_msg:=$TIME_WITHOUT_MSG; fi
+  - if ! $USE_TEB_PLANNER; then roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/DWAPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS time_without_msg:=$TIME_WITHOUT_MSG use_han:=$USE_HAN; else roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/TebLocalPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS time_without_msg:=$TIME_WITHOUT_MSG use_han:=$USE_HAN; fi
   check: "rosservice list | grep -q topological_navigation"
   tags: [nav, site]
 - name: nav_actions
   panes:
   - if ! $USE_TEB_PLANNER; then roslaunch rasberry_move_base move_base_dwa.launch use_carrot_planner:=$USE_CARROT use_omni:="$USE_OMNI" robot_no:=$ROBOT_NO robot_footprint:=$ROBOT_FOOTPRINT; else roslaunch rasberry_move_base move_base_teb.launch use_carrot_planner:=$USE_CARROT use_omni:="$USE_OMNI" robot_no:=$ROBOT_NO; fi
-  - roslaunch mesapro row_traversal.launch use_gps_only:="$USE_GPS_ONLY" detector_config_common:="$ROW_DETECTOR_CONFIG_COMMON" detector_config_ellipse:="$ROW_DETECTOR_CONFIG_ELLIPSE" traversal_config:="$ROW_TRAVERSAL_CONFIG" pole_positions:=$POLE_POSITIONS pole_likelihood_field:=$POLE_LIKELIHOOD_FIELD use_restrictions:=$USE_RESTRICTIONS site_path:=$SITE_PATH robot_type:=$RES_ROBOT_TYPE task:=$APPLICATION time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
+  - roslaunch mesapro row_traversal.launch use_gps_only:="$USE_GPS_ONLY" detector_config_common:="$ROW_DETECTOR_CONFIG_COMMON" detector_config_ellipse:="$ROW_DETECTOR_CONFIG_ELLIPSE" traversal_config:="$ROW_TRAVERSAL_CONFIG" pole_positions:=$POLE_POSITIONS pole_likelihood_field:=$POLE_LIKELIHOOD_FIELD use_restrictions:=$USE_RESTRICTIONS site_path:=$SITE_PATH robot_type:=$RES_ROBOT_TYPE task:=$APPLICATION time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT use_han:=$USE_HAN
   - roslaunch mesapro hri_footpath_gesture_control.launch time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT
   check: "rosrun dynamic_reconfigure dynparam list | grep row_traversal"
   tags: [nav, site]

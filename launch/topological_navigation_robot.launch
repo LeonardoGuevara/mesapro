@@ -20,6 +20,8 @@
   <arg name="use_restrictions" default="false"/>
   <!-- Maximum time without receiving safety or human perception messages  -->
   <arg name="time_without_msg" default="5"/>
+  <!-- If human aware navigation is activated  -->
+  <arg name="use_han" default="false"/>
 
   <machine name="$(arg machine)" address="$(arg machine)" env-loader="$(optenv ROS_ENV_LOADER )" user="$(arg user)" default="true"/>
 
@@ -41,12 +43,13 @@
     <remap from="/topological_map" to="/restricted_topological_map"  if="$(arg use_restrictions)"/>
   </node>
 
-  <node pkg="mesapro" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
+  <node pkg="topological_navigation" name="topological_navigation" type="navigation.py" output="screen" respawn="true">
     <param name="move_base_name" type="str" value="$(arg move_base_name)"/>
     <param name="move_base_planner" type="str" value="$(arg move_base_planner)"/>
     <param name="max_dist_to_closest_edge" value="$(arg max_dist_to_closest_edge)"/>
     <param name="reconfigure_edges" value="$(arg reconfigure_edges)"/>
     <param name="time_without_msg" value="$(arg time_without_msg)"/>
+    <param name="use_han" value="$(arg use_han)"/>
     <rosparam param="move_base_actions" subst_value="True">$(arg move_base_actions)</rosparam>
 
     <remap from="/topological_map_2" to="/restricted_topological_map_2"  if="$(arg use_restrictions)"/>
