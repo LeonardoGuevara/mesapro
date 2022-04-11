@@ -14,11 +14,10 @@ pub_hz=0.01 #main loop frequency
 cmd_pub = rospy.Publisher('/nav_vel', Twist, queue_size=1)
 cmd_vel = Twist()
 #Importing global parameters from .yaml file
-default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
-config_direct=rospy.get_param("/gesture_control/config_direct",default_config_direct) #you have to change /gesture_control/ if the node is not named like this
+config_direct=rospy.get_param("/gesture_control/config_direct")
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
-han_distances=parsed_yaml_file.get("human_safety_config").get("han_distances",[3.6,1]) #distances used when robot is "approaching to picker"
+han_distances=parsed_yaml_file.get("human_safety_config").get("han_distances") #distances used when robot is "approaching to picker"
 #########################################################################################################
 
 class robot_class:
@@ -38,21 +37,21 @@ class human_class:
             self.pos_y=human_info.position_y[hri.critical_index]
 
 class hri_class:
-    def __init__(self): #It is done only the first iteration
-        self.safety_action=7 # no safety action as initial condition     
-        self.human_command=0 # no human command as initial condition
-        self.critical_index=0 #index of the human considered as critical during interaction (it is not neccesary the same than the closest human or the goal human)
+    def __init__(self):                         
+        self.safety_action=7                    # no safety action as initial condition     
+        self.human_command=0                    # no human command as initial condition
+        self.critical_index=0                   # index of the human considered as critical during interaction (it is not neccesary the same than the closest human or the goal human)
         self.han_start_dist=han_distances[0]    # Human to robot Distance at which the robot starts to slow down
         self.han_stop_dist=han_distances[1]     # Human to robot Distance at which the robot must stop
-        self.time_without_msg=rospy.get_param("/gesture_control/time_without_msg",5) # Maximum time without receiving safety messages
+        self.time_without_msg=rospy.get_param("/gesture_control/time_without_msg",5)   # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
-        # Dynamically reconfigurable parameters
+
         self.align_tolerance= 0.2               # tolerance to consider the robot aligned to the human (in metres)
         self.x_speed_limit=0.3                  # Maximum speed on the X axis
         self.y_speed_limit=0.3                  # Maximum speed on the Y axis
         self.turning_speed_limit=0.1            # Maximum turning speed
-        self.turning_kp=0.5                     # Gains for tunning speed control
+        self.turning_kp=0.5                     # Gain for tunning speed control
         ########################################################################################################### 
 
     def get_speed(self, error_x,error_y,command):
@@ -138,9 +137,5 @@ if __name__ == '__main__':
             cmd_vel.linear.y = robot.vel[1]
             cmd_vel.angular.z = robot.vel[2]
             cmd_pub.publish(cmd_vel)     
-        #elif hri.safety_action==3 or hri.safety_action==4: #if safety action is make the robot stop
-        #    cmd_vel.linear.x = 0
-        #    cmd_vel.linear.y = 0
-        #    cmd_vel.angular.z = 0
-        #    cmd_pub.publish(cmd_vel)  
+         
         rate.sleep() #to keep fixed the publishing loop rate
