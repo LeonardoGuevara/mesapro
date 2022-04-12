@@ -17,14 +17,11 @@ init_cmd: |
   # HUMAN-AWARE NAVIGATION PARAMETERS
   export_default CATKIN_WORKSPACE "$HOME/rasberry_ws"
   export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of mesapro config file
-  export_default AUDIO_DIRECT "$(rospack find mesapro)/audio/" #directory of audio files
+  export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected
   export_default VISUAL_MODE 2 #"1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
-  export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
-  export_default THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
-  export_default IMAGE_ROTATION "270_90" # cameras orientation, "270_90" means that the frontal camera is rotated 270 degrees and the back one 90 degrees
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
-  export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected 
-  export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
+  export_default THERMAL_INFO true # if "true", thermal information from FLIR camera is used for the camera_detector 
+  export_default N_LANGUAGES 1 # "1" means, only english version of voice messages is reproduced, "2" means english+polish version
   export_default USE_VISUAL_ALERTS true # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
   export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
@@ -215,14 +212,14 @@ windows:
 ############################################################################################ launching modified scripts from mesapro package
 - name: topo_nav
   panes:
-  - if ! $USE_TEB_PLANNER; then roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/DWAPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS time_without_msg:=$TIME_WITHOUT_MSG use_han:=$USE_HAN; else roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/TebLocalPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS time_without_msg:=$TIME_WITHOUT_MSG use_han:=$USE_HAN; fi
+  - if ! $USE_TEB_PLANNER; then roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/DWAPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS  use_han:=$USE_HAN config_direct:=$CONFIG_DIRECT; else roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/TebLocalPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS use_han:=$USE_HAN config_direct:=$CONFIG_DIRECT; fi
   check: "rosservice list | grep -q topological_navigation"
   tags: [nav, site]
 - name: nav_actions
   panes:
   - if ! $USE_TEB_PLANNER; then roslaunch rasberry_move_base move_base_dwa.launch use_carrot_planner:=$USE_CARROT use_omni:="$USE_OMNI" robot_no:=$ROBOT_NO robot_footprint:=$ROBOT_FOOTPRINT; else roslaunch rasberry_move_base move_base_teb.launch use_carrot_planner:=$USE_CARROT use_omni:="$USE_OMNI" robot_no:=$ROBOT_NO; fi
-  - roslaunch mesapro row_traversal.launch use_gps_only:="$USE_GPS_ONLY" detector_config_common:="$ROW_DETECTOR_CONFIG_COMMON" detector_config_ellipse:="$ROW_DETECTOR_CONFIG_ELLIPSE" traversal_config:="$ROW_TRAVERSAL_CONFIG" pole_positions:=$POLE_POSITIONS pole_likelihood_field:=$POLE_LIKELIHOOD_FIELD use_restrictions:=$USE_RESTRICTIONS site_path:=$SITE_PATH robot_type:=$RES_ROBOT_TYPE task:=$APPLICATION time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT use_han:=$USE_HAN
-  - if $USE_HAN ; roslaunch mesapro hri_footpath_gesture_control.launch time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT; fi
+  - roslaunch mesapro row_traversal.launch use_gps_only:="$USE_GPS_ONLY" detector_config_common:="$ROW_DETECTOR_CONFIG_COMMON" detector_config_ellipse:="$ROW_DETECTOR_CONFIG_ELLIPSE" traversal_config:="$ROW_TRAVERSAL_CONFIG" pole_positions:=$POLE_POSITIONS pole_likelihood_field:=$POLE_LIKELIHOOD_FIELD use_restrictions:=$USE_RESTRICTIONS site_path:=$SITE_PATH robot_type:=$RES_ROBOT_TYPE task:=$APPLICATION config_direct:=$CONFIG_DIRECT use_han:=$USE_HAN
+  - if $USE_HAN ; then roslaunch mesapro hri_footpath_gesture_control.launch config_direct:=$CONFIG_DIRECT; fi
   check: "rosrun dynamic_reconfigure dynparam list | grep row_traversal"
   tags: [nav, site]
 ########################################################################################
@@ -230,15 +227,14 @@ windows:
 - name: hri_perception
   panes:
   - roslaunch mesapro ds4_driver.launch
-  - rosrun mesapro virtual_picker_simulation.py
+  - roslaunch mesapro hri_virtual_picker_detection.launch config_direct:=$CONFIG_DIRECT
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
-  - sleep 10 ; roslaunch mesapro hri_audio_visual_alerts.launch audio_direct:=$AUDIO_DIRECT arduino_port:=$ARDUINO_PORT time_without_msg:=$TIME_WITHOUT_MSG use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS
+  - roslaunch mesapro hri_safety_system.launch config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
+  - sleep 10 ; roslaunch mesapro hri_audio_visual_alerts.launch config_direct:=$CONFIG_DIRECT arduino_port:=$ARDUINO_PORT use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS n_languages:=$N_LANGUAGES
 - name: hri_visualization
   panes:
-  - sleep 10 ; roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG
-#############################################################################################
+  - sleep 10 ; roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT thermal_info:=$THERMAL_INFO n_cameras:=$N_CAMERAS #############################################################################################
 - name: localisation_prelims_aditional
   panes:
   - roslaunch rasberry_bringup corner_lasers_merger.launch

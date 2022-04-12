@@ -3,10 +3,15 @@
 import rospy 
 import time
 import threading # Needed for Timer
-
+import yaml
 from mesapro.msg import hri_msg
 from std_msgs.msg import String
 
+#Importing global parameters from .yaml file
+config_direct=rospy.get_param("/hri_visual_alerts/config_direct")
+a_yaml_file = open(config_direct+"global_config.yaml")
+parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
+#General purposes variables
 pub_hz=0.1 #main loop frequency
 
 class hri_class:
@@ -16,7 +21,7 @@ class hri_class:
         self.audio_message=0        
         self.current_alert="none"
         self.new_goal="Unknown"
-        self.time_without_msg=rospy.get_param("/hri_visual_alerts/time_without_msg",5) # Maximum time without receiving safety messages
+        self.time_without_msg=parsed_yaml_file.get("human_safety_config").get("time_without_msg") # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
         self.problem_perception=False #Flag to know if human perception system has problems

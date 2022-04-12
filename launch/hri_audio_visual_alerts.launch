@@ -1,21 +1,24 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="audio_direct" default="/home/leo/rasberry_ws/src/mesapro/audio/" /> 
     <arg name="arduino_port" default="/dev/ttyACM0" /> 
-    <arg name="time_without_msg" default="5"/>
     <arg name="use_audio_alerts" default="True"/>
     <arg name="use_visual_alerts" default="True"/>
+    <arg name="config_direct" default="" />
+    <arg name="n_languages" default="" />
     
-    <node pkg="mesapro" type="audio_alerts.py" name="hri_audio_alerts"  if="$(eval arg('use_audio_alerts') == True)"> 
-	<param name="audio_direct" value="$(arg audio_direct)"/>
-        <param name="time_without_msg" value="$(arg time_without_msg)"/>
-    </node>
+    <node pkg="mesapro" type="audio_alerts.py" name="hri_audio_alerts"  if="$(eval arg('use_audio_alerts') == True)">
+        <param name="config_direct" value="$(arg config_direct)"/>
+        <param name="n_languages" value="$(arg n_languages)"/>
+    </node> 
+	
     <node pkg="rosserial_python" type="serial_node.py" name="rosserial" if="$(eval arg('use_visual_alerts') == True)"> 
 	<param name="port" value="$(arg arduino_port)" />
     </node>
+
     <node pkg="mesapro" type="visual_alerts.py" name="hri_visual_alerts" if="$(eval arg('use_visual_alerts') == True)">
-        <param name="time_without_msg" value="$(arg time_without_msg)"/> 
+        <param name="config_direct" value="$(arg config_direct)"/>
     </node>
+        
 </launch>
 
 

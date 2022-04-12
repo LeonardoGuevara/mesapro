@@ -24,8 +24,8 @@ default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
 config_direct=rospy.get_param("/hri_safety_system/config_direct",default_config_direct) #you have to change /hri_safety_system/ if the node is not named like this
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
-collision_risk_dist=parsed_yaml_file.get("human_safety_config").get("collision_risk_distances",[3.6,1.2]) #Human to robot distances (m) used to determine the HRI risk during logistics 
-uvc_risk_dist=parsed_yaml_file.get("human_safety_config").get("uvc_risk_distances",[10,7]) #Human to robot distances (m) used to determine the HRI risk during uvc treatment
+collision_risk_dist=parsed_yaml_file.get("human_safety_config").get("collision_risk_distances") #Human to robot distances (m) used to determine the HRI risk during logistics 
+uvc_risk_dist=parsed_yaml_file.get("human_safety_config").get("uvc_risk_distances") #Human to robot distances (m) used to determine the HRI risk during uvc treatment
 #########################################################################################################################
 
 class robot_class:
@@ -78,7 +78,7 @@ class human_class:
         self.thermal_detection=False #true if thermal detection flag is also True
         #Safety Timer
         self.perception_msg=True      # if "False", human perception messages are not published, by default is "True"
-        self.time_without_msg=rospy.get_param("/hri_safety_system/time_without_msg",5) # Maximum time without receiving human perception messages
+        self.time_without_msg=parsed_yaml_file.get("human_safety_config").get("time_without_msg") # Maximum time without receiving human perception messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
         
@@ -147,7 +147,7 @@ class hri_class:
         self.critical_dist=0 #distance of the critical human
         self.safe_cond_occlusion=False #it is true if the detected human is considered in risk during autonomous navigation (occluding the robot path), used to avoid unnecesary stops with human who is not occluding the current robot path
         self.new_goal="none" #name of the new final goal
-        self.operation=rospy.get_param("/hri_safety_system/operation_mode","logistics") #it can be "UVC" or "logistics"
+        self.operation=parsed_yaml_file.get("robot_config").get("operation_mode") #it can be "UVC" or "logistics"
         self.safe_cond_approach=False #True if the human is static and facing the robot, False if not satisfying this safety condition, used to stop the robot during approaching maneuvers inside polytunnels
         self.safe_cond_critic_area=False #True if the human is located at critical areas, False if is not located at critical areas, used to determine if a human is critical to be tracked or not
         self.gesture_control=rospy.get_param("/hri_safety_system/gesture_control",True) # Flag to activate or not gesture control
@@ -552,7 +552,7 @@ class hri_class:
                         self.audio_message=2 # message to ask the human for new order
                         self.new_goal=final_goal # the current goal is not changed                       
         
-        elif thermal_detection==True and self.operation=="UVC": #even if no human was detected but thermal_detection is TRUE, only for UVC treatment
+        elif thermal_detection==True and self.operation!="logistics": #even if no human was detected but thermal_detection is TRUE, only for UVC treatment
             self.human_command=0 #no human command expected during uv-c treatment
             self.status=2 #risky HRI
             self.safety_action=7 # keep the previous robot action     

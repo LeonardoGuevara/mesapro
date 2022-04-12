@@ -7,20 +7,33 @@ import geometry_msgs.msg
 from geometry_msgs.msg import Pose
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
+import yaml
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from mesapro.msg import human_msg, hri_msg 
 from geometry_msgs.msg import PoseStamped
 import time
 
 ##########################################################################################
+#GLOBAL CONFIG FILE DIRECTORY
+config_direct=rospy.get_param("/hri_virtual_perception/config_direct") #you have to change /hri_camera_detector/ if the node is not named like this
+a_yaml_file = open(config_direct+"global_config.yaml")
+parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
+#Human simulation
 picker_step=0.05 # maximum picker step each time an action is triggered 
 picker_step_angle=0.03 # maximim picker step in radians
-n_samples=10 #number of samples used for the motion inference
-speed_threshold=[0.6,1]  # [static, slow motion] m/s
-areas_angle=[150,100,80,30,0] #in degrees
+#Human detection system simulation
+motion_infer_param=parsed_yaml_file.get("action_recog_config").get("motion_infer_param")
+n_samples=motion_infer_param[0] #number of samples used for the motion inference
+speed_threshold=motion_infer_param[1]  # threshold to determine if human is static or not, < means static, > means slow motion
 dist_detection=10 #range in meters of human detection
 dist_thermal_detection=15 #range in meters of thermal detection
-main_counter=0
+#Parameters for area inference
+area_distribution=parsed_yaml_file.get("human_safety_config").get("area_distribution") 
+angle_area= area_distribution[0] # in degrees mesuared from the local x-axis robot frame
+row_width= area_distribution[1] # critical areas width (in meters)
+angle_scaling= area_distribution[2] # scaling factor for angle
+width_scaling= area_distribution[3] # scaling factor for width
+#General purposes variables
 pub_hz=0.01 #main loop frequency
     
 class human_class:
@@ -76,7 +89,7 @@ class human_class:
         ii=0
         if self.counter_motion[ii]>=n_samples:
             speed_mean=np.mean(self.speed_buffer[ii,:])
-            if abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
+            if abs(speed_mean)<speed_threshold: # if human is  mostly static
                 self.motion[ii]=1
             else: #if human is moving 
                 self.motion[ii]=2
@@ -137,7 +150,7 @@ class human_class:
         ii=1
         if self.counter_motion[ii]>=n_samples:
             speed_mean=np.mean(self.speed_buffer[ii,:])
-            if abs(speed_mean)<speed_threshold[0]: # if human is  mostly static
+            if abs(speed_mean)<speed_threshold: # if human is  mostly static
                 self.motion[ii]=1
             else: #if human is moving
                 self.motion[ii]=2
@@ -287,8 +300,6 @@ def joy_callback(data):
                     human.posture[0,0]=0 #to reset human gesture
     
 def area_inference(pos_y,pos_x,action_mode):
-    row_width=1.3 #in meters
-    angle_area=60 # in degrees mesuared from the local x-axis robot frame
     angle=atan2(pos_y,pos_x)# local x-axis is aligned to the robot orientation
     if angle>pi: #  to keep the angle between [-180,+180]
         angle=angle-2*pi
@@ -297,8 +308,8 @@ def area_inference(pos_y,pos_x,action_mode):
     
     a=angle_area*(pi/180)
     w=row_width
-    n=2 #scaling factor for distance "w"
-    m=1 #scaling factor for angle "a"
+    m=angle_scaling #scaling factor for angle "a"
+    n=width_scaling #scaling factor for distance "w"    
     if action_mode=="polytunnel":                    
         #Front
         if (pos_y>=0 and pos_y<=(3/2)*w and angle>=a and angle<=pi/2) or (pos_y>(3/2)*w and pos_x>0): #if belongs to 0
@@ -369,8 +380,6 @@ if __name__ == '__main__':
     #Rate setup
     rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz
     while not rospy.is_shutdown():
-        main_counter=main_counter+1  
-        #print("main_counter",main_counter)
         #Setup ROS publiser
         pub_human = rospy.Publisher('human_info', human_msg)
         msg = human_msg()

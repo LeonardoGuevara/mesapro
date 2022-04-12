@@ -7,34 +7,42 @@ from geometry_msgs.msg import PoseArray
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 import time
+import yaml
 from mesapro.msg import human_msg, human_detector_msg, hri_msg 
 import threading # Needed for Timer
 ##########################################################################################
-#GENERAL PURPUSES VARIABLES
-#Setup ROS publiser
-pub = rospy.Publisher('human_info', human_msg,queue_size=1) #small queue means priority to new data
-msg = human_msg()
-#Parameters for area inference
-row_width=1.3 #in meters
-angle_area=60 # in degrees mesuared from the local x-axis robot frame
-#Parameters for matching
-meter_threshold=[0.5,1] # error in meters within two human detections are considered the same human, different for lidar than for camera -> [lidar,camera]
-tracking_threshold=3 #times a detection has to be received in order to consider for tracking
-w_data=[0.2,0.8] #weights used for calculating a weighted average during matching old with new data -> [old,new]
-lidar_to_cam=[-0.35,0] #distances [x,y] in meters used to compensate the difference in position between the lidars and the cameras (The camera location is the reference origin)
-#Parameters for Motion and Gesture inference
-n_samples=8 #number of samples used for the motion inference
-n_samples_gest=4 #number of samples used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
-posture_threshold=0.5 #minimum probability delivered by gesture recognition algoritm to consider a gesture valid
-speed_threshold=0.5  # < speed_threshold means static, > speed_threshold means slow motion 
-#Paremeters for human Tracking
-threshold_no_data=2 #seconds needed to remove an old human tracked from tracking list
 #General purposes variables
-main_counter=0
 new_data=[0,0]     #flag to know if a new human detection from LiDAR or Camera is available, first element is for LiDAR, second for Camera
 time_data=[0,0]    #list with the time in which new detection was taken from Lidar or camera
 time_diff=[0,0]    #list with the time between two consecutive detections taken from lidar or camera
 pub_hz=0.01 #main loop frequency
+#Setup ROS publiser
+pub = rospy.Publisher('human_info', human_msg,queue_size=1) #small queue means priority to new data
+msg = human_msg()
+#GLOBAL CONFIG FILE DIRECTORY
+config_direct=rospy.get_param("/hri_perception/config_direct") #you have to change /hri_camera_detector/ if the node is not named like this
+a_yaml_file = open(config_direct+"global_config.yaml")
+parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
+#Parameters for area inference
+area_distribution=parsed_yaml_file.get("human_safety_config").get("area_distribution") 
+angle_area= area_distribution[0] # in degrees mesuared from the local x-axis robot frame
+row_width= area_distribution[1] # critical areas width (in meters)
+angle_scaling= area_distribution[2] # scaling factor for angle
+width_scaling= area_distribution[3] # scaling factor for width
+#Parameters for sensor fusion and tracking
+threshold_param=parsed_yaml_file.get("tracking_config").get("threshold_param") 
+meter_threshold=threshold_param[0:2] # maximum error (in meters) between two human detections to consider them detections of the same human, different for lidar than for camera -> [lidar,camera]
+tracking_threshold=threshold_param[2] #times a human has to be detected in order to consider for tracking
+threshold_no_data=threshold_param[3] #seconds needed to remove an old human tracked from tracking list
+w_data=parsed_yaml_file.get("tracking_config").get("weights_param")  #weights used for calculating a weighted average during matching old with new data -> [weigth of old data,weight of new data]
+lidar_to_cam=parsed_yaml_file.get("tracking_config").get("dist_comp_param") #distances (in meters) used to compensate the difference in position between the lidars and cameras origin frames (the camera location is the reference origin) 
+#Parameters for Motion and Gesture inference
+motion_infer_param=parsed_yaml_file.get("action_recog_config").get("motion_infer_param")
+n_samples=motion_infer_param[0] # number of samples used for the motion inference
+speed_threshold=motion_infer_param[1] # threshold to determine if human is static or not, < means static, > means slow motion
+gesture_recogn_param=parsed_yaml_file.get("action_recog_config").get("gesture_recogn_param")
+n_samples_gest=gesture_recogn_param[3] #number of frames used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
+posture_threshold=gesture_recogn_param[4] #minimum probability delivered by gesture recognition algoritm to consider a gesture valid for the gesture inference (when analyzing a set of frames)
 #########################################################################################################################
 
 class robot_class:
@@ -81,7 +89,7 @@ class human_class:
         self.thermal_detection=False #assuming no thermal detection as initial value
         # Safety timers (only for camera messages because leg detector is not publishing continuously)
         self.cam_msg=True                       #flag to know if camera is publishing messages, by default is "True"
-        self.time_without_msg=rospy.get_param("/hri_perception/time_without_msg",5) # Maximum time without receiving sensors messages 
+        self.time_without_msg=parsed_yaml_file.get("human_safety_config").get("time_without_msg") # Maximum time without receiving sensors messages 
         self.timer_safety_cam = threading.Timer(self.time_without_msg,self.safety_timeout_cam) # If "n" seconds elapse, call safety_timeout() for camera
         self.timer_safety_cam.start()
         
@@ -690,8 +698,8 @@ class human_class:
     def area_inference(self,angle,pos_y,pos_x,action_mode):
         a=angle_area*(pi/180)
         w=row_width
-        n=2 #scaling factor for distance "w"
-        m=1 #scaling factor for angle "a"
+        m=angle_scaling #scaling factor for angle "a"
+        n=width_scaling #scaling factor for distance "w"
         if action_mode=="polytunnel":                    
             #Front
             if (pos_y>=0 and pos_y<=(3/2)*w and angle>=a and angle<=pi/2) or (pos_y>(3/2)*w and pos_x>0): #if belongs to 0
@@ -766,7 +774,6 @@ if __name__ == '__main__':
     #Rate setup
     rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz
     while not rospy.is_shutdown():	
-        main_counter=main_counter+1
         #Human tracking
         human.human_tracking()     
         if new_data[0]==1:

@@ -1,36 +1,95 @@
+##################################################
+#Parameters to configure the neccesary directories
+##################################################
+
 directories_config:
   open_pose_python: "/home/thorvald/rasberry_ws/src/openpose/build/python"
   open_pose_models: "/home/thorvald/rasberry_ws/src/openpose/models"
   gesture_classifier_model: "/home/thorvald/rasberry_ws/src/mesapro/config/classifier_model_3D_v6.joblib"
+  audio_direct: "/home/thorvald/rasberry_ws/src/mesapro/audio/"
   training_set: "/home/leo/Documents/mesapro/bags/training/"
-  testing_set: "/home/leo/Documents/mesapro/bags/testing/" 
-###############################################  
-camera_config: #for depth image of realsense D455
-  intr_param: [384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] #[fx cx fy cy]
-  dist_param: [-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] #[k1 k2 t1 t2 k3]
-##################################################
-matching_config: #for camera D455 + FLIR lepton
-  270_90_param: [110,127,285,380,270,150,70,285,380,90]  #[y_init_up,x_init_left,n_pixels_x,n_pixels_y,rotation "THE SAME 5 PARAM FOR BACK IMAGE"] when frontal image is rotated 270 degrees and back 90 degrees 
-  90_90_param: [120,105,285,380,90,120,105,285,380,90]  #when both images are rotated 90 degrees NOT WELL CALIBRATED*****
-  0_0_param: [120,130,380,285,0,120,130,380,285,0]   #when both images are rotated 0 degrees NOT WELL CALIBRATED*****
-##################################################
+  testing_set: "/home/leo/Documents/mesapro/bags/testing/"
+ 
+##############################################################################################################################################################
+#Parameters to calibrate matching between RGB and thermal images, to calibrate sensor fusion and human tracking algorithms, and to calibrate thermal detection
+##############################################################################################################################################################
+
+camera_config:
+  intr_param: [384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] # intrinsic parameters of realsense D455 such that -> [fx cx fy cy] 
+  dist_param: [-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] # distortion parameters of realsense D455 such that -> [k1 k2 t1 t2 k3] 
+  orient_param: "270_90" #orientation angles of frontal and back cameras
+
+matching_config: 
+  270_90_param: [110,127,285,380,270,150,70,285,380,90]  # parameters used to match the images taken from D455 with the lower resolution FLIR lepton images such that
+  # 1st - 5th  ->  parameters [y_init_up,x_init_left,n_pixels_x,n_pixels_y,rotation] of frontal camera when rotated 270 degrees
+  # 6th - 10th ->  parameters [y_init_up,x_init_left,n_pixels_x,n_pixels_y,rotation] of back camera when rotated 90 degrees
+  90_90_param: [120,105,285,380,90,120,105,285,380,90]   # when both images are rotated 90 degrees NOT WELL CALIBRATED*****
+  0_0_param: [120,130,380,285,0,120,130,380,285,0]       # when both images are rotated 0 degrees NOT WELL CALIBRATED*****
+
+tracking_config:
+  threshold_param: [0.5,1,3,2] # parameters used as threshold for the human tracking algorithm such that
+  # 1st - 2nd -> maximum error (in meters) between two human detections to consider them detections of the same human, different for lidar than for camera -> [lidar,camera]
+  # 3rd -> times a human has to be detected in order to consider for tracking
+  # 4th -> seconds needed to remove an old human tracked from tracking list
+  weights_param: [0.2,0.8] # weights used for calculating a weighted average during matching old with new data -> [weigth of old data,weight of new data]
+  dist_comp_param: [-0.35,0] #distances (in meters) used to compensate the difference in position between the lidars and cameras origin frames (the camera location is the reference origin) 
+  # 1st -> distance in "x" that has to be compensated on the lidar detection to be compared with the camera detection.
+  # 2nd -> distance in "y" that has to be compensated on the lidar detection to be compared with the camera detection.
+
+thermal_config:
+  temp_thresh: 100      # threshold to determine if the temperature if a pixel is considered as higher as human temperature, from 0 to 255
+  detection_thresh: 0.1 # percentage of pixels in the thermal image which have to satisfy the temp_thresh in order to rise the thermal_detection flag
+
+################################################################################################################################
+#Parameters to calibrate human feature extraction with openpose, gesture inference, motion inference, and names of labels used
+################################################################################################################################
+
 action_recog_config:
-  n_joints: 19       #19 body joints from openpose output (25 available)
-  n_features: 36     #19 distances + 17 angles = 36 features
   posture_labels: ["no_gesture","left_arm_up","left_hand_front","left_arm_sideways","left_forearm_sideways","right_arm_up","right_hand_front","right_arm_sideways","right_forearm_sideways","both_arms_up","both_hands_front","crouched_down","picking"]
   motion_labels: ["not_defined","mostly_static", "moving"]
   orientation_labels: ["facing_the_robot", "giving_the_back", "left_side", "right_side"]
-################################################
+  gesture_recogn_param: [19,36,7,4,0.5] # parameters used for gesture recognition (a single frame) and gesture inference (analyzing a set of frames) such that
+  # 1st -> number of body joints used from openpose output (25 available) but only used 19
+  # 2nd -> number of features used to train the gesture recognition algorithm, 19 distances + 17 angles = 36 features
+  # 3rd -> minimum number of joints necessaries to consider an openpose detection valid
+  # 4th -> number of frames used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
+  # 5th -> minimum probability delivered by gesture recognition algoritm to consider a gesture valid for the gesture inference (when analyzing a set of frames)
+  motion_infer_param: [8,0.5] # parameters used for motion inference such that:
+  # 1st -> number of samples used for the motion inference
+  # 2nd -> threshold to determine if human is static or not, < means static, > means slow motion, in m/s
+  openpose_normal_performance: "-1x400" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+  openpose_high_performance: "-1x480" # net resolution of the openpose when working on "high" performance mode,
+  dynamic_performance: [3.6,3] #parameters to calibrate dynamic changes on the openpose performance
+  # 1st -> distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances above dist_performance_change
+  # 2nd -> minimum time allowed (in seconds) between two consecute changes of openpose performance
+  avoid_area: 0.05             # percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
+  search_area: 0.3             # percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
+
+#############################################################################  
+#Parameters to calibrate the safety system policies, and names of labels used
+#############################################################################
+
 human_safety_config:
   hri_status: ["no_human","safety_hri","risky_hri","dangerous_hri"]
   audio_message: ["no_message","alert_UVC_danger","ask_for_next_action","ask_for_free_space","alert_approaching","alert_moving_away","alert_moving_to_goal","safety_system_error","human_perception_error","teleoperation_mode","gesture_control_mode"]
   safety_action: ["move_to_goal","approach_to_human","move_away_from_human","pause","wait_for_new_human_command","teleoperation","gesture_control","no_safety_action"]
   human_command: ["no_command","approach","move_away","stop","move_forwards","move_backwards","move_right","move_left","rotate_clockwise","rotate_counterclockwise"]
-  operation_mode: ["logistics","UV-C_treatment"]
-  han_distances: [3.6,1] #Human to robot distances (m) at which the robot starts to slow down or stop -> [slow_down,stop]
-  collision_risk_distances: [3.6,1.2] #Human to robot distances (m) used to determine the HRI risk in case of collisions -> [risky,dangerous]
-  uvc_risk_distances: [10,7] #Human to robot distances (m) used to determine the HRI risk during uvc treatment > [risky,dangerous]
-###############################################
+  operation_mode: ["logistics","UVC-Treatment"]
+  han_distances: [3.6,1] #Human to robot distances (in meters) at which the robot starts to slow down or stop -> [slow_down,stop]
+  collision_risk_distances: [3.6,1.2] #Human to robot distances (in meters) used to determine the HRI risk in case of collisions -> [risky,dangerous]
+  uvc_risk_distances: [10,7] #Human to robot distances (in meters) used to determine the HRI risk during uvc treatment > [risky,dangerous]
+  area_distribution: [60,1.3,1,2] # parameters to determine the detection area distribution -> [area angle "a",row width "w", "a" scaling factor, "w" scaling factor]
+  time_without_msg: 5 # Maximum time (in seconds) without receiving safety messages or human detection messages, it is necesary to activate emergency stops due to failure modes
+
 robot_config:
   action: ["moving_to_goal","approaching","moving_away","pause","waiting_for_new_human_command","teleoperation","gesture_control"]
+  max_vel: [0.3,0.1]     # maximum velocities admitted during human robot interactions -> [linear velocity (m/s), angular velocity (rad/s)]
+  align_tolerance: 0.2   # tolerance to consider the robot aligned to the human (in meters) when performing gesture control at footpaths
+  turning_kp: 0.5        # Gain for tunning speed control when performing gesture control at footpaths
+  operation_mode: "logistics" #it can be "logistics" or "UVC"
 
+audio_config:
+  intervals_long: [10,10,10,10,10,10,10,10,10,10,10] # time in which the first version of a message is repeated, in seconds
+  intervals_short: [3,3,3,4,3,3,3,4,4,3,3]           # time between two versions of the same message, in seconds
+
+############################################################################

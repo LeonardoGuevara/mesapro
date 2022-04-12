@@ -18,6 +18,7 @@ config_direct=rospy.get_param("/gesture_control/config_direct")
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 han_distances=parsed_yaml_file.get("human_safety_config").get("han_distances") #distances used when robot is "approaching to picker"
+max_vel=parsed_yaml_file.get("robot_config").get("max_vel") # maximum velocities admitted during human robot interactions
 #########################################################################################################
 
 class robot_class:
@@ -43,15 +44,15 @@ class hri_class:
         self.critical_index=0                   # index of the human considered as critical during interaction (it is not neccesary the same than the closest human or the goal human)
         self.han_start_dist=han_distances[0]    # Human to robot Distance at which the robot starts to slow down
         self.han_stop_dist=han_distances[1]     # Human to robot Distance at which the robot must stop
-        self.time_without_msg=rospy.get_param("/gesture_control/time_without_msg",5)   # Maximum time without receiving safety messages
-        self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
+        self.time_without_msg=parsed_yaml_file.get("human_safety_config").get("time_without_msg")   # Maximum time without receiving safety messages
+        self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout)              # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
 
-        self.align_tolerance= 0.2               # tolerance to consider the robot aligned to the human (in metres)
-        self.x_speed_limit=0.3                  # Maximum speed on the X axis
-        self.y_speed_limit=0.3                  # Maximum speed on the Y axis
-        self.turning_speed_limit=0.1            # Maximum turning speed
-        self.turning_kp=0.5                     # Gain for tunning speed control
+        self.x_speed_limit=max_vel[0]           # Maximum speed on the X axis
+        self.y_speed_limit=max_vel[0]           # Maximum speed on the Y axis
+        self.turning_speed_limit=max_vel[1]     # Maximum turning speed
+        self.align_tolerance= parsed_yaml_file.get("robot_config").get("align_tolerance") # tolerance to consider the robot aligned to the human (in meters)
+        self.turning_kp=parsed_yaml_file.get("robot_config").get("turning_kp")            # Gain for tunning speed control
         ########################################################################################################### 
 
     def get_speed(self, error_x,error_y,command):

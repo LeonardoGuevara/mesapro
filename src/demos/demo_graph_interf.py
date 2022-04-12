@@ -16,15 +16,14 @@ import ros_numpy
 #GENERAL PURPUSES VARIABLES
 pub_hz=0.01 #main loop frequency
 #Importing global parameters from .yaml file
-default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
-config_direct=rospy.get_param("/hri_visualization/config_direct",default_config_direct) #you have to change /hri_visualization/ if the node is not named like this
+config_direct=rospy.get_param("/hri_visualization/config_direct")
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 ##############################################################################################################################
 #CAMERAS INFO
-thermal_info=rospy.get_param("/hri_visualization/thermal_info",True) #you have to change /hri_visualization/ if the node is not named like this
-image_rotation=rospy.get_param("/hri_visualization/image_rotation","270_90") #you have to change /hri_visualization/ if the node is not named like this
-resize_param=parsed_yaml_file.get("matching_config").get(image_rotation+"_param") #parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y]
+thermal_info=rospy.get_param("/hri_visualization/thermal_info",False) #to know if thermal information is going to be used or not
+image_rotation=parsed_yaml_file.get("camera_config").get("orient_param") #to know if the images have to be rotated
+resize_param=parsed_yaml_file.get("matching_config").get(image_rotation+"_param") #parameters to resize images for matching
 #################################################################################################################################
 #IMPORTING LABELS NAMES
 posture_labels=parsed_yaml_file.get("action_recog_config").get("posture_labels") # labels of the gestures used to train the gesture recognition model
@@ -261,7 +260,7 @@ class hri_class:
         self.safety_action=5 #no safety action  
         self.human_command=0
         self.critical_index=0 #index of the human considered as critical during interaction (it is not neccesary the same than the closest human or the goal human)
-        self.time_without_msg=rospy.get_param("/hri_visualization/time_without_msg",5) # Maximum time without receiving safety messages
+        self.time_without_msg=parsed_yaml_file.get("human_safety_config").get("time_without_msg") # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
                  

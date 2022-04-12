@@ -20,12 +20,10 @@ init_cmd: |
   export_default BAG_FILE "$HOME/Documents/mesapro/bags/testing/all_gestures_3.bag" #full name of the bag file to be reproduced 
  
   export_default VISUAL_MODE 1 # "1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
-  export_default OPERATION_MODE "logistics" #it can be "logistics" or "UVC"
   export_default USE_CAMERA_DETECTOR true #if "false", the rgbd+thermal human detector is not launched
   export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
   export_default USE_GESTURE_CONTROL false # if "true", gesture detection is used to control robot actions
   export_default USE_BAG true #if "true", a bag file is launched instead of getting on-line data from sensors
-  export_default IMAGE_ROTATION "270_90" # cameras orientation, "270_90" means that the frontal camera is rotated 270 degrees and the back one 90 degrees
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
   export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera back
@@ -34,7 +32,6 @@ init_cmd: |
   export_default FLIR_SERIAL_N1 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera front
   export_default FLIR_MIN_RANGE "29000" # minimum measurement range for scaling to pixel value [0,255]
   export_default FLIR_MAX_RANGE "31000" # mamixum measurement range for scaling to pixel value [0,255]
-  export_default TIME_WITHOUT_MSG 5 # maximum time without receiving safety or human perception messages, in seconds
   ##############################################################################################
   # Source ROS
   #source "/opt/ros/$(rosversion -d)/setup.bash"
@@ -65,15 +62,15 @@ windows:
   check: "rostopic list || $USE_BAG"
 - name: hri_cameras_perception
   panes:
-  - if $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO image_rotation:=$IMAGE_ROTATION n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL ; fi
-  - roslaunch mesapro hri_perception_system.launch time_without_msg:=$TIME_WITHOUT_MSG 
+  - sleep 5 ; if $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL ; fi
+  - sleep 5 ; roslaunch mesapro hri_perception_system.launch config_direct:=$CONFIG_DIRECT
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch operation_mode:=$OPERATION_MODE time_without_msg:=$TIME_WITHOUT_MSG config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
+  - roslaunch mesapro hri_safety_system.launch config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization
   panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT image_rotation:=$IMAGE_ROTATION thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS time_without_msg:=$TIME_WITHOUT_MSG
+  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS
 #############################################################################################
 

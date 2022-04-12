@@ -19,20 +19,21 @@ import ros_numpy
 pub_hz=0.01 #main loop frequency
 new_data=False #Flag to know if a new data was received from cameras
 #GLOBAL CONFIG FILE DIRECTORY
-default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
-config_direct=rospy.get_param("/hri_camera_detector/config_direct",default_config_direct) #you have to change /hri_camera_detector/ if the node is not named like this
+config_direct=rospy.get_param("/hri_camera_detector/config_direct") #you have to change /hri_camera_detector/ if the node is not named like this
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 #FEATURE EXTRACTION PARAMETERS
-n_joints=parsed_yaml_file.get("action_recog_config").get("n_joints") #19 body joints from openpose output (25 available)
-n_features=parsed_yaml_file.get("action_recog_config").get("n_features") #19 distances + 17 angles = 36 features
-joints_min=7 #minimum number of joints to consider a detection
+gesture_recogn_param=parsed_yaml_file.get("action_recog_config").get("gesture_recogn_param")
+n_joints=gesture_recogn_param[0] #19 body joints from openpose output (25 available)
+n_features=gesture_recogn_param[1] #19 distances + 17 angles = 36 features
+joints_min=gesture_recogn_param[2] #minimum number of joints to consider a detection
 performance="normal" #OpenPose performance, can be "normal" or "high", "normal" as initial condition
-dist_performance_change = 3.6 # distance (m) where performance change from "normal" to "high"
-time_threshold=3 # minimum time allowed (in seconds) between two consecute changes of openpose performance
+dynamic_performance = parsed_yaml_file.get("action_recog_config").get("dynamic_performance") 
+dist_performance_change= dynamic_performance[0] # distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances above dist_performance_change
+time_threshold=dynamic_performance[1]           # minimum time allowed (in seconds) between two consecute changes of openpose performance
 time_change=0 #initial counter value
-avoid_area=0.05 #percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
-search_area=0.3 #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
+avoid_area=parsed_yaml_file.get("action_recog_config").get("avoid_area") # percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
+search_area=parsed_yaml_file.get("action_recog_config").get("search_area") #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
 ##MODEL FOR POSTURE RECOGNITION
 posture_classifier_model=parsed_yaml_file.get("directories_config").get("gesture_classifier_model") 
 model_rf = joblib.load(posture_classifier_model)   
@@ -48,24 +49,23 @@ except ImportError as e:
 params = dict()
 params["model_folder"] = openpose_models
 if performance=="normal":
-    net_resolution= "-1x400" #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
-else:
-    net_resolution= "-1x480" #High performance 480
-#params["maximize_positives"] = True
+    net_resolution= parsed_yaml_file.get("action_recog_config").get("openpose_normal_performance") # has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
+else: #high performance
+    net_resolution= parsed_yaml_file.get("action_recog_config").get("openpose_high_performance")  #High performance is "-1x480"
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
 opWrapper.start()
 datum = op.Datum()
 #ROS PUBLISHER SET UP
-pub = rospy.Publisher('human_info_camera', human_detector_msg,queue_size=1) #small queue means priority to new data
+pub = rospy.Publisher('human_info_camera', human_detector_msg,queue_size=1) # small queue means priority to new data
 msg = human_detector_msg()
 #THERMAL INFORMATION
-thermal_info=rospy.get_param("/hri_camera_detector/thermal_info",True) #you have to change /hri_camera_detector/ if the node is not named like this
+thermal_info=rospy.get_param("/hri_camera_detector/thermal_info",False) # you have to change /hri_camera_detector/ if the node is not named like this
 #PARAMETERS TO MATCH RGBD + THERMAL IMAGES 
-temp_thresh=100 #threshold to determine if the temperature if a pixel is considered as higher as human temperature
-detection_thresh=0.1 #percentage of pixels in the thermal image which have to satisfy the temp_thresh in order to rise the thermal_detection flag
-image_rotation=rospy.get_param("/hri_camera_detector/image_rotation","270_90") #it can be 0,90,270 measured clockwise        
-resize_param=parsed_yaml_file.get("matching_config").get(image_rotation+"_param") #parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y,y_init_up,x_init_left,n_pixels_x,n_pixels_y]
+temp_thresh=parsed_yaml_file.get("thermal_config").get("temp_thresh")           # threshold to determine if the temperature if a pixel is considered as higher as human temperature
+detection_thresh=parsed_yaml_file.get("thermal_config").get("detection_thresh") # percentage of pixels in the thermal image which have to satisfy the temp_thresh in order to rise the thermal_detection flag
+image_rotation=parsed_yaml_file.get("camera_config").get("orient_param")        # it can be 0,90,270 measured clockwise, for each camera        
+resize_param=parsed_yaml_file.get("matching_config").get(image_rotation+"_param") # parameters to resize images for matching, [y_init_up,x_init_left,n_pixels_x,n_pixels_y,y_init_up,x_init_left,n_pixels_x,n_pixels_y]
 #RGBD CAMERA INTRINSIC,DISTORTION PARAMETERS
 intr_param=parsed_yaml_file.get("camera_config").get("intr_param") #camera intrinsic parameters
 dist_param=parsed_yaml_file.get("camera_config").get("dist_param") #camera distortion parameters
@@ -75,7 +75,7 @@ mtx =  np.array([[intr_param[0], 0, intr_param[1]],
 distor=np.array(dist_param)
 #VISUALIZATION VARIABLES
 n_cameras=rospy.get_param("/hri_camera_detector/n_cameras",1) # 1 means that the back camera is emulated by reproducing the front camera image
-openpose_visual=rospy.get_param("/hri_camera_detector/openpose_visual",True)  #to show or not a window with the human detection delivered by openpose
+openpose_visual=rospy.get_param("/hri_camera_detector/openpose_visual",False)  #to show or not a window with the human detection delivered by openpose
 #########################################################################################################################
 
 class human_class:

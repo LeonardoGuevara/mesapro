@@ -4,17 +4,22 @@ import rospy
 import multiprocessing
 from playsound import playsound
 import time
+import yaml
 import threading # Needed for Timer
 from mesapro.msg import hri_msg
 
-default_audio_direct="/home/leo/rasberry_ws/src/mesapro/audio/"
-audio_direct=rospy.get_param("/hri_audio_alerts/audio_direct",default_audio_direct) #you have to change /hri_audio_alerts/ if the node is not named like this
-intervals_long=[10,10,10,10,10,10,10,10,10,10,10] #time in which the first version of a message is repeated, in seconds,
-intervals_short=[3,3,3,4,3,3,3,4,4,3,3] #time between two versions of the same message
+#Importing global parameters from .yaml file
+config_direct=rospy.get_param("/hri_audio_alerts/config_direct")
+a_yaml_file = open(config_direct+"global_config.yaml")
+parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
+audio_direct=parsed_yaml_file.get("directories_config").get("audio_direct") #directory with the voice messages
+intervals_long=parsed_yaml_file.get("audio_config").get("intervals_long") # time in which the first version of a message is repeated, in seconds
+intervals_short=parsed_yaml_file.get("audio_config").get("intervals_short") # time between two versions of the same message, in seconds
+n_languages=rospy.get_param("/hri_audio_alerts/n_languages",1) # how many version of the same message to be reproduced in a loop
+#General purposes variables
 version=0 #to know which language its been used, initially is English
 pub_hz=0.01 #main loop frequency
         
-
 class hri_class:
     def __init__(self): #It is done only the first iteration
         self.safety_message=0
@@ -24,7 +29,7 @@ class hri_class:
         self.change_audio=False #flag to know if current message has to me changed
         self.repeat_audio=False #flag to know if current message should be reproduced again
         self.time_audio=(time.time()-time_init) #time when last message was activated
-        self.time_without_msg=rospy.get_param("/hri_audio_alerts/time_without_msg",5) # Maximum time without receiving safety messages
+        self.time_without_msg=parsed_yaml_file.get("human_safety_config").get("time_without_msg") # Maximum time without receiving safety messages
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
         self.timer_safety.start()
         
@@ -118,13 +123,17 @@ if __name__ == '__main__':
                 print("Audio alert is played in version", version)
                 while hri.change_audio==False and hri.repeat_audio==False:   
                     #if hri.change_audio==False:
-                    if (time.time()-hri.time_audio>=intervals_long[audio_index] and version==1) or (time.time()-hri.time_audio>=intervals_short[audio_index] and version==0):
-                        hri.repeat_audio=True
-                        #To change the version in the next iteration
-                        if version==1:
-                            version=0
-                        elif version==0:
-                            version=1        
+                    if n_languages!=1: #if more than one language
+                        if (time.time()-hri.time_audio>=intervals_long[audio_index] and version==1) or (time.time()-hri.time_audio>=intervals_short[audio_index] and version==0):
+                            hri.repeat_audio=True
+                            #To change the version in the next iteration
+                            if version==1:
+                                version=0
+                            elif version==0:
+                                version=1        
+                    else: #only english version
+                        if time.time()-hri.time_audio>=intervals_long[audio_index]:
+                            hri.repeat_audio=True
                     #print("Audio alert is repeated")
                 p.join() #to make sure the new message is not overlapping the past message
         rate.sleep() 

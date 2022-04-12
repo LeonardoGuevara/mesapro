@@ -21,11 +21,12 @@ config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 #FEATURE EXTRACTION PARAMETERS
-n_joints=parsed_yaml_file.get("action_recog_config").get("n_joints") #19 body joints from openpose output (25 available)
-n_features=parsed_yaml_file.get("action_recog_config").get("n_features") #19 distances + 17 angles = 36 features
+gesture_recogn_param=parsed_yaml_file.get("action_recog_config").get("gesture_recogn_param")
+n_joints=gesture_recogn_param[0] #19 body joints from openpose output (25 available)
+n_features=gesture_recogn_param[1] #19 distances + 17 angles = 36 features
 dist=[0]*n_joints
 angles=[0]*(n_joints-2) #17 angles
-joints_min=7 #minimum number of joints to consider a detection
+joints_min=gesture_recogn_param[2] #minimum number of joints to consider a detection
 labels=parsed_yaml_file.get("action_recog_config").get("posture_labels") #labels used for training the posture recognition model
 n_labels=len(labels)
 performance="high" #OpenPose performance, can be "normal" or "high", "normal" as initial condition
@@ -58,9 +59,9 @@ X=np.zeros([1,len(dist)+len(angles)])#.flatten()
 Y=np.zeros([1,1]).flatten()
 training_folder=parsed_yaml_file.get("directories_config").get("training_set") 
 testing_folder=parsed_yaml_file.get("directories_config").get("testing_set") 
-dist_threshold=7 #maximim distance (m) at which the human detection is considered for training/testing
+dist_threshold=7 #maximim distance (meters) at which the human detection is considered for training/testing
 ##TESTING PARAMETERS
-posture_classifier_model=n_features=parsed_yaml_file.get("directories_config").get("gesture_classifier_model") #Full name of the gesture_classifier_model to be tested
+posture_classifier_model=parsed_yaml_file.get("directories_config").get("gesture_classifier_model") #Full name of the gesture_classifier_model to be tested
 model_rf = joblib.load(posture_classifier_model)   
 #########################################################################################################################
     

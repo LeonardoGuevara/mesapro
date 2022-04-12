@@ -2,7 +2,7 @@
 <launch>
     <arg name="config_direct" default="" /> 
   
-    <node pkg="mesapro" type="human_perception_system.py" name="hri_perception">        
+    <node pkg="mesapro" type="virtual_picker_simulation.py" name="hri_virtual_perception">        
         <param name="config_direct" value="$(arg config_direct)"/>
     </node>
 </launch>
