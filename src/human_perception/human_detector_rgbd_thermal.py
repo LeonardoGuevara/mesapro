@@ -34,6 +34,9 @@ time_threshold=dynamic_performance[1]           # minimum time allowed (in secon
 time_change=0 #initial counter value
 avoid_area=parsed_yaml_file.get("action_recog_config").get("avoid_area") # percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
 search_area=parsed_yaml_file.get("action_recog_config").get("search_area") #percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
+#DISTANCE ESTIMATION
+dist_comp_param=parsed_yaml_file.get("tracking_config").get("dist_comp_param") #distances (in meters) used to compensate the difference in position between the cameras and the origin of the robot local frame  
+dimension_tolerance=parsed_yaml_file.get("robot_config").get("dimension_tolerance") # tolerance (in meters) to consider the robot dimensions when computing distances between robot and humans detected
 ##MODEL FOR POSTURE RECOGNITION
 posture_classifier_model=parsed_yaml_file.get("directories_config").get("gesture_classifier_model") 
 model_rf = joblib.load(posture_classifier_model)   
@@ -86,7 +89,7 @@ class human_class:
         self.centroid=np.zeros([self.n_human,2]) #x,y (pixels) of the human centroid, from camera
         self.features=np.zeros([self.n_human,n_features]) #distances and angles of each skeleton, from camera
         self.orientation=np.zeros([self.n_human,1]) # it can be "front" or "back" if the human is facing the robot or not , from camera
-        self.distance=np.zeros([self.n_human,1])  # distance between the robot and the average of the skeleton joints distances taken from the depth image, from camera
+        self.distance=np.zeros([self.n_human,1])  # distance between the robot and the average of the skeleton joints distances taken from the depth image, from camera, considering the robot dimensions
         self.image_size=[480,640] #initial condition, assuming portrait mode
         self.camera_id=np.zeros([self.n_human,1]) #to know which camera detected the human
         self.color_image=np.zeros((848,400,3), np.uint8) #rgb image, initial value
@@ -95,7 +98,7 @@ class human_class:
         self.image_show=np.zeros((848,400,3), np.uint8) #image used for visualization, initial value
         self.intensity=np.zeros([self.n_human,1]) #from thermal camera
         self.thermal_detection=False #assuming no thermal detection as initial value
-        self.centroid_3d=np.zeros([self.n_human,2]) #x,y (3d world) of the human centroids
+        self.centroid_3d=np.zeros([self.n_human,2]) #position [x,y] of the humans detected mesuared respect to the robot local frame
     
     def rgbd_thermal_1_callback(self,rgb_front, depth_front, therm_front):
         global new_data
@@ -423,8 +426,6 @@ class human_class:
                 time_change=time.time()
                 #datum = op.Datum()
 
-        #print("PERFORMANCE",performance)
-        #print("MIN DIS",min(self.distance))
         ####################################################################################################
         datum.cvInputData = color_image
         opWrapper.emplaceAndPop(op.VectorDatum([datum]))
@@ -649,7 +650,6 @@ class human_class:
                             n_joints_cent=n_joints_cent+1
                 #Only continue if there is at least 1 joint with x*y*z!=0 in the center of the body
                 if n_joints_cent!=0:
-                    distance[kk,:]=dist_sum/n_joints_cent
                     if joints_x_init[1]!=0 and joints_y_init[1]!=0 and joints_z_init[1]!=0: #If neck joint exists, then this is choosen as centroid
                         centroid[kk,0]=joints_x_init[1]
                         centroid[kk,1]=joints_y_init[1]
@@ -660,30 +660,36 @@ class human_class:
                     width=self.image_size[1]                       
                     if centroid[kk,0]<=width-width*avoid_area or centroid[kk,0]>=width+width*avoid_area: 
                         #CAMERA ID
+                        dist_camera_frame=dist_sum/n_joints_cent #distance with respect to the camera location as origin
                         if centroid[kk,0]<=width: #camera front
                             camera_id[kk]=0
-                            #HUMAN XY POSITION IN PIXELS INTO 3D WORLD
-                            centroid_3d[kk,0] = distance[kk,0] #z-axis in camera 3d world is the positive x-axis of robot frame
+                            #HUMAN XY POSITION IN PIXELS INTO 3D WORLD, compensating the location of the cameras respect to the robot local frame location
+                            centroid_3d[kk,0] = dist_camera_frame+dist_comp_param[0] #z-axis in frontal camera 3d world is the positive x-axis of robot frame
                             #MAP CENTROID COORDINATES FROM THE ROTATED IMAGE TO THE ORIGINAL IMAGE (UNDISTORTED)
                             orig_centroid_y=centroid[kk,0]
                             if resize_param[4]==270 or resize_param[9]==90:
-                                centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame
+                                centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * dist_camera_frame  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame
                             #elif resize_param[4]==90:
-                            #    centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame
+                            #    centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * dist_camera_frame  / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame
                             else: #rotation==0
-                                centroid_3d[kk,1] = -(orig_centroid_y - intr_param[1]) * distance[kk,0]  / intr_param[0] #y-axis in camera 3d world is the negative y-axis of the robot frame   
+                                centroid_3d[kk,1] = -(orig_centroid_y - intr_param[1]) * dist_camera_frame  / intr_param[0] #y-axis in camera 3d world is the negative y-axis of the robot frame   
                         else:#camera back
                             camera_id[kk]=1
-                            #HUMAN XY POSITION IN PIXELS INTO 3D WORLD
-                            centroid_3d[kk,0] = -distance[kk,0] #z-axis in camera 3d world is the negative x-axis of robot frame
+                            #HUMAN XY POSITION IN PIXELS INTO 3D WORLD, compensating the location of the cameras respect to the robot local frame location
+                            centroid_3d[kk,0] = -dist_camera_frame+dist_comp_param[2] #z-axis in back camera 3d world is the negative x-axis of robot frame
                             #MAP CENTROID COORDINATES FROM THE ROTATED IMAGE TO THE ORIGINAL IMAGE (UNDISTORTED) which is the one aligned to the robot x-axis
                             orig_centroid_y=centroid[kk,0]-width
                             if resize_param[9]==270 or resize_param[9]==90:
-                                centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * distance[kk,0] / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame  
+                                centroid_3d[kk,1] = (orig_centroid_y - intr_param[3]) * dist_camera_frame / intr_param[2] #y-axis in camera 3d world is the positive y-axis of the robot frame  
                             #elif resize_param[9]==90:
-                            #    centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * distance[kk,0]  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame  
+                            #    centroid_3d[kk,1] = -(orig_centroid_y - intr_param[3]) * dist_camera_frame  / intr_param[2] #y-axis in camera 3d world is the negative y-axis of the robot frame  
                             else: #rotation==0
-                                centroid_3d[kk,1] = (orig_centroid_y - intr_param[1]) * distance[kk,0] / intr_param[0] #y-axis in camera 3d world is the positive y-axis of the robot frame                       
+                                centroid_3d[kk,1] = (orig_centroid_y - intr_param[1]) * dist_camera_frame / intr_param[0] #y-axis in camera 3d world is the positive y-axis of the robot frame                       
+                        #Distance calculation considering Thorvald dimensions:
+                        distance[kk,0]=abs(centroid_3d[kk,0])-dimension_tolerance
+                        if distance[kk,0]<0:
+                            distance[kk,0]=0
+                    
                         if n_cameras==2 or (camera_id[kk]==0 and n_cameras==1): #to consider only detections from frontal image when second image is a copy of the frontal image
                             index_to_keep=index_to_keep+[kk]   
                         

@@ -32,9 +32,9 @@ tracking_config:
   # 3rd -> times a human has to be detected in order to consider for tracking
   # 4th -> seconds needed to remove an old human tracked from tracking list
   weights_param: [0.2,0.8] # weights used for calculating a weighted average during matching old with new data -> [weigth of old data,weight of new data]
-  dist_comp_param: [-0.35,0] #distances (in meters) used to compensate the difference in position between the lidars and cameras origin frames (the camera location is the reference origin) 
-  # 1st -> distance in "x" that has to be compensated on the lidar detection to be compared with the camera detection.
-  # 2nd -> distance in "y" that has to be compensated on the lidar detection to be compared with the camera detection.
+  dist_comp_param: [0.35,0,-0.35,0] #distances (in meters) used to compensate the difference in position between the cameras and the origin of the robot local frame 
+  # 1st and 3rd -> signed distance in "x" that has to be compensated on cameras detection to be compared with the lidar detection, 1st for frontal camera and 3rd for back camera
+  # 2nd and 4th -> signed distance in "y" that has to be compensated on cameras detection to be compared with the lidar detection, 2nd for frontal camera and 4th for back camera
 
 thermal_config:
   temp_thresh: 100      # threshold to determine if the temperature if a pixel is considered as higher as human temperature, from 0 to 255
@@ -84,9 +84,10 @@ human_safety_config:
 robot_config:
   action: ["moving_to_goal","approaching","moving_away","pause","waiting_for_new_human_command","teleoperation","gesture_control"]
   max_vel: [0.3,0.1]     # maximum velocities admitted during human robot interactions -> [linear velocity (m/s), angular velocity (rad/s)]
-  align_tolerance: 0.2   # tolerance to consider the robot aligned to the human (in meters) when performing gesture control at footpaths
+  align_tolerance: 0.2   # tolerance (in meters) to consider the robot aligned to the human when performing gesture control at footpaths
   turning_kp: 0.5        # Gain for tunning speed control when performing gesture control at footpaths
   operation_mode: "logistics" #it can be "logistics" or "UVC"
+  dimension_tolerance: 0.8 # tolerance (in meters) to consider the robot dimensions when computing distances between robot and humans detected
 
 audio_config:
   intervals_long: [10,10,10,10,10,10,10,10,10,10,10] # time in which the first version of a message is repeated, in seconds

@@ -35,7 +35,8 @@ meter_threshold=threshold_param[0:2] # maximum error (in meters) between two hum
 tracking_threshold=threshold_param[2] #times a human has to be detected in order to consider for tracking
 threshold_no_data=threshold_param[3] #seconds needed to remove an old human tracked from tracking list
 w_data=parsed_yaml_file.get("tracking_config").get("weights_param")  #weights used for calculating a weighted average during matching old with new data -> [weigth of old data,weight of new data]
-lidar_to_cam=parsed_yaml_file.get("tracking_config").get("dist_comp_param") #distances (in meters) used to compensate the difference in position between the lidars and cameras origin frames (the camera location is the reference origin) 
+#Parameters for distance estimation
+dimension_tolerance=parsed_yaml_file.get("robot_config").get("dimension_tolerance") # tolerance (in meters) to consider the robot dimensions when computing distances between robot and humans detected
 #Parameters for Motion and Gesture inference
 motion_infer_param=parsed_yaml_file.get("action_recog_config").get("motion_infer_param")
 n_samples=motion_infer_param[0] # number of samples used for the motion inference
@@ -61,12 +62,12 @@ class human_class:
         #General purposes variables
         self.n_human=1 # considering up to 1 human to track initially
         #Variables to store temporally the info of human detectection at each time instant
-        self.position_lidar=np.zeros([self.n_human,2]) #[x,y] from lidar local frame
+        self.position_lidar=np.zeros([self.n_human,2]) #[x,y] from lidar 
         self.posture=np.zeros([self.n_human,2]) #from camera [posture_label,posture_probability]
         self.centroid=np.zeros([self.n_human,2]) #x,y (pixels) of the human centroid, from camera
         self.orientation=np.zeros([self.n_human,1]) # it can be "front" or "back" if the human is facing the robot or not , from camera
-        self.distance=np.zeros([self.n_human,1])  # distance between the robot and the average of the skeleton joints distances taken from the depth image (from camera local frame)
-        self.position_cam=np.zeros([self.n_human,2]) #[x,y] from camera local frame
+        self.distance=np.zeros([self.n_human,1])  # distance taken from the camera, considering robot dimensions
+        self.position_cam=np.zeros([self.n_human,2]) #[x,y] from camera 
         
         #Variables to store the info of relevant humans tracked along the time
         self.position_track=np.zeros([self.n_human,2])
@@ -102,9 +103,9 @@ class human_class:
                 for pose in legs.poses:
                     if k<len(pos):
                         ##########################################################################################################
-                        #THIS DISTANCE NEEDS TO BE CALIBRATED ACCORDING TO THE LIDAR READINGS RESPECT TO THE CAMERAS POSITION (The camera location is the reference origin)
-                        pos[k,0] = pose.position.x + lidar_to_cam[0] # -0.35
-                        pos[k,1] = pose.position.y + lidar_to_cam[1]  #+0
+                        #it is assumed that lidar readings are aligned to the robot local frame
+                        pos[k,0] = pose.position.x
+                        pos[k,1] = pose.position.y
                         ############################################################################################################
                     else: #if there are more human detected than before
                         position_new=np.array([pose.position.x,pose.position.y])
@@ -210,7 +211,9 @@ class human_class:
             new_human_flag=np.zeros([len(position_lidar_new[:,0]),1]) #assuming all are new humans
             for k in range(0,n_human): 
                 for kk in range(0,len(position_lidar_new[:,0])):
-                    distance_lidar=np.sqrt((position_lidar_new[kk,0])**2+(position_lidar_new[kk,1])**2) 
+                    distance_lidar=np.sqrt((position_lidar_new[kk,0])**2+(position_lidar_new[kk,1])**2)-dimension_tolerance #distance calculation considering robot dimensions
+                    if distance_lidar<0:
+                        distance_lidar=0
                     diff[k,kk]=abs(distance[k,:]-distance_lidar)        
                 counter_no_new_data=0 # counter to know if the k-th human tracked is not longer detected
                 for kk in range(0,len(position_lidar_new[:,0])):
@@ -234,7 +237,9 @@ class human_class:
                         if diff[k,kk]<error_threshold and ((area[k,0]==area_new[kk,0] and action_mode=="polytunnel") or (abs(area[k,0]-area_new[kk,0])<=1 and action_mode!="polytunnel")):# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk                           
                             #Updating speed,motion and time_track
-                            dist_lidar=np.sqrt(position_lidar_new[new_index,0]**2+position_lidar_new[new_index,1]**2)
+                            dist_lidar=np.sqrt(position_lidar_new[new_index,0]**2+position_lidar_new[new_index,1]**2)-dimension_tolerance #distance calculation considering robot dimensions
+                            if dist_lidar<0:
+                                dist_lidar=0
                             motion_diff=distance[k,:]-dist_lidar
                             speed[k,:]=abs(motion_diff/time_diff[0])-rob_speed
                             time_track[k,0]=time_data[0]

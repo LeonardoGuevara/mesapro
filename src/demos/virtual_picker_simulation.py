@@ -33,6 +33,8 @@ angle_area= area_distribution[0] # in degrees mesuared from the local x-axis rob
 row_width= area_distribution[1] # critical areas width (in meters)
 angle_scaling= area_distribution[2] # scaling factor for angle
 width_scaling= area_distribution[3] # scaling factor for width
+#Parameters for distance estimation
+dimension_tolerance=parsed_yaml_file.get("robot_config").get("dimension_tolerance") # tolerance (in meters) to consider the robot dimensions when computing distances between robot and humans detected
 #General purposes variables
 pub_hz=0.01 #main loop frequency
     
@@ -71,7 +73,7 @@ class human_class:
         time_new=time.time()-time_init
         distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
         #to include the thorlvard dimensions
-        distance_new=distance_new#-1
+        distance_new=distance_new-dimension_tolerance
         if distance_new<0:
             distance_new=0
          
@@ -134,7 +136,7 @@ class human_class:
         time_new=time.time()-time_init
         distance_new=sqrt((robot.position[0]-pose[0])**2+(robot.position[1]-pose[1])**2)
         #to include the thorlvard dimensions
-        distance_new=distance_new#-1
+        distance_new=distance_new-dimension_tolerance
         if distance_new<0:
            distance_new=0
         self.speed[1,0]= abs((distance_new-self.distance[1,0])/(time_new-self.time[1]))-abs(robot.speed)
