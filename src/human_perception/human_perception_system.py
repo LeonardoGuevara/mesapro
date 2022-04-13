@@ -63,10 +63,11 @@ class human_class:
         self.n_human=1 # considering up to 1 human to track initially
         #Variables to store temporally the info of human detectection at each time instant
         self.position_lidar=np.zeros([self.n_human,2]) #[x,y] from lidar 
+        self.distance_lidar=np.zeros([self.n_human,1])  # distance taken from lidar, considering robot dimensions
         self.posture=np.zeros([self.n_human,2]) #from camera [posture_label,posture_probability]
         self.centroid=np.zeros([self.n_human,2]) #x,y (pixels) of the human centroid, from camera
         self.orientation=np.zeros([self.n_human,1]) # it can be "front" or "back" if the human is facing the robot or not , from camera
-        self.distance=np.zeros([self.n_human,1])  # distance taken from the camera, considering robot dimensions
+        self.distance_cam=np.zeros([self.n_human,1])  # distance taken from the camera, considering robot dimensions
         self.position_cam=np.zeros([self.n_human,2]) #[x,y] from camera 
         
         #Variables to store the info of relevant humans tracked along the time
@@ -100,20 +101,26 @@ class human_class:
             if legs.poses is not None: #only if there are legs detected           
                 k=0
                 pos=self.position_lidar
+                dist=self.distance_lidar
                 for pose in legs.poses:
                     if k<len(pos):
                         ##########################################################################################################
                         #it is assumed that lidar readings are aligned to the robot local frame
                         pos[k,0] = pose.position.x
                         pos[k,1] = pose.position.y
+                        dist[k] = np.sqrt((pos[k,0])**2+(pos[k,1])**2)-dimension_tolerance #distance calculation considering robot dimensions
                         ############################################################################################################
                     else: #if there are more human detected than before
                         position_new=np.array([pose.position.x,pose.position.y])
+                        distance_new=np.sqrt((position_new[0])**2+(position_new[1])**2)-dimension_tolerance #distance calculation considering robot dimensions
                         pos=np.append(pos,[position_new],axis=0)
+                        dist=np.append(dist,[distance_new],axis=0)
                     k=k+1
                 if k<len(pos): #if there are less human detected than before
-                    pos=pos[0:k,:]    
+                    pos=pos[0:k,:]
+                    dist=dist[0:k,:]
                 self.position_lidar=pos
+                self.distance_lidar=dist
                 new_data[0]=1 # update flag for new data only if there are legs detected, not only for receiving empty messages
                 time_diff[0]=time.time()-time_init-time_data[0]
                 time_data[0]=time.time()-time_init # update time when the last data was received
@@ -129,7 +136,7 @@ class human_class:
             k=0
             posture=self.posture
             orientation=self.orientation
-            distance=self.distance
+            distance_cam=self.distance_cam
             centroid=self.centroid
             position_cam=self.position_cam
             for i in range(0,len(data.posture)):
@@ -137,7 +144,7 @@ class human_class:
                     posture[k,0]=data.posture[i]
                     posture[k,1]=data.posture_prob[i]
                     orientation[k,0]=data.orientation[i]
-                    distance[k,0]=data.distance[i]
+                    distance_cam[k,0]=data.distance[i]
                     centroid[k,0]=data.centroid_x[i]
                     centroid[k,1]=data.centroid_y[i]
                     position_cam[k,0]=data.position_x[i]
@@ -151,7 +158,7 @@ class human_class:
                     
                     posture=np.append(posture,[posture_new],axis=0)
                     orientation=np.append(orientation,[orientation_new],axis=0)
-                    distance=np.append(distance,[distance_new],axis=0)
+                    distance_cam=np.append(distance_cam,[distance_new],axis=0)
                     centroid=np.append(centroid,[centroid_new],axis=0)
                     position_cam=np.append(position_cam,[position_new],axis=0)
                     
@@ -159,12 +166,12 @@ class human_class:
             if k<len(posture): #if there are less human detected than before
                 posture=posture[0:k,:]
                 orientation=orientation[0:k,:]
-                distance=distance[0:k,:]
+                distance_cam=distance_cam[0:k,:]
                 centroid=centroid[0:k,:]
                 position_cam=position_cam[0:k,:]
             self.posture=posture
             self.orientation=orientation
-            self.distance=distance
+            self.distance_cam=distance_cam
             self.centroid=centroid
             self.position_cam=position_cam
             
@@ -194,10 +201,11 @@ class human_class:
         area=self.area
         counter_old=self.counter_old
         position_lidar_new=self.position_lidar
+        distance_lidar_new=self.distance_lidar
         posture_new=self.posture
         centroid_new=self.centroid
         orientation_new=self.orientation
-        distance_new=self.distance
+        distance_cam_new=self.distance_cam
         rob_speed=robot.speed
         action_mode=robot.action_mode
         ##############################################################################################################################################
@@ -211,10 +219,7 @@ class human_class:
             new_human_flag=np.zeros([len(position_lidar_new[:,0]),1]) #assuming all are new humans
             for k in range(0,n_human): 
                 for kk in range(0,len(position_lidar_new[:,0])):
-                    distance_lidar=np.sqrt((position_lidar_new[kk,0])**2+(position_lidar_new[kk,1])**2)-dimension_tolerance #distance calculation considering robot dimensions
-                    if distance_lidar<0:
-                        distance_lidar=0
-                    diff[k,kk]=abs(distance[k,:]-distance_lidar)        
+                    diff[k,kk]=abs(distance[k,:]-distance_lidar_new[kk,:])      
                 counter_no_new_data=0 # counter to know if the k-th human tracked is not longer detected
                 for kk in range(0,len(position_lidar_new[:,0])):
                     if new_human_flag[kk]==0: # Consider the kk-th new human only if it was not matched with another tracked human before
@@ -236,11 +241,8 @@ class human_class:
                             error_threshold=meter_threshold[0] #meters 
                         if diff[k,kk]<error_threshold and ((area[k,0]==area_new[kk,0] and action_mode=="polytunnel") or (abs(area[k,0]-area_new[kk,0])<=1 and action_mode!="polytunnel")):# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk                           
-                            #Updating speed,motion and time_track
-                            dist_lidar=np.sqrt(position_lidar_new[new_index,0]**2+position_lidar_new[new_index,1]**2)-dimension_tolerance #distance calculation considering robot dimensions
-                            if dist_lidar<0:
-                                dist_lidar=0
-                            motion_diff=distance[k,:]-dist_lidar
+                            #Updating speed,motion and time_track                                
+                            motion_diff=distance[k,:]-distance_lidar_new[new_index,:]    
                             speed[k,:]=abs(motion_diff/time_diff[0])-rob_speed
                             time_track[k,0]=time_data[0]
                             #GIVING PRIORITY TO LIDAR DATA FOR MOTION ESTIMATION
@@ -260,7 +262,7 @@ class human_class:
                             area[k,0]=area_new[new_index,0]
                             counter_old[k,0]=counter_old[k,0]-1
                             new_human_flag[new_index]=1 #it is not a new human
-                            distance[k,:]=w_data[0]*distance[k,:]+w_data[1]*dist_lidar
+                            distance[k,:]=w_data[0]*distance[k,:]+w_data[1]*distance_lidar_new[new_index,:]
                             #Updating sensor    
                             if sensor[k]==2: #if before it was only from camera
                                 sensor[k,:]=0 #now is from both
@@ -340,8 +342,7 @@ class human_class:
                     posture=np.append(posture,np.zeros([1,2]),axis=0)
                     centroid=np.append(centroid,np.zeros([1,2]),axis=0)
                     orientation=np.append(orientation,np.zeros([1,1]),axis=0)
-                    distance=np.append(distance,np.zeros([1,1]),axis=0)
-                    distance[-1,0]=np.sqrt((position_lidar_new[k,0])**2+(position_lidar_new[k,1])**2) 
+                    distance=np.append(distance,[distance_lidar_new[k,:]],axis=0)
                     sensor=np.append(sensor,np.ones([1,1]),axis=0) #1 because it is a lidar type data
                     #Posture and Motion inference
                     motion=np.append(motion,np.zeros([1,1]),axis=0) #new human detection starts with motion label 0 = "not_defined"
@@ -367,8 +368,8 @@ class human_class:
             new_human_flag=np.zeros([len(centroid_new[:,0]),1]) #assuming all are new humans
             error_threshold=meter_threshold[1] #meters
             for k in range(0,n_human):
-                for kk in range(0,len(distance_new[:,0])):
-                    diff[k,kk]=abs(distance[k,:]-distance_new[kk,:])
+                for kk in range(0,len(distance_cam_new[:,0])):
+                    diff[k,kk]=abs(distance[k,:]-distance_cam_new[kk,:])
                 counter_no_new_data=0 # counter to know if the k-th human tracked is not longer detected
                 for kk in range(0,len(centroid_new[:,0])):
                     if new_human_flag[kk]==0: # Consider the kk-th new human only if it was not matched with another tracked human before                     
@@ -404,7 +405,7 @@ class human_class:
                             #GIVING PRIORITY TO LIDAR DATA FOR MOTION ESTIMATION
                             if sensor[k]==2: #only update with camera info if no lidar info is available                          
                                 #Updating speed, motion
-                                motion_diff=distance[k,:]-distance_new[new_index,:]
+                                motion_diff=distance[k,:]-distance_cam_new[new_index,:]
                                 speed[k,:]=abs(motion_diff/time_diff[1])-rob_speed
                                 if counter_motion[k]<n_samples: #while the recorded data is less than n_points                
                                     speed_buffer[k,int(counter_motion[k])]=speed[k,:]
@@ -417,7 +418,7 @@ class human_class:
                             #Updating position, distance and area
                             position[k,0]=w_data[0]*position[k,0]+w_data[1]*position_cam_new[new_index,0]
                             position[k,1]=w_data[0]*position[k,1]+w_data[1]*position_cam_new[new_index,1]
-                            distance[k,:]=w_data[0]*distance[k,:]+w_data[1]*distance_new[new_index,:]
+                            distance[k,:]=w_data[0]*distance[k,:]+w_data[1]*distance_cam_new[new_index,:]
                             area[k,0]=area_new[new_index,0]                           
                             #Updating counter_old    
                             counter_old[k,1]=counter_old[k,1]-1                          
@@ -503,7 +504,7 @@ class human_class:
                     posture=np.append(posture,[posture_new[k,:]],axis=0)
                     centroid=np.append(centroid,[centroid_new[k,:]],axis=0)
                     orientation=np.append(orientation,[orientation_new[k,:]],axis=0)
-                    distance=np.append(distance,[distance_new[k,:]],axis=0)
+                    distance=np.append(distance,[distance_cam_new[k,:]],axis=0)
                     sensor=np.append(sensor,2*np.ones([1,1]),axis=0) #2 because it is a camera type data
                     #Posture and Motion inference
                     motion=np.append(motion,np.zeros([1,1]),axis=0) #new human detection starts with motion label 0 = "not_defined"
