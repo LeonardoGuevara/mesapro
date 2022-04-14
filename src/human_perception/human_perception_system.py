@@ -118,7 +118,7 @@ class human_class:
                         ############################################################################################################
                     else: #if there are more human detected than before
                         position_new=np.array([pose.position.x,pose.position.y])
-                        distance_new=np.sqrt((position_new[0])**2+(position_new[1])**2)-dimension_tolerance #distance calculation considering robot dimensions
+                        distance_new=np.array([np.sqrt((position_new[0])**2+(position_new[1])**2)-dimension_tolerance]) #distance calculation considering robot dimensions
                         pos=np.append(pos,[position_new],axis=0)
                         dist=np.append(dist,[distance_new],axis=0)
                     k=k+1
