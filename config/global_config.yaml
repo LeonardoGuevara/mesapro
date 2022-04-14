@@ -20,7 +20,7 @@ camera_config:
   orient_param: "270_90" #orientation angles of frontal and back cameras
 
 matching_config: 
-  270_90_param: [110,127,285,380,270,150,70,285,380,90]  # parameters used to match the images taken from D455 with the lower resolution FLIR lepton images such that
+  270_90_param: [110,127,285,380,270,140,60,285,380,90]  # parameters used to match the images taken from D455 with the lower resolution FLIR lepton images such that
   # 1st - 5th  ->  parameters [y_init_up,x_init_left,n_pixels_x,n_pixels_y,rotation] of frontal camera when rotated 270 degrees
   # 6th - 10th ->  parameters [y_init_up,x_init_left,n_pixels_x,n_pixels_y,rotation] of back camera when rotated 90 degrees
   90_90_param: [120,105,285,380,90,120,105,285,380,90]   # when both images are rotated 90 degrees NOT WELL CALIBRATED*****
