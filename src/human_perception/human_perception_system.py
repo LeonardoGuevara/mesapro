@@ -44,6 +44,9 @@ speed_threshold=motion_infer_param[1] # threshold to determine if human is stati
 gesture_recogn_param=parsed_yaml_file.get("action_recog_config").get("gesture_recogn_param")
 n_samples_gest=gesture_recogn_param[3] #number of frames used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
 posture_threshold=gesture_recogn_param[4] #minimum probability delivered by gesture recognition algoritm to consider a gesture valid for the gesture inference (when analyzing a set of frames)
+#Safaty parameters
+camera_info=rospy.get_param("/hri_perception/camera_info") # flag to know if camera detector was activated or not, if not, then safety timer is not used
+
 #########################################################################################################################
 
 class robot_class:
@@ -90,10 +93,13 @@ class human_class:
         #Thermal detection
         self.thermal_detection=False #assuming no thermal detection as initial value
         # Safety timers (only for camera messages because leg detector is not publishing continuously)
-        self.cam_msg=True                       #flag to know if camera is publishing messages, by default is "True"
-        self.time_without_msg=parsed_yaml_file.get("human_safety_config").get("time_without_msg") # Maximum time without receiving sensors messages 
-        self.timer_safety_cam = threading.Timer(self.time_without_msg,self.safety_timeout_cam) # If "n" seconds elapse, call safety_timeout() for camera
-        self.timer_safety_cam.start()
+        if camera_info: #only activate safety timer if camera detector is running
+            self.cam_msg=True    #flag to know if camera is publishing messages, by default is "True"
+            self.time_without_msg=parsed_yaml_file.get("human_safety_config").get("time_without_msg") # Maximum time without receiving sensors messages 
+            self.timer_safety_cam = threading.Timer(self.time_without_msg,self.safety_timeout_cam) # If "n" seconds elapse, call safety_timeout() for camera
+            self.timer_safety_cam.start()
+        else:
+            self.cam_msg=False
         
     def lidar_callback(self,legs):
         #print("DATA FROM LIDAR")
@@ -786,8 +792,8 @@ if __name__ == '__main__':
             new_data[0]=0
         if new_data[1]==1:
             new_data[1]=0
-        #Publish human_perception messages only if camaras are still publishing messages  
-        if human.cam_msg==True:
+        #Publish human_perception messages only if camaras are still publishing messages  or if camera detector was not activated by the user
+        if human.cam_msg==True or camera_info==False:
             if human.n_human>1 or (human.n_human==1 and (human.motion_track[0,0]+human.centroid_track[0,0]+human.centroid_track[0,1]+human.posture_track[0,0]+human.position_track[0,0]+human.position_track[0,1]+human.distance_track[0,0])!=0):
                 msg.n_human = human.n_human
                 msg.posture = list(human.posture_track[:,0])

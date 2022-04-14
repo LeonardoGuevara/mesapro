@@ -63,7 +63,7 @@ windows:
 - name: hri_cameras_perception
   panes:
   - sleep 5 ; if $USE_CAMERA_DETECTOR ; then roslaunch mesapro hri_camera_detector.launch config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS openpose_visual:=$OPENPOSE_VISUAL ; fi
-  - sleep 5 ; roslaunch mesapro hri_perception_system.launch config_direct:=$CONFIG_DIRECT
+  - sleep 5 ; roslaunch mesapro hri_perception_system.launch config_direct:=$CONFIG_DIRECT camera_info:=$USE_CAMERA_DETECTOR
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
