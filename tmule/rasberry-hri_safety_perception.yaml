@@ -25,11 +25,11 @@ init_cmd: |
   export_default USE_CAMERA_DETECTOR true #if "false", the rgbd+thermal human detector is not launched
   export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
   export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
-  export_default USE_LEG_DETECTOR false #if "false", Lidar based leg_detector is not launched
+  export_default USE_LEG_DETECTOR true #if "false", Lidar based leg_detector is not launched
   export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
   export_default USE_VISUAL_ALERTS true # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
-  export_default USE_VISUALIZATION false # if "true", visualization window is activated
+  export_default USE_VISUALIZATION true # if "true", visualization window is activated
   export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default N_LANGUAGES 1 # "1" means, only english version of voice messages is reproduced, "2" means english+polish version
   export_default OPENPOSE_VISUAL false # if "true", openpose skeleton detections are visualized
@@ -38,7 +38,7 @@ init_cmd: |
   export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera front
   export_default FLIR_SERIAL_N2 "801b002f-5119-3038-3532-373600000000" #serial number thermal camera back
   export_default FLIR_SERIAL_N1 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera front
-  export_default FLIR_MIN_RANGE "29000" # minimum measurement range for scaling to pixel value [0,255]
+  export_default FLIR_MIN_RANGE "29500" # minimum measurement range for scaling to pixel value [0,255]
   export_default FLIR_MAX_RANGE "31000" # mamixum measurement range for scaling to pixel value [0,255]
   ##############################################################################################
   # Source ROS
@@ -61,7 +61,7 @@ init_cmd: |
 windows:
 - name: bag_files
   panes:
-  - sleep 5 ; if $USE_BAG ; then roslaunch mesapro bags_data_rgbd_thermal.launch bag_file:=$BAG_FILE; fi
+  - sleep 10 ; if $USE_BAG ; then roslaunch mesapro bags_data_rgbd_thermal.launch bag_file:=$BAG_FILE; fi
   check: "rostopic list || ! $USE_BAG"
 - name: rgbd_cameras
   panes:
