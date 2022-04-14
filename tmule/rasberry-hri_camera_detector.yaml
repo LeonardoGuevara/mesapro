@@ -28,7 +28,7 @@ init_cmd: |
   export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
   export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera back
   export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera front
-  export_default FLIR_SERIAL_N2 "80060001-5113-3238-3233-393800000000" #serial number thermal camera back
+  export_default FLIR_SERIAL_N2 "801b002f-5119-3038-3532-373600000000" #serial number thermal camera back
   export_default FLIR_SERIAL_N1 "000c0035-510f-3538-3530-333500000000" #serial number thermal camera front
   export_default FLIR_MIN_RANGE "29000" # minimum measurement range for scaling to pixel value [0,255]
   export_default FLIR_MAX_RANGE "31000" # mamixum measurement range for scaling to pixel value [0,255]
