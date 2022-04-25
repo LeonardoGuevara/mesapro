@@ -32,7 +32,7 @@ tracking_config:
   # 3rd -> times a human has to be detected in order to consider for tracking
   # 4th -> seconds needed to remove an old human tracked from tracking list
   weights_param: [0.2,0.8] # weights used for calculating a weighted average during matching old with new data -> [weigth of old data,weight of new data]
-  dist_comp_param: [0.35,0,-0.35,0] #distances (in meters) used to compensate the difference in position between the cameras and the origin of the robot local frame 
+  dist_comp_param: [0.0,0,-0.0,0] #distances (in meters) used to compensate the difference in position between the cameras and the origin of the robot local frame 
   # 1st and 3rd -> signed distance in "x" that has to be compensated on cameras detection to be compared with the lidar detection, 1st for frontal camera and 3rd for back camera
   # 2nd and 4th -> signed distance in "y" that has to be compensated on cameras detection to be compared with the lidar detection, 2nd for frontal camera and 4th for back camera
 
@@ -48,13 +48,13 @@ action_recog_config:
   posture_labels: ["no_gesture","left_arm_up","left_hand_front","left_arm_sideways","left_forearm_sideways","right_arm_up","right_hand_front","right_arm_sideways","right_forearm_sideways","both_arms_up","both_hands_front","crouched_down","picking"]
   motion_labels: ["not_defined","mostly_static", "moving"]
   orientation_labels: ["facing_the_robot", "giving_the_back", "left_side", "right_side"]
-  gesture_recogn_param: [19,36,7,4,0.5] # parameters used for gesture recognition (a single frame) and gesture inference (analyzing a set of frames) such that
+  gesture_recogn_param: [19,36,7,4,0.6] # parameters used for gesture recognition (a single frame) and gesture inference (analyzing a set of frames) such that
   # 1st -> number of body joints used from openpose output (25 available) but only used 19
   # 2nd -> number of features used to train the gesture recognition algorithm, 19 distances + 17 angles = 36 features
   # 3rd -> minimum number of joints necessaries to consider an openpose detection valid
   # 4th -> number of frames used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
   # 5th -> minimum probability delivered by gesture recognition algoritm to consider a gesture valid for the gesture inference (when analyzing a set of frames)
-  motion_infer_param: [8,0.5] # parameters used for motion inference such that:
+  motion_infer_param: [8,1] # parameters used for motion inference such that:
   # 1st -> number of samples used for the motion inference
   # 2nd -> threshold to determine if human is static or not, < means static, > means slow motion, in m/s
   openpose_normal_performance: "-1x400" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"

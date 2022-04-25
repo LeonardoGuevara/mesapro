@@ -203,7 +203,6 @@ class human_class:
         centroid=self.centroid_track
         orientation=self.orientation_track
         distance=self.distance_track
-        position_cam_new=self.position_cam
         area=self.area
         counter_old=self.counter_old
         position_lidar_new=self.position_lidar
@@ -211,6 +210,7 @@ class human_class:
         posture_new=self.posture
         centroid_new=self.centroid
         orientation_new=self.orientation
+        position_cam_new=self.position_cam
         distance_cam_new=self.distance_cam
         rob_speed=robot.speed
         action_mode=robot.action_mode
@@ -220,12 +220,13 @@ class human_class:
         #####New LiDAR info#####################################################################################        
         if new_data[0]==1:
             #print("NEW DATA LIDAR")
-            diff=np.zeros([n_human,len(position_lidar_new[:,0])]) #vector with the error between distances
+            diff=np.zeros([n_human,len(position_lidar_new[:,0])]) #vector with the error between human positions
             area_new=np.zeros([len(position_lidar_new[:,0]),1]) #vector with the area of the image where the new human is detected
             new_human_flag=np.zeros([len(position_lidar_new[:,0]),1]) #assuming all are new humans
             for k in range(0,n_human): 
                 for kk in range(0,len(position_lidar_new[:,0])):
-                    diff[k,kk]=abs(distance[k,:]-distance_lidar_new[kk,:])      
+                    #diff[k,kk]=abs(distance[k,:]-distance_lidar_new[kk,:])    
+                    diff[k,kk]=np.sqrt((position[k,0]-position_lidar_new[kk,0])**2+(position[k,1]-position_lidar_new[kk,1])**2)
                 counter_no_new_data=0 # counter to know if the k-th human tracked is not longer detected
                 for kk in range(0,len(position_lidar_new[:,0])):
                     if new_human_flag[kk]==0: # Consider the kk-th new human only if it was not matched with another tracked human before
@@ -245,7 +246,7 @@ class human_class:
                             error_threshold=meter_threshold[1] #meters                
                         else:
                             error_threshold=meter_threshold[0] #meters 
-                        if diff[k,kk]<error_threshold and ((area[k,0]==area_new[kk,0] and action_mode=="polytunnel") or (abs(area[k,0]-area_new[kk,0])<=1 and action_mode!="polytunnel")):# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
+                        if diff[k,kk]<error_threshold:# and ((area[k,0]==area_new[kk,0] and action_mode=="polytunnel") or (abs(area[k,0]-area_new[kk,0])<=1 and action_mode!="polytunnel")):# abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk                           
                             #Updating speed,motion and time_track                                
                             motion_diff=distance[k,:]-distance_lidar_new[new_index,:]    
@@ -375,7 +376,8 @@ class human_class:
             error_threshold=meter_threshold[1] #meters
             for k in range(0,n_human):
                 for kk in range(0,len(distance_cam_new[:,0])):
-                    diff[k,kk]=abs(distance[k,:]-distance_cam_new[kk,:])
+                    #diff[k,kk]=abs(distance[k,:]-distance_cam_new[kk,:])
+                    diff[k,kk]=np.sqrt((position[k,0]-position_cam_new[kk,0])**2+(position[k,1]-position_cam_new[kk,1])**2)
                 counter_no_new_data=0 # counter to know if the k-th human tracked is not longer detected
                 for kk in range(0,len(centroid_new[:,0])):
                     if new_human_flag[kk]==0: # Consider the kk-th new human only if it was not matched with another tracked human before                     
@@ -388,7 +390,7 @@ class human_class:
                             angle=angle+2*np.pi
                         area_new[kk,0]=self.area_inference(angle,position_cam_new[kk,1],position_cam_new[kk,0],action_mode)                     
                         
-                        if diff[k,kk]<error_threshold and ((area[k,0]==area_new[kk,0] and action_mode=="polytunnel") or (abs(area[k,0]-area_new[kk,0])<=1 and action_mode!="polytunnel")): #and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
+                        if diff[k,kk]<error_threshold:# and ((area[k,0]==area_new[kk,0] and action_mode=="polytunnel") or (abs(area[k,0]-area_new[kk,0])<=1 and action_mode!="polytunnel")): #and abs(area[k,0]-area_new[kk,0])<=1: # if a new detection match with a previos detected in distance and area
                             new_index=kk
                             #Updating posture
                             if counter_posture[k]<n_samples_gest: #while the recorded data is less than n_points 
@@ -533,16 +535,18 @@ class human_class:
         if new_data[0]==1 or new_data[1]==1:
             repeated_index=np.zeros([n_human,1]) #initially all humans are considered different
             for k in range(0,n_human):
-                dist_1=distance[k,:]     
+                #dist_1=distance[k,:]  
+                pos_1=position[k,:]
                 for i in range (0,n_human):
                     if k!=i and repeated_index[k]==0 and repeated_index[i]==0:
-                        dist_2=distance[i,:]   
-                        dist_diff=abs(dist_1-dist_2)  
+                        #dist_2=distance[i,:]  
+                        pos_2=position[i,:]
+                        pos_diff=np.sqrt((pos_1[0]-pos_2[0])**2+(pos_1[1]-pos_2[1])**2)  
                         if sensor[k]==2 or sensor[i]==2: #if at least one of these two data are from camera
                             error_threshold=meter_threshold[1] #meters                
                         else:
                             error_threshold=meter_threshold[0] #meters 
-                        if dist_diff<=error_threshold and ((area[k,0]==area[i,0] and action_mode=="polytunnel") or (abs(area[k,0]-area[i,0])<=1 and action_mode!="polytunnel")):   
+                        if pos_diff<=error_threshold:# and ((area[k,0]==area[i,0] and action_mode=="polytunnel") or (abs(area[k,0]-area[i,0])<=1 and action_mode!="polytunnel")):   
                             #print('Repeated human in track_list, merged')
                             if min(counter_old[k,:])<=min(counter_old[i,:]):
                                 repeated_index[i]=1

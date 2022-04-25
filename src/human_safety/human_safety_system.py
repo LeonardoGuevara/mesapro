@@ -19,6 +19,8 @@ pub_safety = rospy.Publisher('human_safety_info', hri_msg,queue_size=1)
 safety_msg = hri_msg()
 pub_pose = rospy.Publisher("/human/posestamped", PoseStamped, queue_size=1)
 pose_msg = PoseStamped()
+pub_goal = rospy.Publisher("/goal/posestamped", PoseStamped, queue_size=1)
+goal_msg = PoseStamped()
 #Importing global parameters from .yaml file
 default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
 config_direct=rospy.get_param("/hri_safety_system/config_direct",default_config_direct) #you have to change /hri_safety_system/ if the node is not named like this
@@ -38,6 +40,7 @@ class robot_class:
         self.current_goal_info="Unknown"   #initial condition
         self.polytunnel=False #to know if robot is moving inside the polytunnel or not, by default is "False"
         self.final_goal="Unknown" #name of final robot goal
+        self.goal_coord=[0,0] # (x,y) coordinates of final_goal , by default (0,0)
         
     def robot_info_callback(self,robot_info):
         if robot_info.current_node!="Unknown":
@@ -51,6 +54,9 @@ class robot_class:
             self.current_goal=robot_info.current_node
             self.current_goal_info=parent
             self.final_goal=robot_info.goal_node
+            if self.final_goal!="Unknown":
+                parent=topo_map.rsearch.get_node_from_tmap2(self.final_goal)
+                self.goal_coord=[parent["node"]["pose"]["position"]["x"],parent["node"]["pose"]["position"]["y"]]
         self.action=robot_info.action
             
     
@@ -466,7 +472,7 @@ class hri_class:
                     else: #if human is not located at critical areas 
                          self.status=1 # safety HRI
                 ##IN CASE THE HUMAN PERFORMS BODY GESTURES
-                if self.gesture_control==True:
+                if self.gesture_control==True and self.critical_dist<=collision_risk_dist[0]: #excecute only if gesture_control is activated and if human is <3.6m (to avoid false positives)
                     #In case the picker wants the robot to approch to him/her , only valid inside polytunnels and above 1.2m 
                     if self.human_command==1: #sensor[self.critical_index]!=1 and posture[self.critical_index]==1:# and polytunnel==True and self.critical_dist>1.2 and self.critical_area==True: #picker is ordering the robot to approach (using both arms)
                         self.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
@@ -488,7 +494,7 @@ class hri_class:
                         self.safety_action=6 # to make the robot activate the gesture control at footpaths
                         self.new_goal=final_goal # the current goal is not changed
                 else:
-                    self.human_command==0 #assuming no gesture detected
+                    self.human_command=0 #assuming no gesture detected
                    
                 if action==0 or action==2: #if robot is moving to an original goal or moving away from the picker
                     if self.status==1: #if human is above 3.6m and robot is on normal operation
@@ -503,10 +509,9 @@ class hri_class:
                         if self.human_command==0: #if human is not performing any gesture
                             self.safety_action=3 # pause operation and continue when human has move away 
                             self.audio_message=3 # message to ask the human for free space to continue moving
-                            self.new_goal=final_goal # the current goal is not changed
-                            
-                    else: #if human is within 1.2m or moving or is not facig the robot
-                        if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards (using both hands)
+                            self.new_goal=final_goal # the current goal is not changed                         
+                    else: #if human is within 1.2m 
+                        if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards 
                             self.safety_action=3 # pause operation and continue when human has move away 
                             self.audio_message=3 # message to ask the human for free space to continue moving
                             self.new_goal=final_goal # the current goal is not changed
@@ -518,19 +523,24 @@ class hri_class:
                             self.safety_action=7 # keep it approaching to the picker
                             self.new_goal=final_goal # the current goal is not changed
                     else: #if human is within 1.2m  or moving or is not facig the robot
-                        if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards (using both hands) 
+                        if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards 
                             self.safety_action=4 # stop operation and wait till human gives the robot a new order 
                             self.audio_message=2 # message to ask the human for new order
                             self.new_goal=final_goal # the current goal is not changed
                             
                 elif action==3: #if robot is in pause mode, waiting till the human is occluding to continue moving
-                    if self.status==1: #if human is above 3.6m and robot is on normal operation
+                    if self.status==1 : #if human is above 3.6m 
                         if self.human_command==0 : #if human is not performing any gesture
                             self.audio_message=6 # alert robot presence
                             self.safety_action=0 # restart operation making the robot moving to the current goal
                             self.new_goal=final_goal # the current goal is not changed
-                    else: #if human is within 3.6m
-                        if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards (using both hands)
+                    elif self.status==2 : #if human is between 1.2-3.6m
+                        if self.human_command==0: #if human is not performing any gesture
+                            self.safety_action=3 # still in pause operation and continue when human has move away 
+                            self.audio_message=3 # message to ask the human for free space to continue moving
+                            self.new_goal=final_goal # the current goal is not changed       
+                    else: #if human is within 1.2m
+                        if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards 
                             self.safety_action=7 # still in pause operation 
                             self.audio_message=3 # message to ask the human for free space to continue moving
                             self.new_goal=final_goal # the current goal is not changed
@@ -542,7 +552,7 @@ class hri_class:
                             self.audio_message=2 # message to ask the human for new order
                             self.new_goal=final_goal # the current goal is not changed
                     else: #if human is within 1.2m or moving or is not facig the robot
-                        if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards (using both hands)
+                        if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards 
                             self.safety_action=7 # still waiting for another human order 
                             self.audio_message=2 # message to ask the human for new order
                             self.new_goal=final_goal # the current goal is not changed
@@ -647,7 +657,7 @@ if __name__ == '__main__':
         else:
             safety_msg.action_mode = "footpath"          
         pub_safety.publish(safety_msg)
-        
+        #Publish Human position
         pose_msg.header.seq = 1
         pose_msg.header.stamp = rospy.Time.now()
         pose_msg.header.frame_id = "map"
@@ -660,5 +670,17 @@ if __name__ == '__main__':
         pose_msg.pose.orientation.z = quater[2]
         pose_msg.pose.orientation.w = quater[3]
         pub_pose.publish(pose_msg)
-   
+        #Publish Goal position
+        goal_msg.header.seq = 1
+        goal_msg.header.stamp = rospy.Time.now()
+        goal_msg.header.frame_id = "map"
+        goal_msg.pose.position.x = robot.goal_coord[0]
+        goal_msg.pose.position.y = robot.goal_coord[1]
+        goal_msg.pose.position.z = 0.0
+        quater = quaternion_from_euler(0, 0, 1.7, 'ryxz')
+        goal_msg.pose.orientation.x = quater[0]
+        goal_msg.pose.orientation.y = quater[1]
+        goal_msg.pose.orientation.z = quater[2]
+        goal_msg.pose.orientation.w = quater[3]
+        pub_goal.publish(goal_msg)
         rate.sleep() #to keep fixed the publishing loop rate

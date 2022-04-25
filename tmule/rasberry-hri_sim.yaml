@@ -81,7 +81,10 @@ init_cmd: |
   # Config defaults
   export_default ROW_CHANGE_CONFIG "${DEFAULT_PATH}/row_change_cfg.yaml"
   # Application specific config defaults
-  export_default ROW_TRAVERSAL_CONFIG "${DEFAULT_PATH}/${APPLICATION}/row_traversal_cfg.yaml"
+  ############################################################################################################ To use row_traversal_cfg.yaml from mesapro package instead of rasberry_bringup
+  export_default ROW_TRAVERSAL_CONFIG "$(rospack find mesapro)/config/row_traversal_cfg.yaml"
+  # export_default ROW_TRAVERSAL_CONFIG "${DEFAULT_PATH}/${APPLICATION}/row_traversal_cfg.yaml"
+  ################################################################################################################
   export_default ROW_DETECTOR_CONFIG_COMMON "${DEFAULT_PATH}/${APPLICATION}/row_detector_common_cfg.yaml"
   export_default ROW_DETECTOR_CONFIG_ELLIPSE "${DEFAULT_PATH}/${APPLICATION}/row_detector_ellipse_cfg.yaml"
 

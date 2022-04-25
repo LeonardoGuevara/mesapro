@@ -16,6 +16,7 @@ Panels:
         - /Pose2
         - /Pose3
         - /PoseArray2
+        - /Pose4
       Splitter Ratio: 0.5
     Tree Height: 724
   - Class: rviz/Selection
@@ -67,21 +68,94 @@ Visualization Manager:
       Collision Enabled: false
       Enabled: true
       Links:
+        1_color:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_d435e_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        1_d435e_color_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_d435e_depth_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_d435e_infra1_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_d435e_infra2_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_depth:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_depth_registered:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_ired1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_ired2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_perception_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_zed2_baro_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_zed2_camera_center:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        1_zed2_left_camera_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_zed2_left_camera_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_zed2_mag_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_zed2_right_camera_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_zed2_right_camera_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_zed2_temp_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        1_zed2_temp_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
         base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        basler_ac1440_0:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        basler_mono_frame_0:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -189,16 +263,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        nanoscan3_back:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        nanoscan3_front:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         os_sensor:
           Alpha: 1
           Show Axes: false
@@ -260,6 +324,16 @@ Visualization Manager:
           Show Trail: false
           Value: true
         top3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        umt30lxew_back:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        umt30lxew_front:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -466,7 +540,7 @@ Visualization Manager:
           Marker Topic: /row_detector/poles_vis
           Name: MarkerArray
           Namespaces:
-            {}
+            "": true
           Queue Size: 1
           Value: true
         - Class: rviz/Marker
@@ -590,6 +664,21 @@ Visualization Manager:
       Topic: /people_tracker/pose_array
       Unreliable: false
       Value: true
+    - Alpha: 0.800000011920929
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 255
+      Enabled: true
+      Head Length: 0
+      Head Radius: 0
+      Name: Pose
+      Shaft Length: 0.6000000238418579
+      Shaft Radius: 0.800000011920929
+      Shape: Arrow
+      Topic: /goal/posestamped
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -617,7 +706,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0.0950000137090683
+      Angle: 0.06499985605478287
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -630,8 +719,8 @@ Visualization Manager:
       Scale: 46.17680358886719
       Target Frame: base_link
       Value: TopDownOrtho (rviz)
-      X: 1.8097021579742432
-      Y: -1.8937885761260986
+      X: 1.2344070672988892
+      Y: -0.3904174566268921
     Saved: ~
 Window Geometry:
   Displays:
