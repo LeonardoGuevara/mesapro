@@ -26,7 +26,7 @@ init_cmd: |
   export_default USE_CAMERA_DETECTOR true #if "false", the rgbd+thermal human detector is not launched
   export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
   export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
-  export_default USE_LEG_DETECTOR false #if "false", Lidar based leg_detector is not launched
+  export_default USE_LEG_DETECTOR true #if "false", Lidar based leg_detector is not launched
   export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
   export_default USE_VISUAL_ALERTS true # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
