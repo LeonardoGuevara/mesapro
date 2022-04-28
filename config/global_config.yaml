@@ -17,7 +17,7 @@ directories_config:
 camera_config:
   intr_param: [384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] # intrinsic parameters of realsense D455 such that -> [fx cx fy cy] 
   dist_param: [-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] # distortion parameters of realsense D455 such that -> [k1 k2 t1 t2 k3] 
-  orient_param: "270_90" #orientation angles of frontal and back cameras
+  orient_param: "0_0" #orientation angles of frontal and back cameras -> "frontal_back"
 
 matching_config: 
   270_90_param: [110,127,285,380,270,140,60,285,380,90]  # parameters used to match the images taken from D455 with the lower resolution FLIR lepton images such that
