@@ -24,7 +24,7 @@ matching_config:
   # 1st - 5th  ->  parameters [y_init_up,x_init_left,n_pixels_x,n_pixels_y,rotation] of frontal camera when rotated 270 degrees
   # 6th - 10th ->  parameters [y_init_up,x_init_left,n_pixels_x,n_pixels_y,rotation] of back camera when rotated 90 degrees
   90_90_param: [120,105,285,380,90,120,105,285,380,90]   # when both images are rotated 90 degrees NOT WELL CALIBRATED*****
-  0_0_param: [130,135,380,285,0,130,135,380,285,0]       # when both images are rotated 0 degrees NOT WELL CALIBRATED*****
+  0_0_param: [130,135,380,285,0,118,145,380,285,0]       # when both images are rotated 0 degrees NOT WELL CALIBRATED*****
 
 tracking_config:
   threshold_param: [0.5,1,3,2] # parameters used as threshold for the human tracking algorithm such that
@@ -87,7 +87,7 @@ robot_config:
   align_tolerance: 0.2   # tolerance (in meters) to consider the robot aligned to the human when performing gesture control at footpaths
   turning_kp: 0.5        # Gain for tunning speed control when performing gesture control at footpaths
   operation_mode: "logistics" #it can be "logistics" or "UVC"
-  dimension_tolerance: 0.8 # tolerance (in meters) to consider the robot dimensions when computing distances between robot and humans detected
+  dimension_tolerance: 0.6 # tolerance (in meters) to consider the robot dimensions when computing distances between robot and humans detected
 
 audio_config:
   intervals_long: [10,10,10,10,10,10,10,10,10,10,10] # time in which the first version of a message is repeated, in seconds

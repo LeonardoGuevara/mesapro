@@ -24,9 +24,9 @@ init_cmd: |
   
   export_default VISUAL_MODE 3 # "1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
   export_default USE_CAMERA_DETECTOR true #if "false", the rgbd+thermal human detector is not launched
-  export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
+  export_default USE_THERMAL_INFO false # if "true", thermal information from FLIR camera is used in the camera_detector
   export_default USE_BAG false #if "true", a bag file is launched instead of getting on-line data from sensors
-  export_default USE_LEG_DETECTOR true #if "false", Lidar based leg_detector is not launched
+  export_default USE_LEG_DETECTOR false #if "false", Lidar based leg_detector is not launched
   export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
   export_default USE_VISUAL_ALERTS true # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
@@ -34,7 +34,7 @@ init_cmd: |
   export_default USE_SAFETY_SYSTEM true # if "false", the human perception and safety systems are not launched, useful when testing data from bag files
   export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default N_LANGUAGES 1 # "1" means, only english version of voice messages is reproduced, "2" means english+polish version
-  export_default OPENPOSE_VISUAL false # if "true", openpose skeleton detections are visualized
+  export_default OPENPOSE_VISUAL true # if "true", openpose skeleton detections are visualized
   export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected 
   export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera back
   export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera front
