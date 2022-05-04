@@ -376,7 +376,7 @@ def visual_outputs(color_image):
                         else:
                             color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
     if visual_mode!=2: #To resize the window with images and text
-        scaling=1
+        scaling=0.75
         color_image=cv2.resize(color_image,(int(color_image.shape[1]*scaling),int(color_image.shape[0]*scaling))) #resizing it to fit the screen
         
     cv2.imshow("System outputs",color_image)
