@@ -42,8 +42,8 @@ motion_infer_param=parsed_yaml_file.get("action_recog_config").get("motion_infer
 n_samples=motion_infer_param[0] # number of samples used for the motion inference
 speed_threshold=motion_infer_param[1] # threshold to determine if human is static or not, < means static, > means slow motion
 gesture_recogn_param=parsed_yaml_file.get("action_recog_config").get("gesture_recogn_param")
-n_samples_gest=gesture_recogn_param[3] #number of frames used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
-posture_threshold=gesture_recogn_param[4] #minimum probability delivered by gesture recognition algoritm to consider a gesture valid for the gesture inference (when analyzing a set of frames)
+n_samples_gest=gesture_recogn_param[0] #number of frames used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
+posture_threshold=gesture_recogn_param[1] #minimum probability delivered by gesture recognition algoritm to consider a gesture valid for the gesture inference (when analyzing a set of frames)
 #Safaty parameters
 camera_info=rospy.get_param("/hri_perception/camera_info") # flag to know if camera detector was activated or not, if not, then safety timer is not used
 

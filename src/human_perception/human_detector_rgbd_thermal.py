@@ -27,6 +27,7 @@ selected_joints=parsed_yaml_file.get("action_recog_config").get("feature_extract
 n_joints=len(selected_joints)
 dist=[0]*n_joints
 angles=[0]*(n_joints-2)
+n_features=len(dist)+len(angles)
 joints_min=7 # minimum number of joints to consider a detection, 7 are the  keypoints in the center of the body
 performance="normal" #OpenPose performance, can be "normal" or "high", "normal" as initial condition
 dynamic_performance = parsed_yaml_file.get("action_recog_config").get("dynamic_performance") 
@@ -438,7 +439,7 @@ class human_class:
             self.n_human=0
         else: #if there is at least 1 human skeleton detected
             #Feature extraction
-            self.feature_extraction_3D(keypoints,depth_array,therm_array,n_joints)
+            self.feature_extraction_3D(keypoints,depth_array,therm_array,n_joints,n_features)
         #Thermal detection flag
         if thermal_info==False:
             self.thermal_detection=False
@@ -484,7 +485,7 @@ class human_class:
             pub.publish(msg)
         
 ################################################################################################################            
-    def feature_extraction_3D(self,poseKeypoints,depth_array,therm_array,n_joints):
+    def feature_extraction_3D(self,poseKeypoints,depth_array,therm_array,n_joints,n_features):
         posture=np.zeros([len(poseKeypoints[:,0,0]),2])
         centroid=np.zeros([len(poseKeypoints[:,0,0]),2]) 
         centroid_3d=np.zeros([len(poseKeypoints[:,0,0]),2]) 
