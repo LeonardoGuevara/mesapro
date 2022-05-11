@@ -31,7 +31,7 @@ n_features=len(dist)+len(angles)
 joints_min=7 # minimum number of joints to consider a detection, 7 are the  keypoints in the center of the body
 performance="normal" #OpenPose performance, can be "normal" or "high", "normal" as initial condition
 dynamic_performance = parsed_yaml_file.get("action_recog_config").get("dynamic_performance") 
-dist_performance_change= dynamic_performance[0] # distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances above dist_performance_change
+dist_performance_change= dynamic_performance[0] # distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances below dist_performance_change
 time_threshold=dynamic_performance[1]           # minimum time allowed (in seconds) between two consecute changes of openpose performance
 time_change=0 #initial counter value
 avoid_area=parsed_yaml_file.get("action_recog_config").get("avoid_area") # percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
@@ -57,6 +57,7 @@ if performance=="normal":
     net_resolution= parsed_yaml_file.get("action_recog_config").get("openpose_normal_performance") # has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
 else: #high performance
     net_resolution= parsed_yaml_file.get("action_recog_config").get("openpose_high_performance")  #High performance is "-1x480"
+params["net_resolution"] = net_resolution 
 opWrapper = op.WrapperPython()
 opWrapper.configure(params)
 opWrapper.start()
@@ -400,17 +401,17 @@ class human_class:
             performance_past=performance
             if self.n_human>0:
                 if min(self.distance)>dist_performance_change:
-                    performance="high"
-                else:
                     performance="normal"
+                else:
+                    performance="high"
             else:
                 performance="normal"
             
             if performance=="high" and performance_past!=performance:
                 params = dict()
                 params["model_folder"] = openpose_models
-                params["net_resolution"] = net_resolution #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
-                #params["maximize_positives"] = True
+                net_resolution= parsed_yaml_file.get("action_recog_config").get("openpose_high_performance")
+                params["net_resolution"] = net_resolution 
                 opWrapper.stop()
                 opWrapper.configure(params)
                 opWrapper.start()
@@ -419,8 +420,8 @@ class human_class:
             elif performance=="normal" and performance_past!=performance:
                 params = dict()
                 params["model_folder"] = openpose_models
-                params["net_resolution"] = net_resolution #the detection performance and the GPU usage depends on this parameter, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
-                #params["maximize_positives"] = True
+                net_resolution= parsed_yaml_file.get("action_recog_config").get("openpose_normal_performance")
+                params["net_resolution"] = net_resolution 
                 opWrapper.stop()
                 opWrapper.configure(params)
                 opWrapper.start()

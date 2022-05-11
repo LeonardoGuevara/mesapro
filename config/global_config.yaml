@@ -58,7 +58,7 @@ action_recog_config:
   openpose_normal_performance: "-1x400" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
   openpose_high_performance: "-1x480" # net resolution of the openpose when working on "high" performance mode,
   dynamic_performance: [3.6,3] #parameters to calibrate dynamic changes on the openpose performance
-  # 1st -> distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances above dist_performance_change
+  # 1st -> distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances below dist_performance_change
   # 2nd -> minimum time allowed (in seconds) between two consecute changes of openpose performance
   avoid_area: 0.05             # percentage of the center of the merged image (front+back images) that is not considered as valid when detecting skeletons
   search_area: 0.3             # percentage of the image that is going to be search to find the pixel with the max temperature (centered on the skeleton joint with highest temp)
@@ -85,7 +85,7 @@ robot_config:
   align_tolerance: 0.2   # tolerance (in meters) to consider the robot aligned to the human when performing gesture control at footpaths
   turning_kp: 0.5        # Gain for tunning speed control when performing gesture control at footpaths
   operation_mode: "logistics" #it can be "logistics" or "UVC"
-  dimension_tolerance: 0.6 # tolerance (in meters) to consider the robot dimensions when computing distances between robot and humans detected
+  dimension_tolerance: 0.0 # tolerance (in meters) to consider the robot dimensions when computing distances between robot and humans detected
 
 audio_config:
   intervals_long: [10,10,10,10,10,10,10,10,10,10,10] # time in which the first version of a message is repeated, in seconds
