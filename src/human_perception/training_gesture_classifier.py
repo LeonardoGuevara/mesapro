@@ -21,12 +21,11 @@ config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 #FEATURE EXTRACTION PARAMETERS
-gesture_recogn_param=parsed_yaml_file.get("action_recog_config").get("gesture_recogn_param")
-n_joints=gesture_recogn_param[0] #19 body joints from openpose output (25 available)
-n_features=gesture_recogn_param[1] #19 distances + 17 angles = 36 features
+selected_joints=parsed_yaml_file.get("action_recog_config").get("feature_extract_param")
+n_joints=len(selected_joints)
 dist=[0]*n_joints
-angles=[0]*(n_joints-2) #17 angles
-joints_min=gesture_recogn_param[2] #minimum number of joints to consider a detection
+angles=[0]*(n_joints-2)
+joints_min=7 # minimum number of joints to consider a detection, 7 are the  keypoints in the center of the body
 labels=parsed_yaml_file.get("action_recog_config").get("posture_labels") #labels used for training the posture recognition model
 n_labels=len(labels)
 performance="high" #OpenPose performance, can be "normal" or "high", "normal" as initial condition
@@ -53,7 +52,7 @@ datum = op.Datum()
 #VISUALIZATION PARAMETERS
 openpose_visual=True  #to show or not a window with the human detection delivered by openpose
 #TRAINING PARAMETERS
-mode=0 # it can be 0 for training or 1 for testing 
+mode=1 # it can be 0 for training or 1 for testing 
 topic_list=['/camera/camera1/color/image_raw','/camera1/color/image_raw','/camera/camera1/aligned_depth_to_color/image_raw','/camera1/aligned_depth_to_color/image_raw'] #name of topics (old and new) to be extracted from bag files
 X=np.zeros([1,len(dist)+len(angles)])#.flatten()
 Y=np.zeros([1,1]).flatten()
@@ -100,8 +99,8 @@ def feature_extraction_3D(poseKeypoints,depth_array):
     
         ### 3D Feature extraction####
         #Using only the important joints
-        joints_x_init=keypoints[0:n_joints,0]
-        joints_y_init=keypoints[0:n_joints,1]   
+        joints_x_init=keypoints[selected_joints,0]
+        joints_y_init=keypoints[selected_joints,1]   
         joints_z_init=[0]*n_joints   
         for k in range(0,n_joints):
             #in case keypoints are out of image range 
@@ -144,7 +143,7 @@ def feature_extraction_3D(poseKeypoints,depth_array):
             for k in range(0,n_joints):
                dist[k]=np.sqrt((joints_x[k]-joints_x[1])**2+(joints_y[k]-joints_y[1])**2+(joints_z[k]-joints_z[1])**2)  
         
-            #Vectors between joints
+            #Vectors between joints, Note that indexes differs from the original openpose notation because legs are not used
             v1_2=[joints_x[1]-joints_x[2], joints_y[1]-joints_y[2], joints_z[1]-joints_z[2]]  
             v2_3=[joints_x[2]-joints_x[3], joints_y[2]-joints_y[3], joints_z[2]-joints_z[3]]  
             v3_4=[joints_x[3]-joints_x[4], joints_y[3]-joints_y[4], joints_z[3]-joints_z[4]]  
@@ -152,17 +151,17 @@ def feature_extraction_3D(poseKeypoints,depth_array):
             v5_6=[joints_x[5]-joints_x[6], joints_y[5]-joints_y[6], joints_z[5]-joints_z[6]]  
             v6_7=[joints_x[6]-joints_x[7], joints_y[6]-joints_y[7], joints_z[6]-joints_z[7]]  
             v1_0=[joints_x[1]-joints_x[0], joints_y[1]-joints_y[0], joints_z[1]-joints_z[0]]  
-            v0_15=[joints_x[0]-joints_x[15], joints_y[0]-joints_y[15], joints_z[0]-joints_z[15]]  
-            v15_17=[joints_x[15]-joints_x[17], joints_y[15]-joints_y[17], joints_z[15]-joints_z[17]]  
-            v0_16=[joints_x[0]-joints_x[16], joints_y[0]-joints_y[16], joints_z[0]-joints_z[16]]
-            v16_18=[joints_x[16]-joints_x[18], joints_y[16]-joints_y[18], joints_z[16]-joints_z[18]]  
+            v0_15=[joints_x[0]-joints_x[11], joints_y[0]-joints_y[11], joints_z[0]-joints_z[11]]  
+            v15_17=[joints_x[11]-joints_x[13], joints_y[11]-joints_y[13], joints_z[11]-joints_z[13]]  
+            v0_16=[joints_x[0]-joints_x[12], joints_y[0]-joints_y[12], joints_z[0]-joints_z[12]]
+            v16_18=[joints_x[12]-joints_x[14], joints_y[12]-joints_y[14], joints_z[12]-joints_z[14]]  
             v1_8=[joints_x[1]-joints_x[8], joints_y[1]-joints_y[8], joints_z[1]-joints_z[8]]
             v8_9=[joints_x[8]-joints_x[9], joints_y[8]-joints_y[9], joints_z[8]-joints_z[9]]  
-            v9_10=[joints_x[9]-joints_x[10], joints_y[9]-joints_y[10], joints_z[9]-joints_z[10]]  
-            v10_11=[joints_x[10]-joints_x[11], joints_y[10]-joints_y[11], joints_z[10]-joints_z[11]]  
-            v8_12=[joints_x[8]-joints_x[12], joints_y[8]-joints_y[12], joints_z[8]-joints_z[12]]  
-            v12_13=[joints_x[12]-joints_x[13], joints_y[12]-joints_y[13], joints_z[12]-joints_z[13]]  
-            v13_14=[joints_x[13]-joints_x[14], joints_y[13]-joints_y[14], joints_z[13]-joints_z[14]] 
+            #v9_10=[joints_x[9]-joints_x[10], joints_y[9]-joints_y[10], joints_z[9]-joints_z[10]]  
+            #v10_11=[joints_x[10]-joints_x[11], joints_y[10]-joints_y[11], joints_z[10]-joints_z[11]]  
+            v8_12=[joints_x[8]-joints_x[10], joints_y[8]-joints_y[10], joints_z[8]-joints_z[10]]  
+            #v12_13=[joints_x[12]-joints_x[13], joints_y[12]-joints_y[13], joints_z[12]-joints_z[13]]  
+            #v13_14=[joints_x[13]-joints_x[14], joints_y[13]-joints_y[14], joints_z[13]-joints_z[14]] 
     
             #Angles between joints  
             angles[0] = atan2(LA.norm(np.cross(v15_17,v0_15)),np.dot(v15_17,v0_15))
@@ -177,11 +176,11 @@ def feature_extraction_3D(poseKeypoints,depth_array):
             angles[9] = atan2(LA.norm(np.cross(v5_6,v6_7)),np.dot(v5_6,v6_7))
             angles[10] = atan2(LA.norm(np.cross(v1_2,v1_8)),np.dot(v1_2,v1_8))
             angles[11] = atan2(LA.norm(np.cross(v1_8,v8_9)),np.dot(v1_8,v8_9))
-            angles[12] = atan2(LA.norm(np.cross(v8_9,v9_10)),np.dot(v8_9,v9_10))
-            angles[13] = atan2(LA.norm(np.cross(v9_10,v10_11)),np.dot(v9_10,v10_11))
-            angles[14] = atan2(LA.norm(np.cross(v1_8,v8_12)),np.dot(v1_8,v8_12))
-            angles[15] = atan2(LA.norm(np.cross(v8_12,v12_13)),np.dot(v8_12,v12_13))
-            angles[16] = atan2(LA.norm(np.cross(v12_13,v13_14)),np.dot(v12_13,v13_14))
+            #angles[12] = atan2(LA.norm(np.cross(v8_9,v9_10)),np.dot(v8_9,v9_10))
+            #angles[13] = atan2(LA.norm(np.cross(v9_10,v10_11)),np.dot(v9_10,v10_11))
+            angles[12] = atan2(LA.norm(np.cross(v1_8,v8_12)),np.dot(v1_8,v8_12))
+            #angles[15] = atan2(LA.norm(np.cross(v8_12,v12_13)),np.dot(v8_12,v12_13))
+            #angles[16] = atan2(LA.norm(np.cross(v12_13,v13_14)),np.dot(v12_13,v13_14))
             
             features=dist+angles  
             n_human=1
@@ -193,7 +192,7 @@ def feature_extraction_3D(poseKeypoints,depth_array):
             centroid=[0,0]
             for k in range(0,n_joints):
                 if joints_x_init[k]!=0 and joints_y_init[k]!=0 and joints_z_init[k]!=0:
-                    if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==12: #Only consider keypoints in the center of the body
+                    if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==10: #Only consider keypoints in the center of the body, Note: k==10 is k==12 in original openpose index
                         dist_sum=joints_z_init[k]+dist_sum
                         x_sum=x_sum+joints_x_init[k]
                         y_sum=y_sum+joints_y_init[k]
@@ -338,7 +337,7 @@ if mode==0:
     #Train the model using the training sets y_pred=clf.predict(X_test)
     clf.fit(np.array(X),Y)
     #Exporting the model
-    joblib.dump(clf, config_direct+"/classifier_model_3D_v6.joblib")    
+    joblib.dump(clf, config_direct+"/classifier_model_3D_v7.joblib")    
     
 
 

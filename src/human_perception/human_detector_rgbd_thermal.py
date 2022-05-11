@@ -23,10 +23,11 @@ config_direct=rospy.get_param("/hri_camera_detector/config_direct") #you have to
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 #FEATURE EXTRACTION PARAMETERS
-gesture_recogn_param=parsed_yaml_file.get("action_recog_config").get("gesture_recogn_param")
-n_joints=gesture_recogn_param[0] #19 body joints from openpose output (25 available)
-n_features=gesture_recogn_param[1] #19 distances + 17 angles = 36 features
-joints_min=gesture_recogn_param[2] #minimum number of joints to consider a detection
+selected_joints=parsed_yaml_file.get("action_recog_config").get("feature_extract_param")
+n_joints=len(selected_joints)
+dist=[0]*n_joints
+angles=[0]*(n_joints-2)
+joints_min=7 # minimum number of joints to consider a detection, 7 are the  keypoints in the center of the body
 performance="normal" #OpenPose performance, can be "normal" or "high", "normal" as initial condition
 dynamic_performance = parsed_yaml_file.get("action_recog_config").get("dynamic_performance") 
 dist_performance_change= dynamic_performance[0] # distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances above dist_performance_change
@@ -87,7 +88,6 @@ class human_class:
         self.n_human=1 # considering up to 1 human to track initially
         self.posture=np.zeros([self.n_human,2]) #from camera [posture_label,posture_probability]
         self.centroid=np.zeros([self.n_human,2]) #x,y (pixels) of the human centroid, from camera
-        self.features=np.zeros([self.n_human,n_features]) #distances and angles of each skeleton, from camera
         self.orientation=np.zeros([self.n_human,1]) # it can be "front" or "back" if the human is facing the robot or not , from camera
         self.distance=np.zeros([self.n_human,1])  # distance between the robot and the average of the skeleton joints distances taken from the depth image, from camera, considering the robot dimensions
         self.image_size=[480,640] #initial condition, assuming portrait mode
@@ -438,7 +438,7 @@ class human_class:
             self.n_human=0
         else: #if there is at least 1 human skeleton detected
             #Feature extraction
-            self.feature_extraction_3D(keypoints,depth_array,therm_array,n_joints,n_features)
+            self.feature_extraction_3D(keypoints,depth_array,therm_array,n_joints)
         #Thermal detection flag
         if thermal_info==False:
             self.thermal_detection=False
@@ -484,7 +484,7 @@ class human_class:
             pub.publish(msg)
         
 ################################################################################################################            
-    def feature_extraction_3D(self,poseKeypoints,depth_array,therm_array,n_joints,n_features):
+    def feature_extraction_3D(self,poseKeypoints,depth_array,therm_array,n_joints):
         posture=np.zeros([len(poseKeypoints[:,0,0]),2])
         centroid=np.zeros([len(poseKeypoints[:,0,0]),2]) 
         centroid_3d=np.zeros([len(poseKeypoints[:,0,0]),2]) 
@@ -507,8 +507,8 @@ class human_class:
            
             ### 3D Feature extraction####
             #Using only the important joints
-            joints_x_init=poseKeypoints[kk,0:n_joints,0]
-            joints_y_init=poseKeypoints[kk,0:n_joints,1]   
+            joints_x_init=poseKeypoints[kk,selected_joints,0]
+            joints_y_init=poseKeypoints[kk,selected_joints,1]   
             joints_z_init=[0]*n_joints   
             joints_temp_init=[0]*n_joints
             for k in range(0,n_joints):
@@ -584,7 +584,7 @@ class human_class:
                 for k in range(0,n_joints):
                    dist[k]=np.sqrt((joints_x[k]-joints_x[1])**2+(joints_y[k]-joints_y[1])**2+(joints_z[k]-joints_z[1])**2)  
             
-                #Vectors between joints
+                #Vectors between joints, Note that indexes differs from the original openpose notation because legs are not used                
                 v1_2=[joints_x[1]-joints_x[2], joints_y[1]-joints_y[2], joints_z[1]-joints_z[2]]  
                 v2_3=[joints_x[2]-joints_x[3], joints_y[2]-joints_y[3], joints_z[2]-joints_z[3]]  
                 v3_4=[joints_x[3]-joints_x[4], joints_y[3]-joints_y[4], joints_z[3]-joints_z[4]]  
@@ -592,20 +592,20 @@ class human_class:
                 v5_6=[joints_x[5]-joints_x[6], joints_y[5]-joints_y[6], joints_z[5]-joints_z[6]]  
                 v6_7=[joints_x[6]-joints_x[7], joints_y[6]-joints_y[7], joints_z[6]-joints_z[7]]  
                 v1_0=[joints_x[1]-joints_x[0], joints_y[1]-joints_y[0], joints_z[1]-joints_z[0]]  
-                v0_15=[joints_x[0]-joints_x[15], joints_y[0]-joints_y[15], joints_z[0]-joints_z[15]]  
-                v15_17=[joints_x[15]-joints_x[17], joints_y[15]-joints_y[17], joints_z[15]-joints_z[17]]  
-                v0_16=[joints_x[0]-joints_x[16], joints_y[0]-joints_y[16], joints_z[0]-joints_z[16]]
-                v16_18=[joints_x[16]-joints_x[18], joints_y[16]-joints_y[18], joints_z[16]-joints_z[18]]  
+                v0_15=[joints_x[0]-joints_x[11], joints_y[0]-joints_y[11], joints_z[0]-joints_z[11]]  
+                v15_17=[joints_x[11]-joints_x[13], joints_y[11]-joints_y[13], joints_z[11]-joints_z[13]]  
+                v0_16=[joints_x[0]-joints_x[12], joints_y[0]-joints_y[12], joints_z[0]-joints_z[12]]
+                v16_18=[joints_x[12]-joints_x[14], joints_y[12]-joints_y[14], joints_z[12]-joints_z[14]]  
                 v1_8=[joints_x[1]-joints_x[8], joints_y[1]-joints_y[8], joints_z[1]-joints_z[8]]
                 v8_9=[joints_x[8]-joints_x[9], joints_y[8]-joints_y[9], joints_z[8]-joints_z[9]]  
-                v9_10=[joints_x[9]-joints_x[10], joints_y[9]-joints_y[10], joints_z[9]-joints_z[10]]  
-                v10_11=[joints_x[10]-joints_x[11], joints_y[10]-joints_y[11], joints_z[10]-joints_z[11]]  
-                v8_12=[joints_x[8]-joints_x[12], joints_y[8]-joints_y[12], joints_z[8]-joints_z[12]]  
-                v12_13=[joints_x[12]-joints_x[13], joints_y[12]-joints_y[13], joints_z[12]-joints_z[13]]  
-                v13_14=[joints_x[13]-joints_x[14], joints_y[13]-joints_y[14], joints_z[13]-joints_z[14]] 
-        
+                #v9_10=[joints_x[9]-joints_x[10], joints_y[9]-joints_y[10], joints_z[9]-joints_z[10]]  
+                #v10_11=[joints_x[10]-joints_x[11], joints_y[10]-joints_y[11], joints_z[10]-joints_z[11]]  
+                v8_12=[joints_x[8]-joints_x[10], joints_y[8]-joints_y[10], joints_z[8]-joints_z[10]]  
+                #v12_13=[joints_x[12]-joints_x[13], joints_y[12]-joints_y[13], joints_z[12]-joints_z[13]]  
+                #v13_14=[joints_x[13]-joints_x[14], joints_y[13]-joints_y[14], joints_z[13]-joints_z[14]] 
+                
                 #Angles between joints  
-                angles=[0]*(n_joints-2) #17 angles
+                angles=[0]*(n_joints-2) #13 angles
                 angles[0] = atan2(LA.norm(np.cross(v15_17,v0_15)),np.dot(v15_17,v0_15))
                 angles[1] = atan2(LA.norm(np.cross(v0_15,v1_0)),np.dot(v0_15,v1_0))
                 angles[2] = atan2(LA.norm(np.cross(v16_18,v0_16)),np.dot(v16_18,v0_16))
@@ -618,11 +618,11 @@ class human_class:
                 angles[9] = atan2(LA.norm(np.cross(v5_6,v6_7)),np.dot(v5_6,v6_7))
                 angles[10] = atan2(LA.norm(np.cross(v1_2,v1_8)),np.dot(v1_2,v1_8))
                 angles[11] = atan2(LA.norm(np.cross(v1_8,v8_9)),np.dot(v1_8,v8_9))
-                angles[12] = atan2(LA.norm(np.cross(v8_9,v9_10)),np.dot(v8_9,v9_10))
-                angles[13] = atan2(LA.norm(np.cross(v9_10,v10_11)),np.dot(v9_10,v10_11))
-                angles[14] = atan2(LA.norm(np.cross(v1_8,v8_12)),np.dot(v1_8,v8_12))
-                angles[15] = atan2(LA.norm(np.cross(v8_12,v12_13)),np.dot(v8_12,v12_13))
-                angles[16] = atan2(LA.norm(np.cross(v12_13,v13_14)),np.dot(v12_13,v13_14))
+                #angles[12] = atan2(LA.norm(np.cross(v8_9,v9_10)),np.dot(v8_9,v9_10))
+                #angles[13] = atan2(LA.norm(np.cross(v9_10,v10_11)),np.dot(v9_10,v10_11))
+                angles[12] = atan2(LA.norm(np.cross(v1_8,v8_12)),np.dot(v1_8,v8_12))
+                #angles[15] = atan2(LA.norm(np.cross(v8_12,v12_13)),np.dot(v8_12,v12_13))
+                #angles[16] = atan2(LA.norm(np.cross(v12_13,v13_14)),np.dot(v12_13,v13_14))
                 
                 #HUMAN FEATURES CALCULATION
                 features[kk,:]=dist+angles  
@@ -643,7 +643,7 @@ class human_class:
                 
                 for k in range(0,n_joints):
                     if joints_x_init[k]!=0 and joints_y_init[k]!=0 and joints_z_init[k]!=0:
-                        if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==12: #Only consider keypoints in the center of the body
+                        if k==0 or k==1 or k==2 or k==8 or k==5 or k==9 or k==10: #Only consider keypoints in the center of the body, Note: k==10 (without legs) is k==12 (in original openpose index)
                             dist_sum=joints_z_init[k]+dist_sum
                             x_sum=x_sum+joints_x_init[k]
                             y_sum=y_sum+joints_y_init[k]
@@ -691,7 +691,6 @@ class human_class:
                         
         #return features,posture,orientation,distance,centroid,camera_id
         if index_to_keep!=[]:
-            self.features=features[np.array(index_to_keep)]
             self.posture=posture[np.array(index_to_keep)]
             self.orientation=orientation[np.array(index_to_keep)]
             self.distance=distance[np.array(index_to_keep)]
