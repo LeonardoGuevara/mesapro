@@ -27,14 +27,4 @@
     <param name="capture_time" type="double" value="$(arg capture_time)" /> <!-- estimated time of capture of the sensor in seconds -->
   </node>
 
-  <!-- VISUALIZATION -->
-  <group if="$(eval arg('debug') == 1)">
-    <node name="rqt_image_view_thermal" pkg="rqt_image_view" type="rqt_image_view" respawn="true" output="screen" >
-      <remap from="image" to="/flir_one_node/thermal1/image_raw" />
-    </node>
-    <node name="rqt_image_view_thermal2" pkg="rqt_image_view" type="rqt_image_view" respawn="true" output="screen" if="$(eval arg('num_cam') == 2)">
-      <remap from="image" to="/flir_one_node/thermal2/image_raw" />
-    </node>
-  </group>
-
 </launch>

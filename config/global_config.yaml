@@ -32,7 +32,7 @@ tracking_config:
   # 3rd -> times a human has to be detected in order to consider for tracking
   # 4th -> seconds needed to remove an old human tracked from tracking list
   weights_param: [0.2,0.8] # weights used for calculating a weighted average during matching old with new data -> [weigth of old data,weight of new data]
-  dist_comp_param: [0.0,0,-0.0,0] #distances (in meters) used to compensate the difference in position between the cameras and the origin of the robot local frame 
+  dist_comp_param: [0.3,0,-0.3,0] #distances (in meters) used to compensate the difference in position between the cameras and the origin of the robot local frame 
   # 1st and 3rd -> signed distance in "x" that has to be compensated on cameras detection to be compared with the lidar detection, 1st for frontal camera and 3rd for back camera
   # 2nd and 4th -> signed distance in "y" that has to be compensated on cameras detection to be compared with the lidar detection, 2nd for frontal camera and 4th for back camera
 
@@ -55,8 +55,8 @@ action_recog_config:
   motion_infer_param: [8,1] # parameters used for motion inference such that:
   # 1st -> number of samples used for the motion inference
   # 2nd -> threshold to determine if human is static or not, < means static, > means slow motion, in m/s
-  openpose_normal_performance: "-1x400" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160"
-  openpose_high_performance: "-1x480" # net resolution of the openpose when working on "high" performance mode,
+  openpose_normal_performance: "-1x320" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160", used for human presence monitoring
+  openpose_high_performance: "-1x480" # net resolution of the openpose when working on "high" performance mode, used for gesture recognition
   dynamic_performance: [3.6,3] #parameters to calibrate dynamic changes on the openpose performance
   # 1st -> distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances below dist_performance_change
   # 2nd -> minimum time allowed (in seconds) between two consecute changes of openpose performance

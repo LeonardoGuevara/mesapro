@@ -404,7 +404,7 @@ class human_class:
                     performance="normal"
                 else:
                     performance="high"
-            else:
+            else: #if no human is detected
                 performance="normal"
             
             if performance=="high" and performance_past!=performance:
