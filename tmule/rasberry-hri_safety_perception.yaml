@@ -69,7 +69,7 @@ windows:
 - name: rgbd_cameras
   panes:
   - sleep 5 ; if ! $USE_BAG ; then roslaunch mesapro rs_multiple_devices.launch rs_serial_n1:=$RS_SERIAL_N1 rs_serial_n2:=$RS_SERIAL_N2 num_cam:=$N_CAMERAS; fi
-  cleck: "rostopic list | grep -q /camera1/color/image_raw || $USE_BAG"
+  cleck: "rostopic list | grep -q /camera1/color/image_raw /camera2/color/image_raw  || $USE_BAG"
 - name: thermal_cameras
   panes:
   - if ! $USE_BAG ; then roslaunch mesapro flir_thermal_module.launch flir_serial_n1:=$FLIR_SERIAL_N1 flir_serial_n2:=$FLIR_SERIAL_N2 num_cam:=$N_CAMERAS min_range:=$FLIR_MIN_RANGE max_range:=$FLIR_MAX_RANGE; fi

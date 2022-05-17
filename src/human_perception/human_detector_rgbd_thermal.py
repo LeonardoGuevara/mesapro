@@ -386,8 +386,8 @@ class human_class:
                     
             ##############################################################################################        
             #Here the images from two cameras has to be merged in a single image (front image left, back image back)
-            color_image=np.append(img_rgb_rot_back,img_rgb_rot_front,axis=1) 
-            depth_array=np.append(img_d_rot_back,img_d_rot_front,axis=1) 
+            color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
+            depth_array=np.append(img_d_rot_front,img_d_rot_back,axis=1) 
             therm_array=np.zeros((color_image.shape[0],color_image.shape[1]),np.uint8)
             self.color_image=color_image
             self.depth_array=depth_array
@@ -663,7 +663,7 @@ class human_class:
                     if centroid[kk,0]<=width-width*avoid_area or centroid[kk,0]>=width+width*avoid_area: 
                         #CAMERA ID
                         dist_camera_frame=dist_sum/n_joints_cent #distance with respect to the camera location as origin
-                        if centroid[kk,0]>=width: #camera front
+                        if centroid[kk,0]<=width: #camera front
                             camera_id[kk]=0
                             #HUMAN XY POSITION IN PIXELS INTO 3D WORLD, compensating the location of the cameras respect to the robot local frame location
                             centroid_3d[kk,0] = dist_camera_frame+dist_comp_param[0] #z-axis in frontal camera 3d world is the positive x-axis of robot frame

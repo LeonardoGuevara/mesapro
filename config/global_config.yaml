@@ -17,7 +17,7 @@ directories_config:
 camera_config:
   intr_param: [384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] # intrinsic parameters of realsense D455 such that -> [fx cx fy cy] 
   dist_param: [-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] # distortion parameters of realsense D455 such that -> [k1 k2 t1 t2 k3] 
-  orient_param: "270_90" #orientation angles of frontal and back cameras -> "frontal_back"
+  orient_param: "0_0" #orientation angles of frontal and back cameras -> "frontal_back"
 
 matching_config: 
   270_90_param: [110,127,285,380,270,140,60,285,380,90]  # parameters used to match the images taken from D455 with the lower resolution FLIR lepton images such that
@@ -55,8 +55,8 @@ action_recog_config:
   motion_infer_param: [8,1] # parameters used for motion inference such that:
   # 1st -> number of samples used for the motion inference
   # 2nd -> threshold to determine if human is static or not, < means static, > means slow motion, in m/s
-  openpose_normal_performance: "-1x320" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160", used for human presence monitoring
-  openpose_high_performance: "-1x480" # net resolution of the openpose when working on "high" performance mode, used for gesture recognition
+  openpose_normal_performance: "-1x256" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160", used for human presence monitoring, "-1x320"
+  openpose_high_performance: "-1x400" # net resolution of the openpose when working on "high" performance mode, used for gesture recognition, "-1x480"
   dynamic_performance: [3.6,3] #parameters to calibrate dynamic changes on the openpose performance
   # 1st -> distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances below dist_performance_change
   # 2nd -> minimum time allowed (in seconds) between two consecute changes of openpose performance
