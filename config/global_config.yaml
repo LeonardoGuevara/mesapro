@@ -17,15 +17,15 @@ directories_config:
 camera_config:
   intr_param: [384.7431945800781, 326.4798278808594, 384.34613037109375, 244.670166015625] # intrinsic parameters of realsense D455 such that -> [fx cx fy cy] 
   dist_param: [-0.056454725563526154, 0.06772931665182114, -0.0011188144562765956, 0.0003955118008889258, -0.022021731361746788] # distortion parameters of realsense D455 such that -> [k1 k2 t1 t2 k3] 
-  orient_param: "0_0" #orientation angles of frontal and back cameras -> "frontal_back"
+  orient_param: "270_90" #orientation angles of frontal and back cameras -> "frontal_back"
 
 matching_config: 
   270_90_param: [110,127,285,380,270,140,60,285,380,90]  # parameters used to match the images taken from D455 with the lower resolution FLIR lepton images such that
   # 1st - 5th  ->  parameters [y_init_up,x_init_left,n_pixels_x,n_pixels_y,rotation] of frontal camera when rotated 270 degrees
   # 6th - 10th ->  parameters [y_init_up,x_init_left,n_pixels_x,n_pixels_y,rotation] of back camera when rotated 90 degrees
+  0_0_param: [118,138,380,285,0,118,145,380,285,0]       # when both images are rotated 0 degrees 
   90_90_param: [120,105,285,380,90,120,105,285,380,90]   # when both images are rotated 90 degrees NOT WELL CALIBRATED*****
-  0_0_param: [118,138,380,285,0,118,145,380,285,0]       # when both images are rotated 0 degrees NOT WELL CALIBRATED*****
-
+  
 tracking_config:
   threshold_param: [0.5,1,3,2] # parameters used as threshold for the human tracking algorithm such that
   # 1st - 2nd -> maximum error (in meters) between two human detections to consider them detections of the same human, different for lidar than for camera -> [lidar,camera]

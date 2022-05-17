@@ -107,17 +107,17 @@ class human_class:
         #Back cameras emulation
         #Color image
         color_image_back=color_image_front
-        if resize_param[9]==90:
+        if resize_param[4]==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif resize_param[9]==270:
+        elif resize_param[4]==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_back=color_image_back            
         #Thermal image
         therm_image_back=therm_image_front
-        if resize_param[9]==90:
+        if resize_param[4]==90:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif resize_param[9]==270:
+        elif resize_param[4]==270:
             img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_t_rot_back=therm_image_back
@@ -150,9 +150,9 @@ class human_class:
         ##################################################################################
         #Back cameras emulation
         color_image_back=color_image_front
-        if resize_param[9]==90:
+        if resize_param[4]==90:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
-        elif resize_param[9]==270:
+        elif resize_param[4]==270:
             img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
         else: #0 degrees
             img_rgb_rot_back=color_image_back            
