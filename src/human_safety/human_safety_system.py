@@ -7,7 +7,7 @@ from geometry_msgs.msg import Pose, PoseStamped
 from math import * #to avoid prefix math.
 import numpy as np #to use matrix
 import yaml
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from topological_navigation.route_search2 import TopologicalRouteSearch2
 from mesapro.msg import human_msg, hri_msg, robot_msg
 import threading # Needed for Timer
@@ -41,6 +41,7 @@ class robot_class:
         self.polytunnel=False #to know if robot is moving inside the polytunnel or not, by default is "False"
         self.final_goal="Unknown" #name of final robot goal
         self.goal_coord=[0,0] # (x,y) coordinates of final_goal , by default (0,0)
+        self.collision_flag=True #Flag to know if a collision was detected by the safety bumpers, by default is "False"
         
     def robot_info_callback(self,robot_info):
         if robot_info.current_node!="Unknown":
@@ -68,6 +69,9 @@ class robot_class:
         angles = euler_from_quaternion((quat.x,quat.y,quat.z,quat.w))
         theta = angles[2]
         self.pos_theta=np.unwrap([theta])[0]
+        
+    def collision_detection_callback(self,collision):
+        self.collision_flag=collision.data
 
         
 class human_class:
@@ -423,7 +427,8 @@ class hri_class:
         final_goal=robot.final_goal
         polytunnel=robot.polytunnel
         current_goal_info=robot.current_goal_info
-         
+        collision=robot.collision_flag
+    
         ## IN CASE OF HUMAN DETECTION 
         if detection==True: #execute only if at least a human is detected   
             #Critical human selection
@@ -597,8 +602,16 @@ class hri_class:
                 self.safety_action=7 # no safety action / keep the previous robot action
                 self.audio_message=0 #no message
         
-        #FINALLY, check if perception system is ok, then check if teleoperacion is not activated and then check if first goal was assined already
-        if perception==False: #If no human perception messages are being published
+        #FINALLY, check if a collision was detected, if perception system is ok, if teleoperacion is not activated and then check if first goal was assined already
+        if collision==True:
+            self.status=3 #Collision detected
+            #self.critical_index=0 #by default
+            #self.critical_dist=0 #by default 0
+            self.human_command=0 #no human command
+            #self.new_goal=final_goal # the current goal is not changed
+            self.safety_action=3 # to make the robot pause the operation 
+            self.audio_message=11 # message for collision detection
+        elif perception==False: #If no human perception messages are being published
             self.safety_action=3 # to pause robot operation 
             self.audio_message=8 # to alert that human perception system is not working
             self.human_command=0 #no human command
@@ -606,7 +619,7 @@ class hri_class:
             self.safety_action=5 # teleoperation mode 
             self.audio_message=9 # to alert that robot is moving in teleoperation mode
             self.human_command=0 #no human command
-        elif final_goal=="Unknown": #If the robot doesn't have a goal yet
+        elif final_goal=="Unknown" and self.safety_action!=6: #If the robot doesn't have a goal yet BUT gesture control (footpaths) is not activated
             self.safety_action=7 # no safety action 
             self.audio_message=0 # no message
             self.human_command=0 #no human command
@@ -629,6 +642,7 @@ if __name__ == '__main__':
     rospy.Subscriber('human_info',human_msg,human.human_callback)  
     rospy.Subscriber('robot_info',robot_msg,robot.robot_info_callback)  
     rospy.Subscriber('/robot_pose', Pose, robot.robot_pose_callback)  
+    rospy.Subscriber('collision_detection', Bool, robot.collision_detection_callback) 
     robot.base_frame = rospy.get_param("row_traversal/base_frame", "base_link")
     #Rate setup
     rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz

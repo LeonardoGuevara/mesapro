@@ -89,6 +89,8 @@ class hri_class:
             audio="teleoperation_activated.mp3"
         if audio_index==10:
             audio="gesture_control_activated.mp3"
+        if audio_index==11:
+            audio="paused_collision_detected.mp3"
         message=folder+audio
         return message
 

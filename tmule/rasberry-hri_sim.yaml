@@ -234,10 +234,10 @@ windows:
 - name: hri_safety_system
   panes:
   - roslaunch mesapro hri_safety_system.launch config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
-  - sleep 10 ; roslaunch mesapro hri_audio_visual_alerts.launch config_direct:=$CONFIG_DIRECT arduino_port:=$ARDUINO_PORT use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS n_languages:=$N_LANGUAGES
+  - sleep 5 ; roslaunch mesapro hri_audio_visual_alerts.launch config_direct:=$CONFIG_DIRECT arduino_port:=$ARDUINO_PORT use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS n_languages:=$N_LANGUAGES
 - name: hri_visualization
   panes:
-  - sleep 10 ; roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT thermal_info:=$THERMAL_INFO n_cameras:=$N_CAMERAS #############################################################################################
+  - sleep 5 ; roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT thermal_info:=$THERMAL_INFO n_cameras:=$N_CAMERAS #############################################################################################
 - name: localisation_prelims_aditional
   panes:
   - roslaunch rasberry_bringup corner_lasers_merger.launch

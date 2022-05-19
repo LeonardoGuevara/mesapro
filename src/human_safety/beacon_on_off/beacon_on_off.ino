@@ -2,6 +2,8 @@
 #include <ros.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
+
 ros::NodeHandle  nh;
 
 const int red_pin=8;
@@ -10,18 +12,23 @@ const int green_pin=13;
 const int period_blink=1000;
 String  current_alert="none";
 bool blinking_flag=true;
+bool collision=false;
 
 void messageCb( const std_msgs::String& data){
   current_alert=data.data;
 }
 
 ros::Subscriber<std_msgs::String> sub("visual_alerts", &messageCb );
+std_msgs::Bool bool_msg;
+ros::Publisher chatter("collision_detection", &bool_msg);
 
 void setup()
 { 
   pinMode(red_pin, OUTPUT);
   pinMode(yellow_pin, OUTPUT);
   pinMode(green_pin, OUTPUT);
+  attachInterrupt(digitalPinToInterrupt(2),PadReleased,RISING);
+  attachInterrupt(digitalPinToInterrupt(2),PadPressed,FALLING); 
   nh.initNode();
   nh.subscribe(sub);
   
@@ -101,10 +108,22 @@ void activation()
       }
   }
 }
+
+void PadReleased()          
+{                   
+   collision=false;
+}
+
+void PadPressed()          
+{                   
+   collision=true;
+}
   
 void loop()
 { 
   activation();
+  bool_msg.data = collision;
+  chatter.publish( &bool_msg );
   nh.spinOnce();
   delay(1);
 }

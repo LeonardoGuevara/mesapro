@@ -27,6 +27,7 @@ class hri_class:
         self.problem_perception=False #Flag to know if human perception system has problems
         self.problem_safety=False #Flag to know if safety system has problems
         self.teleop=False #Flag to know if teleoperation mode is activated
+        self.collision=False # Flag to know if a collision was detected
         
     def safety_callback(self,safety_info):
         self.status=safety_info.hri_status
@@ -41,6 +42,10 @@ class hri_class:
              self.teleop=True #to alert that robot is in teleoperation    	
         else:
              self.teleop=False   
+        if self.audio_message==11:
+            self.collision=True #to alert that a collision was detected
+        else:
+            self.collision=False
         print("Safety message received")
         self.timer_safety.cancel()
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
@@ -52,8 +57,10 @@ class hri_class:
         self.problem_safety=True #to alert that safety system is not publishing 
         
     def activate_alerts(self):
-        #Priority order is: 1st - failere modes, 2nd - telep_mode, 3rd - status, and 4th goal="unknown" 
-        if (self.problem_safety==True or self.problem_perception==True):# and self.new_goal!="Unknown": 
+        #Priority order is: 1st - collision_detection 2nd - failere modes, 3rd - telep_mode, 4th - status, and 5th goal="unknown" 
+        if self.collision==True:
+            self.current_alert="red" #means dangerous interaction
+        elif (self.problem_safety==True or self.problem_perception==True):# and self.new_goal!="Unknown": 
             self.current_alert="red_blink" # means that there are problems with the safety system or human perception system
         elif self.teleop==True: # and self.new_goal!="Unknown":
            self.current_alert="green_blink" #means robot is moving in teleoperation mode
