@@ -32,6 +32,7 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(2),PadReleased,RISING);
   attachInterrupt(digitalPinToInterrupt(2),PadPressed,FALLING); 
   nh.initNode();
+  nh.advertise(chatter);
   nh.subscribe(sub);
   
 }

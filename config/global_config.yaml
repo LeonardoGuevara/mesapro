@@ -6,7 +6,7 @@ directories_config:
   open_pose_python: "/home/thorvald/rasberry_ws/src/openpose/build/python"
   open_pose_models: "/home/thorvald/rasberry_ws/src/openpose/models"
   gesture_classifier_model: "/home/thorvald/rasberry_ws/src/mesapro/config/classifier_model_3D_v7.joblib"
-  audio_direct: "/home/leo/rasberry_ws/src/mesapro/audio/"
+  audio_direct: "/home/thorvald/rasberry_ws/src/mesapro/audio/"
   training_set: "/home/leo/Documents/mesapro/bags/training/"
   testing_set: "/home/leo/Documents/mesapro/bags/testing/"
  
