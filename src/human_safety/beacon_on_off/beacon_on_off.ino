@@ -10,6 +10,8 @@ const int red_pin=8;
 const int yellow_pin=12;
 const int green_pin=13;
 const int period_blink=1000;
+unsigned long light_time = 0;  
+unsigned long last_light_time = 0;
 String  current_alert="none";
 bool blinking_flag=true;
 bool collision=false;
@@ -34,8 +36,25 @@ void setup()
   
 }
 
+void check_time()
+{
+  light_time = millis();
+  if (light_time - last_light_time > period_blink)
+  {
+    last_light_time = light_time;
+    if (blinking_flag==true){
+     blinking_flag=false; 
+    }
+    else{
+      blinking_flag=true;
+    }
+  }
+}
+
+
 void activation()
 {
+  check_time();
   if (current_alert=="green"){
       digitalWrite(green_pin, HIGH);   // activate the green led
       digitalWrite(red_pin, LOW);   // deactivate the red led
@@ -61,15 +80,11 @@ void activation()
         digitalWrite(green_pin, LOW);   // deactivate the green led
         digitalWrite(red_pin, LOW);   // deactivate the red led
         digitalWrite(yellow_pin, HIGH);   // activate the yellow led
-        blinking_flag=false;
-        delay(period_blink);
       }
       else{
         digitalWrite(green_pin, LOW);   // deactivate the green led
         digitalWrite(red_pin, LOW);   // deactivate the red led
         digitalWrite(yellow_pin, LOW);   // deactivate the yellow led
-        blinking_flag=true;
-        delay(period_blink);
         
       }
   }
@@ -78,15 +93,11 @@ void activation()
         digitalWrite(green_pin, LOW);   // deactivate the green led
         digitalWrite(red_pin, HIGH);   // activate the red led
         digitalWrite(yellow_pin, LOW);   // deactivate the yellow led
-        blinking_flag=false;
-        delay(period_blink);
       }
       else{
         digitalWrite(green_pin, LOW);   // deactivate the green led
         digitalWrite(red_pin, LOW);   // deactivate the red led
         digitalWrite(yellow_pin, LOW);   // deactivate the yellow led
-        blinking_flag=true;
-        delay(period_blink);
         
       }
   }
@@ -95,15 +106,11 @@ void activation()
         digitalWrite(green_pin, HIGH);   // activate the green led
         digitalWrite(red_pin, LOW);   // deactivate the red led
         digitalWrite(yellow_pin, LOW);   // deactivate the yellow led
-        blinking_flag=false;
-        delay(period_blink);
       }
       else{
         digitalWrite(green_pin, LOW);   // deactivate the green led
         digitalWrite(red_pin, LOW);   // deactivate the red led
         digitalWrite(yellow_pin, LOW);   // deactivate the yellow led
-        blinking_flag=true;
-        delay(period_blink);
         
       }
   }
