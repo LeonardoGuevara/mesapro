@@ -29,8 +29,8 @@ void setup()
   pinMode(red_pin, OUTPUT);
   pinMode(yellow_pin, OUTPUT);
   pinMode(green_pin, OUTPUT);
-  attachInterrupt(digitalPinToInterrupt(2),PadReleased,RISING);
-  attachInterrupt(digitalPinToInterrupt(2),PadPressed,FALLING); 
+  attachInterrupt(digitalPinToInterrupt(2),PadReleased,CHANGE);
+  //attachInterrupt(digitalPinToInterrupt(2),PadPressed,LOW); 
   nh.initNode();
   nh.advertise(chatter);
   nh.subscribe(sub);
@@ -118,14 +118,20 @@ void activation()
 }
 
 void PadReleased()          
-{                   
-   collision=false;
+{  
+  if (collision==true){
+   collision=false;                  
+  }
+  else{
+    collision=true;
+  }
+   
 }
 
-void PadPressed()          
-{                   
-   collision=true;
-}
+//void PadPressed()          
+//{                   
+//   collision=true;
+//}
   
 void loop()
 { 
