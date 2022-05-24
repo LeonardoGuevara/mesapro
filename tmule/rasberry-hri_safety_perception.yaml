@@ -32,6 +32,7 @@ init_cmd: |
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
   export_default USE_VISUALIZATION false # if "true", visualization window is activated in the robot local screen
   export_default USE_SAFETY_SYSTEM true # if "false", the human perception and safety systems are not launched, useful when testing data from bag files
+  export_default USE_AUTOMATIC_REACTIVATION false # if "true", robot can resume the previos goal after being "waiting for a new command" for a long time
   export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default N_LANGUAGES 1 # "1" means, only english version of voice messages is reproduced, "2" means english+polish version
   export_default OPENPOSE_VISUAL false # if "true", openpose skeleton detections are visualized in the robot local screen
@@ -89,7 +90,7 @@ windows:
   check: "rostopic list | grep -q /human_info" 
 - name: hri_safety_system
   panes:
-  - if $USE_SAFETY_SYSTEM ; then roslaunch mesapro hri_safety_system.launch config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL ; fi
+  - if $USE_SAFETY_SYSTEM ; then roslaunch mesapro hri_safety_system.launch config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL automatic_reactivation:=$USE_AUTOMATIC_REACTIVATION ; fi
   - sleep 5 ; if $USE_SAFETY_SYSTEM ; then roslaunch mesapro hri_audio_visual_alerts.launch config_direct:=$CONFIG_DIRECT arduino_port:=$ARDUINO_PORT use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS n_languages:=$N_LANGUAGES ; fi
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization

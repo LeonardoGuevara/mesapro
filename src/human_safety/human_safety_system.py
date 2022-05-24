@@ -22,8 +22,7 @@ pose_msg = PoseStamped()
 pub_goal = rospy.Publisher("/goal/posestamped", PoseStamped, queue_size=1)
 goal_msg = PoseStamped()
 #Importing global parameters from .yaml file
-default_config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
-config_direct=rospy.get_param("/hri_safety_system/config_direct",default_config_direct) #you have to change /hri_safety_system/ if the node is not named like this
+config_direct=rospy.get_param("/hri_safety_system/config_direct") #you have to change /hri_safety_system/ if the node is not named like this
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 collision_risk_dist=parsed_yaml_file.get("human_safety_config").get("collision_risk_distances") #Human to robot distances (m) used to determine the HRI risk during logistics 
@@ -46,6 +45,7 @@ class robot_class:
         self.resume_goal=False # Flag to know if the robot can resume the previous goal after been stop or if can move to the collection point if previos goal was already completed
         self.time_without_hri=parsed_yaml_file.get("human_safety_config").get("time_without_hri") # Maximum time without receiving a new command while robot is "waiting for a command"
         self.efficient_timer_running=False #flag to know if the efficient timer is running or not
+        self.automatic_reactivation=rospy.get_param("/hri_safety_system/automatic_reactivation") # flag to know if automatic reactivation feature is required or not
         #self.timer_efficient = threading.Timer(self.time_without_hri,self.efficient_timeout) # If "n" seconds elapse, call efficient_timeout()
         #self.timer_efficient.start()
         
@@ -65,19 +65,19 @@ class robot_class:
                 parent=topo_map.rsearch.get_node_from_tmap2(self.final_goal)
                 self.goal_coord=[parent["node"]["pose"]["position"]["x"],parent["node"]["pose"]["position"]["y"]]
         self.action=robot_info.action
-        if self.efficient_timer_running==False:
-            if self.action==4 and human.detection==False and self.final_goal!="Unknown" and self.current_goal!=self.collection_point: 
-                self.timer_efficient = threading.Timer(self.time_without_hri,self.efficient_timeout) # If "n" seconds elapse, call safety_timeout()
-                self.timer_efficient.start()
-                self.efficient_timer_running=True
-                #self.resume_goal=False
-        else:    
-            if (self.action==4 and (human.detection==True or self.final_goal=="Unknown" or self.current_goal==self.collection_point)) or self.action!=4: 
-                self.timer_efficient.cancel()
-                self.efficient_timer_running=False
-                #self.resume_goal=False
-            
-    
+        if self.automatic_reactivation==True:
+            if self.efficient_timer_running==False:
+                if self.action==4 and human.detection==False and self.final_goal!="Unknown" and self.current_goal!=self.collection_point: 
+                    self.timer_efficient = threading.Timer(self.time_without_hri,self.efficient_timeout) # If "n" seconds elapse, call safety_timeout()
+                    self.timer_efficient.start()
+                    self.efficient_timer_running=True
+                    #self.resume_goal=False
+            else:    
+                if (self.action==4 and (human.detection==True or self.final_goal=="Unknown" or self.current_goal==self.collection_point)) or self.action!=4: 
+                    self.timer_efficient.cancel()
+                    self.efficient_timer_running=False
+                    #self.resume_goal=False
+             
     def robot_pose_callback(self,pose):
         self.pos_x=pose.position.x
         self.pos_y=pose.position.y

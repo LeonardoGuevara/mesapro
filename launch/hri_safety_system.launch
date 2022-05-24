@@ -2,10 +2,12 @@
 <launch>
     <arg name="config_direct" default="" /> 
     <arg name="gesture_control" default=""/>
+    <arg name="automatic_reactivation" default=""/>
  
     <node pkg="mesapro" type="human_safety_system.py" name="hri_safety_system"> 
 	<param name="config_direct" value="$(arg config_direct)"/>
         <param name="gesture_control" type="bool" value="$(arg gesture_control)"/>
+        <param name="automatic_reactivation" type="bool" value="$(arg automatic_reactivation)"/>
     </node>
 
 </launch>

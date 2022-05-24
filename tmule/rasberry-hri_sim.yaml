@@ -22,6 +22,7 @@ init_cmd: |
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default THERMAL_INFO true # if "true", thermal information from FLIR camera is used for the camera_detector 
   export_default N_LANGUAGES 1 # "1" means, only english version of voice messages is reproduced, "2" means english+polish version
+  export_default USE_AUTOMATIC_REACTIVATION false # if "true", robot can resume the previos goal after being "waiting for a new command" for a long time
   export_default USE_VISUAL_ALERTS true # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
   export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
@@ -233,7 +234,7 @@ windows:
   - roslaunch mesapro hri_virtual_picker_detection.launch config_direct:=$CONFIG_DIRECT
 - name: hri_safety_system
   panes:
-  - roslaunch mesapro hri_safety_system.launch config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL
+  - roslaunch mesapro hri_safety_system.launch config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL automatic_reactivation:=$USE_AUTOMATIC_REACTIVATION
   - sleep 5 ; roslaunch mesapro hri_audio_visual_alerts.launch config_direct:=$CONFIG_DIRECT arduino_port:=$ARDUINO_PORT use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS n_languages:=$N_LANGUAGES
 - name: hri_visualization
   panes:
