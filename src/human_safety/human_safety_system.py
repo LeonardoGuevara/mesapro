@@ -41,7 +41,13 @@ class robot_class:
         self.polytunnel=False #to know if robot is moving inside the polytunnel or not, by default is "False"
         self.final_goal="Unknown" #name of final robot goal
         self.goal_coord=[0,0] # (x,y) coordinates of final_goal , by default (0,0)
-        self.collision_flag=True #Flag to know if a collision was detected by the safety bumpers, by default is "False"
+        self.collision_flag=False #Flag to know if a collision was detected by the safety bumpers, by default is "False"
+        self.collection_point=parsed_yaml_file.get("human_safety_config").get("collection_point")  #Name of the node defined as the collection_point
+        self.resume_goal=False # Flag to know if the robot can resume the previous goal after been stop or if can move to the collection point if previos goal was already completed
+        self.time_without_hri=parsed_yaml_file.get("human_safety_config").get("time_without_hri") # Maximum time without receiving a new command while robot is "waiting for a command"
+        self.efficient_timer_running=False #flag to know if the efficient timer is running or not
+        #self.timer_efficient = threading.Timer(self.time_without_hri,self.efficient_timeout) # If "n" seconds elapse, call efficient_timeout()
+        #self.timer_efficient.start()
         
     def robot_info_callback(self,robot_info):
         if robot_info.current_node!="Unknown":
@@ -59,6 +65,17 @@ class robot_class:
                 parent=topo_map.rsearch.get_node_from_tmap2(self.final_goal)
                 self.goal_coord=[parent["node"]["pose"]["position"]["x"],parent["node"]["pose"]["position"]["y"]]
         self.action=robot_info.action
+        if self.efficient_timer_running==False:
+            if self.action==4 and human.detection==False and self.final_goal!="Unknown" and self.current_goal!=self.collection_point: 
+                self.timer_efficient = threading.Timer(self.time_without_hri,self.efficient_timeout) # If "n" seconds elapse, call safety_timeout()
+                self.timer_efficient.start()
+                self.efficient_timer_running=True
+                #self.resume_goal=False
+        else:    
+            if (self.action==4 and (human.detection==True or self.final_goal=="Unknown" or self.current_goal==self.collection_point)) or self.action!=4: 
+                self.timer_efficient.cancel()
+                self.efficient_timer_running=False
+                #self.resume_goal=False
             
     
     def robot_pose_callback(self,pose):
@@ -73,6 +90,11 @@ class robot_class:
     def collision_detection_callback(self,collision):
         self.collision_flag=collision.data
 
+    def efficient_timeout(self):
+        print("No human command received in a long time")
+        #if self.final_goal!="Unknown" and self.current_goal!=self.collection_point: #only if goal is not "Unknown" 
+        self.resume_goal=True #to alert that robot can resume previous goal or move to collection point
+        #self.efficient_timer_running==False
         
 class human_class:
     def __init__(self): 
@@ -106,6 +128,7 @@ class human_class:
             self.detection=True #there is at least one human detected
         else:
             self.detection=False
+
         #print("Human perception message received")
         self.timer_safety.cancel()
         self.timer_safety = threading.Timer(self.time_without_msg,self.safety_timeout) # If "n" seconds elapse, call safety_timeout()
@@ -399,6 +422,12 @@ class hri_class:
         goal=parent["node"]["name"]
         return goal
     
+    def resume_goal_or_collection_point(self,current_goal,final_goal,collection_point):
+        if current_goal==final_goal:
+            goal=collection_point
+        else:
+            goal=final_goal
+        return goal
     
     def get_connected_nodes_tmap(self, node):
         children=[]
@@ -428,6 +457,8 @@ class hri_class:
         polytunnel=robot.polytunnel
         current_goal_info=robot.current_goal_info
         collision=robot.collision_flag
+        current_goal=robot.current_goal
+        collection_point=robot.collection_point
     
         ## IN CASE OF HUMAN DETECTION 
         if detection==True: #execute only if at least a human is detected   
@@ -595,8 +626,14 @@ class hri_class:
                     self.audio_message=6 # alert robot presence
                     self.safety_action=0 # restart operation making the robot moving to the current goal
                 elif action==4: #if robot is waiting for human order
-                    self.safety_action=7 # no safety action / keep the previous robot action
-                    self.audio_message=2 # message to ask the human for new order
+                    if robot.resume_goal==True:
+                        self.new_goal=self.resume_goal_or_collection_point(current_goal,final_goal,collection_point)    
+                        self.safety_action=0 # moving to current goal (resuming the previos goal or going to collection point)
+                        self.audio_message=6 # alert robot presence
+                        robot.resume_goal=False                       
+                    else:
+                        self.safety_action=7 # no safety action / keep the previous robot action
+                        self.audio_message=2 # message to ask the human for new order
                 
             else: #UVC
                 self.safety_action=7 # no safety action / keep the previous robot action

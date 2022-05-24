@@ -10,6 +10,8 @@ const int red_pin=8;
 const int yellow_pin=12;
 const int green_pin=13;
 const int period_blink=1000;
+const int time_without_msg=3000;
+unsigned long msg_time = 0;  
 unsigned long light_time = 0;  
 unsigned long last_light_time = 0;
 String  current_alert="none";
@@ -18,6 +20,7 @@ bool collision=false;
 
 void messageCb( const std_msgs::String& data){
   current_alert=data.data;
+  msg_time=millis();
 }
 
 ros::Subscriber<std_msgs::String> sub("visual_alerts", &messageCb );
@@ -49,6 +52,9 @@ void check_time()
     else{
       blinking_flag=true;
     }
+  }
+  if (light_time- msg_time > time_without_msg){
+    current_alert="none";
   }
 }
 
