@@ -22,7 +22,7 @@ init_cmd: |
   export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default THERMAL_INFO true # if "true", thermal information from FLIR camera is used for the camera_detector 
   export_default N_LANGUAGES 1 # "1" means, only english version of voice messages is reproduced, "2" means english+polish version
-  export_default USE_AUTOMATIC_REACTIVATION false # if "true", robot can resume the previos goal after being "waiting for a new command" for a long time
+  export_default USE_AUTOMATIC_REACTIVATION true # if "true", robot can resume the previos goal after being "waiting for a new command" for a long time
   export_default USE_VISUAL_ALERTS true # if "true", colored beacon is activated
   export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
   export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions

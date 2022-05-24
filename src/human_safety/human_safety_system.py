@@ -67,13 +67,13 @@ class robot_class:
         self.action=robot_info.action
         if self.automatic_reactivation==True:
             if self.efficient_timer_running==False:
-                if self.action==4 and human.detection==False and self.final_goal!="Unknown" and self.current_goal!=self.collection_point: 
+                if self.action==4 and (human.detection==False or (human.detection==True and hri.critical_dist>collision_risk_dist[0])) and self.final_goal!="Unknown" and self.current_goal!=self.collection_point: 
                     self.timer_efficient = threading.Timer(self.time_without_hri,self.efficient_timeout) # If "n" seconds elapse, call safety_timeout()
                     self.timer_efficient.start()
                     self.efficient_timer_running=True
                     #self.resume_goal=False
             else:    
-                if (self.action==4 and (human.detection==True or self.final_goal=="Unknown" or self.current_goal==self.collection_point)) or self.action!=4: 
+                if (self.action==4 and ((human.detection==True and hri.critical_dist<collision_risk_dist[0]) or self.final_goal=="Unknown" or self.current_goal==self.collection_point)) or self.action!=4: 
                     self.timer_efficient.cancel()
                     self.efficient_timer_running=False
                     #self.resume_goal=False
@@ -582,16 +582,22 @@ class hri_class:
                             self.new_goal=final_goal # the current goal is not changed
                             
                 elif action==4: #if robot is waiting for a new human command
-                    if self.status==1 or self.status==2: #if human is above 1.2m 
-                        if self.human_command==0: #if human is not performing any gesture
-                            self.safety_action=7 # still waiting for human order 
-                            self.audio_message=2 # message to ask the human for new order
-                            self.new_goal=final_goal # the current goal is not changed
-                    else: #if human is within 1.2m or moving or is not facig the robot
-                        if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards 
-                            self.safety_action=7 # still waiting for another human order 
-                            self.audio_message=2 # message to ask the human for new order
-                            self.new_goal=final_goal # the current goal is not changed
+                    if robot.resume_goal==True:
+                        self.new_goal=self.resume_goal_or_collection_point(current_goal,final_goal,collection_point)    
+                        self.safety_action=0 # moving to current goal (resuming the previos goal or going to collection point)
+                        self.audio_message=6 # alert robot presence
+                        robot.resume_goal=False   
+                    else:
+                        if self.status==1 or self.status==2: #if human is above 1.2m 
+                            if self.human_command==0: #if human is not performing any gesture
+                                self.safety_action=7 # still waiting for human order 
+                                self.audio_message=2 # message to ask the human for new order
+                                self.new_goal=final_goal # the current goal is not changed
+                        else: #if human is within 1.2m or moving or is not facig the robot
+                            if self.human_command!=2 and self.human_command!=5:  # if picker is not ordering the robot to move away or move backwards 
+                                self.safety_action=7 # still waiting for another human order 
+                                self.audio_message=2 # message to ask the human for new order
+                                self.new_goal=final_goal # the current goal is not changed
                 elif action==6: #if robot is in gesture control mode
                     if self.human_command==0 or self.human_command==3: #if human is not longer performing any gesture for "gesture control" or if is ordering to stop
                         self.safety_action=4 # stop operation and wait till human gives the robot a new order 
