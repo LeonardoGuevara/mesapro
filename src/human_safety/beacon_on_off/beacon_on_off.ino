@@ -9,6 +9,7 @@ ros::NodeHandle  nh;
 const int red_pin=8;
 const int yellow_pin=12;
 const int green_pin=13;
+const int estop_pin=2;
 const int period_blink=1000;
 const int time_without_msg=3000;
 unsigned long msg_time = 0;  
@@ -32,8 +33,10 @@ void setup()
   pinMode(red_pin, OUTPUT);
   pinMode(yellow_pin, OUTPUT);
   pinMode(green_pin, OUTPUT);
-  attachInterrupt(digitalPinToInterrupt(2),PadReleased,CHANGE);
-  //attachInterrupt(digitalPinToInterrupt(2),PadPressed,LOW); 
+  //pinMode(estop_pin,INPUT);
+  attachInterrupt(digitalPinToInterrupt(2),PadReleased,FALLING);
+  //attachInterrupt(digitalPinToInterrupt(2),PadReleased,CHANGE);
+  attachInterrupt(digitalPinToInterrupt(2),PadPressed,RISING); 
   nh.initNode();
   nh.advertise(chatter);
   nh.subscribe(sub);
@@ -123,25 +126,44 @@ void activation()
   }
 }
 
+//void PadReleased()          
+//{  
+//  if (collision==true){
+//   collision=false;                  
+//  }
+//  else{
+//    collision=true;
+//  }   
+//  //delay(10); 
+//}
+
 void PadReleased()          
 {  
-  if (collision==true){
-   collision=false;                  
-  }
-  else{
-    collision=true;
-  }
-   
+  collision=false;                  
+  delay(100); 
 }
 
+void PadPressed()          
+{  
+  collision=true;                  
+  delay(100); 
+}
+
+
 //void PadPressed()          
-//{                   
-//   collision=true;
+//{              
+//  if (digitalRead(estop_pin)==LOW){
+//   collision=false;      
+//  }
+//  else{
+//   collision=true; 
+//  }
 //}
   
 void loop()
 { 
   activation();
+  //PadPressed();
   bool_msg.data = collision;
   chatter.publish( &bool_msg );
   nh.spinOnce();
