@@ -188,7 +188,7 @@ class hri_class:
     def critical_human_selection(self,polytunnel,posture,dist,area,sensor,orientation,motion,final_goal,r_pos_x,r_pos_y,r_pos_theta,h_pos_x,h_pos_y,action):  
         ##################################################################################################################
         #Critical areas distribution: Inside the polytunnel includes areas 2 and 7, and outside polytunnel includes 1,2,3 and 6,7,8
-        #critical human selection logic is: 1st human within 1.2m, 2nd human performing gesture, 3rd human centered, 4rd closest human   
+        #critical human selection logic is: 1st human within 1.2m, 2nd human performing gesture (if within 3.6m), 3rd human centered, 4rd closest human   
         ######################################################################################################################
         n_human=len(dist)
         critical_area_old=False #initial value
@@ -204,33 +204,34 @@ class hri_class:
                 centered_old=True
         if dist[critical_index]<=collision_risk_dist[1] and critical_area_old==True:
             danger_old=True 
-        if (sensor[critical_index]!=1 and posture[critical_index]==8 and orientation[critical_index]==0 and danger_old==False and critical_area_old==True):  #rigth_forearm_sideways
-            gesture_old=True
-            if polytunnel==True:
-                command_old=1 #approach (approching to picker inside polytunnels)
-            else:
-                command_old=4 #move forwards (move towards the human at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==10 and orientation[critical_index]==0  and critical_area_old==True): #both_hands_front
-            gesture_old=True
-            command_old=3 # stop (make the robot stop and wait for new command inside and outside polytunnels)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==4 and orientation[critical_index]==0  and critical_area_old==True): #left_forearm_sideways
-            gesture_old=True
-            if polytunnel==True:
-                command_old=2 #move away (move away from picker inside polytunnel)
-            else:
-                command_old=5 #move backwards (move away from human at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==7  and orientation[critical_index]==0 and critical_area_old==True and polytunnel==False): #right_arm_sideways
-            gesture_old=True
-            command_old=6 #move right (only valid at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==3 and orientation[critical_index]==0 and critical_area_old==True and polytunnel==False): #left_arm_sideways
-            gesture_old=True
-            command_old=7 #move left (only valid at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==5 and orientation[critical_index]==0 and critical_area_old==True and polytunnel==False): #right_arm_up
-            gesture_old=True
-            command_old=8 #rotate clockwise (only valid at footpaths)
-        elif (sensor[critical_index]!=1 and posture[critical_index]==1 and orientation[critical_index]==0 and critical_area_old==True and polytunnel==False): #left_arm_up
-            gesture_old=True
-            command_old=9 #rotate counterclockwise (only valid at footpaths)
+        if dist[critical_index]<=collision_risk_dist[0] and sensor[critical_index]!=1 and orientation[critical_index]==0 and critical_area_old==True: #Conditions for gesture priority
+            if (posture[critical_index]==8 and danger_old==False):  #rigth_forearm_sideways
+                gesture_old=True
+                if polytunnel==True:
+                    command_old=1 #approach (approching to picker inside polytunnels)
+                else:
+                    command_old=4 #move forwards (move towards the human at footpaths)
+            elif (posture[critical_index]==10): #both_hands_front
+                gesture_old=True
+                command_old=3 # stop (make the robot stop and wait for new command inside and outside polytunnels)
+            elif (posture[critical_index]==4): #left_forearm_sideways
+                gesture_old=True
+                if polytunnel==True:
+                    command_old=2 #move away (move away from picker inside polytunnel)
+                else:
+                    command_old=5 #move backwards (move away from human at footpaths)
+            elif (posture[critical_index]==7 and polytunnel==False): #right_arm_sideways
+                gesture_old=True
+                command_old=6 #move right (only valid at footpaths)
+            elif (posture[critical_index]==3 and polytunnel==False): #left_arm_sideways
+                gesture_old=True
+                command_old=7 #move left (only valid at footpaths)
+            elif (posture[critical_index]==5 and polytunnel==False): #right_arm_up
+                gesture_old=True
+                command_old=8 #rotate clockwise (only valid at footpaths)
+            elif (posture[critical_index]==1 and polytunnel==False): #left_arm_up
+                gesture_old=True
+                command_old=9 #rotate counterclockwise (only valid at footpaths)
             
             
         for k in range(0,n_human):  
@@ -246,33 +247,34 @@ class hri_class:
                     centered_new=True
             if dist[k]<=collision_risk_dist[1] and critical_area_new==True:
                 danger_new=True 
-            if (sensor[k]!=1 and posture[k]==8  and orientation[k]==0  and danger_new==False and critical_area_new==True): #rigth_forearm_sideways
-                gesture_new=True
-                if polytunnel==True:
-                    command_new=1 #approach (approching to picker inside polytunnels)
-                else:
-                    command_new=4 #move forwards (move towards the human at footpaths)
-            elif (sensor[k]!=1 and posture[k]==10  and orientation[k]==0 and critical_area_new==True): #both_hands_front
-                gesture_new=True
-                command_new=3 # stop (make the robot stop and wait for new command inside and outside polytunnels)
-            elif (sensor[k]!=1 and posture[k]==4  and orientation[k]==0 and critical_area_new==True): #left_forearm_sideways
-                gesture_new=True
-                if polytunnel==True:
-                    command_new=2 #move away (move away from picker inside polytunnel)
-                else:
-                    command_new=5 #move backwards (move away from human at footpaths)
-            elif (sensor[k]!=1 and posture[k]==7  and orientation[k]==0 and critical_area_new==True and polytunnel==False): #right_arm_sideways
-                gesture_new=True
-                command_new=6 #move right (only valid at footpaths)
-            elif (sensor[k]!=1 and posture[k]==3  and orientation[k]==0 and critical_area_new==True and polytunnel==False): #left_arm_sideways
-                gesture_new=True
-                command_new=7 #move left (only valid at footpaths)
-            elif (sensor[k]!=1 and posture[k]==5  and orientation[k]==0 and critical_area_new==True and polytunnel==False): #right_arm_up
-                gesture_new=True
-                command_new=8 #rotate clockwise  (only valid at footpaths)
-            elif (sensor[k]!=1 and posture[k]==1  and orientation[k]==0 and critical_area_new==True and polytunnel==False): #left_arm_up
-                gesture_new=True
-                command_new=9 #rotate counterclockwise  (only valid at footpaths)
+            if dist[k]<=collision_risk_dist[0] and sensor[k]!=1 and orientation[k]==0 and critical_area_new==True: #Conditions for gesture priority
+                if (posture[k]==8 and danger_new==False): #rigth_forearm_sideways
+                    gesture_new=True
+                    if polytunnel==True:
+                        command_new=1 #approach (approching to picker inside polytunnels)
+                    else:
+                        command_new=4 #move forwards (move towards the human at footpaths)
+                elif (posture[k]==10): #both_hands_front
+                    gesture_new=True
+                    command_new=3 # stop (make the robot stop and wait for new command inside and outside polytunnels)
+                elif (posture[k]==4): #left_forearm_sideways
+                    gesture_new=True
+                    if polytunnel==True:
+                        command_new=2 #move away (move away from picker inside polytunnel)
+                    else:
+                        command_new=5 #move backwards (move away from human at footpaths)
+                elif (posture[k]==7 and polytunnel==False): #right_arm_sideways
+                    gesture_new=True
+                    command_new=6 #move right (only valid at footpaths)
+                elif (posture[k]==3 and polytunnel==False): #left_arm_sideways
+                    gesture_new=True
+                    command_new=7 #move left (only valid at footpaths)
+                elif (posture[k]==5 and polytunnel==False): #right_arm_up
+                    gesture_new=True
+                    command_new=8 #rotate clockwise  (only valid at footpaths)
+                elif (posture[k]==1 and polytunnel==False): #left_arm_up
+                    gesture_new=True
+                    command_new=9 #rotate counterclockwise  (only valid at footpaths)
             #############################################################
             #THIS IS THE CORE OF THE CRITICAL HUMAN SELECTION
             if danger_old==True:
