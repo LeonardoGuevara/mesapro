@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 import rospy 
-import multiprocessing
-from playsound import playsound
+#import multiprocessing
+#from playsound import playsound
 import time
 import yaml
 import threading # Needed for Timer
 from mesapro.msg import hri_msg
+import vlc
 
 #Importing global parameters from .yaml file
 config_direct=rospy.get_param("/hri_audio_alerts/config_direct")
@@ -117,8 +118,10 @@ if __name__ == '__main__':
                 if hri.change_audio==True:
                     version=0 #always start with the english version
                 message=hri.select_message(audio_index)
-                p = multiprocessing.Process(target=playsound, args=(message,))  
-                p.start()
+                #p = multiprocessing.Process(target=playsound, args=(message,))  
+                #p.start()
+                p=vlc.MediaPlayer(message)
+                p.play()
                 hri.time_audio=time.time()
                 hri.repeat_audio=False
                 hri.change_audio=False
@@ -137,7 +140,8 @@ if __name__ == '__main__':
                         if time.time()-hri.time_audio>=intervals_long[audio_index]:
                             hri.repeat_audio=True
                     #print("Audio alert is repeated")
-                p.join() #to make sure the new message is not overlapping the past message
+                #p.join() #to make sure the new message is not overlapping the past message
+                p.stop()
         rate.sleep() 
         
         

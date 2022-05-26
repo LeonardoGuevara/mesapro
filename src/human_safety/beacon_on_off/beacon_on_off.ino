@@ -33,10 +33,11 @@ void setup()
   pinMode(red_pin, OUTPUT);
   pinMode(yellow_pin, OUTPUT);
   pinMode(green_pin, OUTPUT);
-  //pinMode(estop_pin,INPUT);
-  attachInterrupt(digitalPinToInterrupt(2),PadReleased,FALLING);
-  //attachInterrupt(digitalPinToInterrupt(2),PadReleased,CHANGE);
-  attachInterrupt(digitalPinToInterrupt(2),PadPressed,RISING); 
+  pinMode(estop_pin,INPUT);
+  //attachInterrupt(digitalPinToInterrupt(estop_pin),PadReleased,FALLING);
+  attachInterrupt(digitalPinToInterrupt(estop_pin),pin_eval,CHANGE);
+  //attachInterrupt(digitalPinToInterrupt(estop_pin),PadReleased,RISING); 
+  //attachInterrupt(digitalPinToInterrupt(estop_pin),PadPressed,RISING); 
   nh.initNode();
   nh.advertise(chatter);
   nh.subscribe(sub);
@@ -128,7 +129,7 @@ void activation()
 
 //void PadReleased()          
 //{  
-//  if (collision==true){
+//  if (digitalRead(estop_pin)==LOW){
 //   collision=false;                  
 //  }
 //  else{
@@ -137,33 +138,35 @@ void activation()
 //  //delay(10); 
 //}
 
-void PadReleased()          
-{  
-  collision=false;                  
-  delay(100); 
-}
-
-void PadPressed()          
-{  
-  collision=true;                  
-  delay(100); 
-}
-
+//void PadReleased()          
+//{  
+//  delay(1);
+//  //collision=false;                  
+//  pin_eval();
+//}
 
 //void PadPressed()          
-//{              
-//  if (digitalRead(estop_pin)==LOW){
-//   collision=false;      
-//  }
-//  else{
-//   collision=true; 
-//  }
+//{  
+//  delay(1);
+//  //collision=true;                  
+//  pin_eval();
 //}
+
+
+void pin_eval()          
+{ 
+  delay(5); // mandatory            
+  if (digitalRead(estop_pin)==LOW){
+   collision=false;      
+  }
+  else{
+   collision=true; 
+  }
+}
   
 void loop()
 { 
   activation();
-  //PadPressed();
   bool_msg.data = collision;
   chatter.publish( &bool_msg );
   nh.spinOnce();
