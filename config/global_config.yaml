@@ -55,7 +55,7 @@ action_recog_config:
   motion_infer_param: [8,1] # parameters used for motion inference such that:
   # 1st -> number of samples used for the motion inference
   # 2nd -> threshold to determine if human is static or not, < means static, > means slow motion, in m/s
-  openpose_normal_performance: "-1x288" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160", used for human presence monitoring, "-1x320"
+  openpose_normal_performance: "-1x160" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160", used for human presence monitoring, "-1x320"
   openpose_high_performance: "-1x400" # net resolution of the openpose when working on "high" performance mode, used for gesture recognition, "-1x480"
   dynamic_performance: [3.6,3] #parameters to calibrate dynamic changes on the openpose performance
   # 1st -> distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances below dist_performance_change
