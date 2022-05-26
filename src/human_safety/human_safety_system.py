@@ -424,11 +424,18 @@ class hri_class:
         goal=parent["node"]["name"]
         return goal
     
-    def resume_goal_or_collection_point(self,current_goal,final_goal,collection_point):
+    def resume_goal_or_collection_point(self,current_goal,final_goal,collection_point,detection,occlusion):
         if current_goal==final_goal:
             goal=collection_point
         else:
-            goal=final_goal
+            if detection==True:
+                if occlusion==False:
+                    goal=collection_point
+                else:
+                    goal=final_goal
+            else:
+                goal=final_goal
+                #goal=collection_point
         return goal
     
     def get_connected_nodes_tmap(self, node):
@@ -585,7 +592,7 @@ class hri_class:
                             
                 elif action==4: #if robot is waiting for a new human command
                     if robot.resume_goal==True:
-                        self.new_goal=self.resume_goal_or_collection_point(current_goal,final_goal,collection_point)    
+                        self.new_goal=self.resume_goal_or_collection_point(current_goal,final_goal,collection_point,detection,self.safe_cond_occlusion)    
                         self.safety_action=0 # moving to current goal (resuming the previos goal or going to collection point)
                         self.audio_message=6 # alert robot presence
                         robot.resume_goal=False   
@@ -620,6 +627,7 @@ class hri_class:
             self.critical_dist=100 #by default
             self.human_command=0 #no human command
             self.new_goal=final_goal # the current goal is not changed
+            self.safe_cond_occlusion=False
             if self.operation=="logistics":
                 if action==0 or action==2: # robot is moving to an initial goal or moving away from the picker
                     self.safety_action=7 # no safety action / keep the previous robot action
@@ -635,7 +643,8 @@ class hri_class:
                     self.safety_action=0 # restart operation making the robot moving to the current goal
                 elif action==4: #if robot is waiting for human order
                     if robot.resume_goal==True:
-                        self.new_goal=self.resume_goal_or_collection_point(current_goal,final_goal,collection_point)    
+                        
+                        self.new_goal=self.resume_goal_or_collection_point(current_goal,final_goal,collection_point,detection,self.safe_cond_occlusion)    
                         self.safety_action=0 # moving to current goal (resuming the previos goal or going to collection point)
                         self.audio_message=6 # alert robot presence
                         robot.resume_goal=False                       
