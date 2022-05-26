@@ -73,7 +73,7 @@ human_safety_config:
   safety_action: ["move_to_goal","approach_to_human","move_away_from_human","pause","wait_for_new_human_command","teleoperation","gesture_control","no_safety_action"]
   human_command: ["no_command","approach","move_away","stop","move_forwards","move_backwards","move_right","move_left","rotate_clockwise","rotate_counterclockwise"]
   operation_mode: ["logistics","UVC-Treatment"]
-  han_distances: [3.6,1] #Human to robot distances (in meters) at which the robot starts to slow down or stop -> [slow_down,stop]
+  han_distances: [3.6,1.2] #Human to robot distances (in meters) at which the robot starts to slow down or stop -> [slow_down,stop]
   collision_risk_distances: [3.6,1.2] #Human to robot distances (in meters) used to determine the HRI risk in case of collisions -> [risky,dangerous]
   uvc_risk_distances: [10,7] #Human to robot distances (in meters) used to determine the HRI risk during uvc treatment > [risky,dangerous]
   area_distribution: [60,1.3,1,2] # parameters to determine the detection area distribution -> [area angle "a",row width "w", "a" scaling factor, "w" scaling factor]
