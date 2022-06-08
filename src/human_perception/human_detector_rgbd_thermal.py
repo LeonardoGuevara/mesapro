@@ -443,18 +443,22 @@ class human_class:
                 #time_change=time.time()
             
         ####################################################################################################
-        datum.cvInputData = color_image
-        opWrapper.emplaceAndPop(op.VectorDatum([datum]))
-        #Keypoints extraction using OpenPose
-        keypoints=datum.poseKeypoints
-        self.image_show=datum.cvOutputData #for visualization 
-         
-        if keypoints is None: #if there is no human skeleton detected
-            #print('No human detected')
+        if performance=="low":
             self.n_human=0
-        else: #if there is at least 1 human skeleton detected
-            #Feature extraction
-            self.feature_extraction_3D(keypoints,depth_array,therm_array,n_joints,n_features)
+        else:
+            datum.cvInputData = color_image
+            opWrapper.emplaceAndPop(op.VectorDatum([datum]))
+            #Keypoints extraction using OpenPose
+            keypoints=datum.poseKeypoints
+            self.image_show=datum.cvOutputData #for visualization 
+             
+            if keypoints is None: #if there is no human skeleton detected
+                #print('No human detected')
+                self.n_human=0
+            else: #if there is at least 1 human skeleton detected
+                #Feature extraction
+                self.feature_extraction_3D(keypoints,depth_array,therm_array,n_joints,n_features)
+        
         #Thermal detection flag
         if thermal_info==False:
             self.thermal_detection=False
