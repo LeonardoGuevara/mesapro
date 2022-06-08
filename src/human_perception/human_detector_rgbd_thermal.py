@@ -14,6 +14,7 @@ import cv2
 import yaml
 from mesapro.msg import human_detector_msg
 import ros_numpy
+from std_msgs.msg import Bool
 ##########################################################################################
 #GENERAL PURPUSES VARIABLES
 pub_hz=0.01 #main loop frequency
@@ -101,6 +102,13 @@ class human_class:
         self.intensity=np.zeros([self.n_human,1]) #from thermal camera
         self.thermal_detection=False #assuming no thermal detection as initial value
         self.centroid_3d=np.zeros([self.n_human,2]) #position [x,y] of the humans detected mesuared respect to the robot local frame
+        self.teleop=False #Flag to know if robot is in teleoperation mode or not, by default is "False"
+    
+    def teleop_callback(self,msg):
+        if msg.data: # if joystick_priority==True
+            self.teleop=True #teleoperation is required
+        else: #then autonomous mode has priority
+            self.teleop=False 
     
     def rgbd_thermal_1_callback(self,rgb_front, depth_front, therm_front):
         global new_data
@@ -398,14 +406,18 @@ class human_class:
     def processing(self,color_image,depth_array,therm_array):
         global time_change, performance
         if time.time()-time_change>time_threshold: #only admit update if time_threshold is satisfied
-            performance_past=performance
-            if self.n_human>0:
-                if min(self.distance)>dist_performance_change:
+            performance_past=performance        
+            
+            if self.teleop==True:
+                performance="low"
+            else:
+                if self.n_human>0:
+                    if min(self.distance)>dist_performance_change:
+                        performance="normal"
+                    else:
+                        performance="high"
+                else: #if no human is detected
                     performance="normal"
-                else:
-                    performance="high"
-            else: #if no human is detected
-                performance="normal"
             
             if performance=="high" and performance_past!=performance:
                 params = dict()
@@ -426,8 +438,10 @@ class human_class:
                 opWrapper.configure(params)
                 opWrapper.start()
                 time_change=time.time()
-                #datum = op.Datum()
-
+            elif performance=="low" and performance_past!=performance:
+                opWrapper.stop()
+                #time_change=time.time()
+            
         ####################################################################################################
         datum.cvInputData = color_image
         opWrapper.emplaceAndPop(op.VectorDatum([datum]))
@@ -574,8 +588,8 @@ class human_class:
                             temp_max=pixel_temp
                             if temp_max>=temp_thresh:
                                 break #no more search
-            #only continue if there are enough joints detected on the skeleton and/or temp_max satisfy the threshold
-            if Js!=0 and valid>=joints_min and ((temp_max>=temp_thresh and thermal_info==True) or thermal_info==False):
+            #only continue if there are enough joints detected on the skeleton and/or temp_max satisfy the threshold (thermal info is not used when human is not facing the robot)
+            if Js!=0 and valid>=joints_min and ((temp_max>=temp_thresh and thermal_info==True) or (orientation[kk,:]==1 and thermal_info==True)  or thermal_info==False):
                 intensity[kk,0]=temp_max
                 joints_x = joints_x_trans/Js      
                 joints_y = joints_y_trans/Js
@@ -714,6 +728,7 @@ if __name__ == '__main__':
     human=human_class()  
     rospy.init_node('human_detector_camera',anonymous=True)
     # Setup and call subscription
+    rospy.Subscriber('/teleop_joy/joy_priority', Bool, human.teleop_callback)
     if n_cameras==1:
         #Camara front
         if thermal_info==True:
