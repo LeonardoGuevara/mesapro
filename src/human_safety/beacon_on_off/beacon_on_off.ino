@@ -9,7 +9,8 @@ ros::NodeHandle  nh;
 const int red_pin=8;
 const int yellow_pin=12;
 const int green_pin=13;
-const int estop_pin=2;
+const int estop_pin_in=2;
+const int estop_pin_out=9;
 const int period_blink=1000;
 const int time_without_msg=3000;
 unsigned long msg_time = 0;  
@@ -33,11 +34,13 @@ void setup()
   pinMode(red_pin, OUTPUT);
   pinMode(yellow_pin, OUTPUT);
   pinMode(green_pin, OUTPUT);
-  pinMode(estop_pin,INPUT);
-  //attachInterrupt(digitalPinToInterrupt(estop_pin),PadReleased,FALLING);
-  attachInterrupt(digitalPinToInterrupt(estop_pin),pin_eval,CHANGE);
-  //attachInterrupt(digitalPinToInterrupt(estop_pin),PadReleased,RISING); 
-  //attachInterrupt(digitalPinToInterrupt(estop_pin),PadPressed,RISING); 
+  pinMode(estop_pin_out, OUTPUT);
+  digitalWrite(estop_pin_out, HIGH);   // unactivate estop as initial condition
+  pinMode(estop_pin_in,INPUT);
+  //attachInterrupt(digitalPinToInterrupt(estop_pin_in),PadReleased,FALLING);
+  attachInterrupt(digitalPinToInterrupt(estop_pin_in),pin_eval,CHANGE);
+  //attachInterrupt(digitalPinToInterrupt(estop_pin_in),PadReleased,RISING); 
+  //attachInterrupt(digitalPinToInterrupt(estop_pin_in),PadPressed,RISING); 
   nh.initNode();
   nh.advertise(chatter);
   nh.subscribe(sub);
@@ -129,7 +132,7 @@ void activation()
 
 //void PadReleased()          
 //{  
-//  if (digitalRead(estop_pin)==LOW){
+//  if (digitalRead(estop_pin_in)==LOW){
 //   collision=false;                  
 //  }
 //  else{
@@ -156,11 +159,13 @@ void activation()
 void pin_eval()          
 { 
   delay(5); // mandatory            
-  if (digitalRead(estop_pin)==LOW){
-   collision=false;      
+  if (digitalRead(estop_pin_in)==LOW){
+   collision=false; 
+   digitalWrite(estop_pin_out, HIGH);   // unactivate estop
   }
   else{
    collision=true; 
+   digitalWrite(estop_pin_out, LOW);   // activate estop
   }
 }
   
