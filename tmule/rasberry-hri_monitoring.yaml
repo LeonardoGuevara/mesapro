@@ -19,7 +19,7 @@ init_cmd: |
   export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of mesapro config file
   
   export_default VISUAL_MODE 3 # "1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
-  export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
+  export_default USE_THERMAL_INFO false # if "true", thermal information from FLIR camera is used in the camera_detector
   export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default RVIZ_CONFIG $(rospack find mesapro)/config/row_traversal_action_sim.rviz
   ##############################################################################################
