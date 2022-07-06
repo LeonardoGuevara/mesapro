@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="bag_file" default="/home/thorvald/Documents/mesapro/bags/06-07-2022/test" />
+    
+    <node pkg="rosbag" type="record" name="rosbag_record_raw_data"
+        args="record -o $(arg bag_file) /flir_module_driver1/thermal/image_raw /flir_module_driver1/thermal/temp_meas_range /camera1/color/image_raw /camera1/aligned_depth_to_color/image_raw /camera1/depth/camera_info /camera1/color/camera_info /camera1/aligned_depth_to_color/camera_info /scan /tf /tf_static /no_go_map /map /topological_map_2 /robot_pose /nav_vel /teleop_joy/joy_priority /people_tracker/pose_array /human_info_camera /human_info /robot_info /human_safety_info /human/posestamped /visual_alerts /collision_detection"/>   
+</launch>
