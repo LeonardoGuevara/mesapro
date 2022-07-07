@@ -151,8 +151,13 @@ class human_class:
             pos_x=(-cos(new_theta)*h_local_x+sin(new_theta)*h_local_y)+r_pos_x
         if orientation==0:
             pos_theta=new_theta+pi
-        else:
+        elif orientation==1:
             pos_theta=new_theta
+        elif orientation==2:
+            pos_theta=new_theta+(pi/2)
+        elif orientation==3:
+            pos_theta=new_theta-(pi/2)
+            
         return pos_x,pos_y,pos_theta
 
 class map_class:

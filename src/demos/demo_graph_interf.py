@@ -338,14 +338,14 @@ def visual_outputs(color_image):
     #Print HUMAN PERCEPTION INFO
     if human.n_human==0: #None human detected
         if human.thermal_detection=="active":
-            color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"thermal:     "+human.thermal_detection,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
         else:
-            color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
             #color_image = cv2.putText(color_image,"no human detection:      ",(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
     else:
         if sensor=="lidar":# and human.centroids_x[hri.critical_index]+human.centroids_y[hri.critical_index]!=0:
-            color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 90) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 120) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
@@ -354,7 +354,7 @@ def visual_outputs(color_image):
             color_image = cv2.putText(color_image,"area:        "+str(human.area),(50, 210) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             
         else:
-            color_image = cv2.putText(color_image,"***HUMAN PERCEPTION***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"thermal:     "+str(human.thermal_detection),(50, 90) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
             color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 120) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
