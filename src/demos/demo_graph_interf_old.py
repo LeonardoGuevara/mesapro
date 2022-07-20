@@ -20,6 +20,11 @@ config_direct=rospy.get_param("/hri_visualization/config_direct")
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 ##############################################################################################################################
+#CAMERAS INFO
+thermal_info=rospy.get_param("/hri_visualization/thermal_info",False) #to know if thermal information is going to be used or not
+image_rotation=parsed_yaml_file.get("camera_config").get("orient_param") #to know if the images have to be rotated
+resize_param=parsed_yaml_file.get("matching_config").get(image_rotation+"_param") #parameters to resize images for matching
+#################################################################################################################################
 #IMPORTING LABELS NAMES
 posture_labels=parsed_yaml_file.get("action_recog_config").get("posture_labels") # labels of the gestures used to train the gesture recognition model
 motion_labels=parsed_yaml_file.get("action_recog_config").get("motion_labels") # labels of the possible motion actions
@@ -33,6 +38,7 @@ action_label=parsed_yaml_file.get("robot_config").get("action") # labels of the 
 #PLOT HRI PARAMETERS
 black_image_size=[680,650] #size of the black background where the parameters are shown
 visual_mode = rospy.get_param("/hri_visualization/visual_mode",1) #"1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
+n_cameras=rospy.get_param("/hri_visualization/n_cameras",1) # 1 means that the back camera is emulated by reproducing the front camera image
 
 class human_class:
     def __init__(self): #It is done only the first iteration
@@ -69,14 +75,182 @@ class human_class:
             self.orientation=human_info.orientation[hri.critical_index]
             self.area=human_info.area[hri.critical_index]
             
-    def image_callback(self,rgb):
+    def rgb_thermal_1_callback(self,rgb_front, therm_front):
         ##################################################################################33
         #Front cameras info extraction
         #Color image
-        openpose_image = ros_numpy.numpify(rgb)
-        color_image = openpose_image[...,[2,1,0]].copy() #from bgr to rgb
-        scaling=2
-        color_image=cv2.resize(color_image,(int(color_image.shape[1]*scaling),int(color_image.shape[0]*scaling))) #resizing it to fit the screen
+        color_image = ros_numpy.numpify(rgb_front)
+        color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
+        if resize_param[4]==90:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[4]==270:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_front=color_image_front            
+        
+        self.image_size = img_rgb_rot_front.shape
+            
+        #Thermal image
+        therm_image_front = ros_numpy.numpify(therm_front)
+        if resize_param[4]==90:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[4]==270:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_front=therm_image_front
+        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
+        #Merging thermal image with black image
+        img_t_rz_front=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
+        img_t_rz_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]=img_t_rot_front
+            
+        ##################################################################################
+        #Back cameras emulation
+        #Color image
+        color_image_back=color_image_front
+        if resize_param[4]==90:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[4]==270:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_back=color_image_back            
+        #Thermal image
+        therm_image_back=therm_image_front
+        if resize_param[4]==90:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[4]==270:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_back=therm_image_back
+        img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[7],resize_param[8]))        
+        #Merging thermal image with black image
+        img_t_rz_back=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
+        img_t_rz_back[resize_param[5]:resize_param[5]+img_t_rot_back.shape[0],resize_param[6]:resize_param[6]+img_t_rot_back.shape[1]]=img_t_rot_back
+        
+        ##############################################################################################
+        #Here the images from two cameras has to be merged in a single image (front image left, back image back)
+        color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
+        therm_array=np.append(img_t_rz_front,img_t_rz_back,axis=1)
+        intensity_image=cv2.cvtColor(therm_array,cv2.COLOR_GRAY2RGB)
+        color_image = cv2.addWeighted(color_image,0.7,intensity_image,0.7,0)      
+        self.image=color_image
+        
+    def rgb_1_callback(self,rgb_front):
+        ##################################################################################33
+        #Front camera info extraction
+        color_image = ros_numpy.numpify(rgb_front)
+        color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
+        if resize_param[4]==90:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[4]==270:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_front=color_image_front            
+        
+        self.image_size = img_rgb_rot_front.shape
+        ##################################################################################
+        #Back cameras emulation
+        color_image_back=color_image_front
+        if resize_param[4]==90:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[4]==270:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_back=color_image_back            
+
+        ##############################################################################################        
+        #Here the images from two cameras has to be merged in a single image (front image left, back image back)
+        color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
+        #######################################################################################
+        self.image=color_image
+        
+    def rgb_thermal_2_callback(self,rgb_front, therm_front,rgb_back, therm_back):
+        ##################################################################################33
+        #Front cameras info extraction
+        #Color image
+        color_image = ros_numpy.numpify(rgb_front)
+        color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
+        if resize_param[4]==90:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[4]==270:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_front=color_image_front                  
+        
+        self.image_size = img_rgb_rot_front.shape
+            
+        #Thermal image
+        therm_image_front = ros_numpy.numpify(therm_front)
+        if resize_param[4]==90:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[4]==270:
+            img_t_rot_front=cv2.rotate(therm_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_front=therm_image_front
+        img_t_rot_front=cv2.resize(img_t_rot_front,(resize_param[2],resize_param[3])) #to match the rgbd aspect ratio
+        #Merging thermal image with black image
+        img_t_rz_front=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
+        img_t_rz_front[resize_param[0]:resize_param[0]+img_t_rot_front.shape[0],resize_param[1]:resize_param[1]+img_t_rot_front.shape[1]]=img_t_rot_front
+            
+        ##################################################################################
+        #Back cameras info extraction
+        #Color image
+        color_image = ros_numpy.numpify(rgb_back)
+        color_image_back = color_image[...,[2,1,0]].copy() #from bgr to rgb
+        if resize_param[9]==90:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[9]==270:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_back=color_image_back            
+        #Thermal image
+        therm_image_back = ros_numpy.numpify(therm_back)
+        if resize_param[9]==90:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[9]==270:
+            img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_t_rot_back=therm_image_back
+        img_t_rot_back=cv2.resize(img_t_rot_back,(resize_param[7],resize_param[8]))        
+        #Merging thermal image with black image
+        img_t_rz_back=np.zeros((self.image_size[0],self.image_size[1]), np.uint8)
+        img_t_rz_back[resize_param[5]:resize_param[5]+img_t_rot_back.shape[0],resize_param[6]:resize_param[6]+img_t_rot_back.shape[1]]=img_t_rot_back
+        
+        ##############################################################################################
+        #Here the images from two cameras has to be merged in a single image (front image left, back image back)
+        color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
+        therm_array=np.append(img_t_rz_front,img_t_rz_back,axis=1)
+        intensity_image=cv2.cvtColor(therm_array,cv2.COLOR_GRAY2RGB)
+        color_image = cv2.addWeighted(color_image,0.7,intensity_image,0.7,0)      
+        self.image=color_image
+        
+    def rgb_2_callback(self,rgb_front,rgb_back):
+        ##################################################################################33
+        #Front camera info extraction
+        color_image = ros_numpy.numpify(rgb_front)
+        color_image_front = color_image[...,[2,1,0]].copy() #from bgr to rgb
+        if resize_param[4]==90:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[4]==270:
+            img_rgb_rot_front=cv2.rotate(color_image_front,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_front=color_image_front            
+        
+        self.image_size = img_rgb_rot_front.shape
+        ##################################################################################
+        #Back camera info extraction
+        color_image = ros_numpy.numpify(rgb_back)
+        color_image_back = color_image[...,[2,1,0]].copy() #from bgr to rgb
+        if resize_param[9]==90:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
+        elif resize_param[9]==270:
+            img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else: #0 degrees
+            img_rgb_rot_back=color_image_back            
+
+        ##############################################################################################        
+        #Here the images from two cameras has to be merged in a single image (front image left, back image back)
+        color_image=np.append(img_rgb_rot_front,img_rgb_rot_back,axis=1) 
+        #######################################################################################
         self.image=color_image
         
 class hri_class:
@@ -220,7 +394,30 @@ if __name__ == '__main__':
     # Setup and call subscription
     rospy.Subscriber('human_info',human_msg,human.human_callback)
     rospy.Subscriber('human_safety_info',hri_msg,hri.safety_callback)
-    rospy.Subscriber('openpose_output', Image,human.image_callback, queue_size=5) #new topic name before thermal info             
+    if n_cameras==1:
+        if visual_mode==1 or visual_mode==3:    
+            if thermal_info==True:
+                thermal_front_sub=message_filters.Subscriber('/flir_module_driver1/thermal/image_raw', Image) #new topic name only for a single camera
+                image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #new topic name only for a single camera
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub], 5, 1)
+                ts.registerCallback(human.rgb_thermal_1_callback)
+            else:
+                rospy.Subscriber('camera1/color/image_raw', Image,human.rgb_1_callback, queue_size=5) #new topic name before thermal info
+    else: #n_cameras==2
+        if visual_mode==1 or visual_mode==3:    
+            if thermal_info==True:
+                thermal_front_sub=message_filters.Subscriber('/flir_module_driver1/thermal/image_raw', Image) #new topic names
+                image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #new topic names
+                thermal_back_sub=message_filters.Subscriber('/flir_module_driver2/thermal/image_raw', Image) #new topic names
+                image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image)    #new topic names
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub, thermal_front_sub,image_back_sub, thermal_back_sub], 5, 1)
+                ts.registerCallback(human.rgb_thermal_2_callback)
+            else:
+                image_front_sub = message_filters.Subscriber('/camera1/color/image_raw', Image)    #new topic names
+                image_back_sub = message_filters.Subscriber('/camera2/color/image_raw', Image)    #new topic names
+                ts = message_filters.ApproximateTimeSynchronizer([image_front_sub,image_back_sub], 5, 1)
+                ts.registerCallback(human.rgb_2_callback)
+                
     if visual_mode>=2:
         rospy.Subscriber('robot_info',robot_msg,robot.robot_callback_info)
         rospy.Subscriber('/robot_pose', Pose, robot.robot_callback_pos) 

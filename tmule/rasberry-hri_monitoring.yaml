@@ -19,8 +19,6 @@ init_cmd: |
   export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of mesapro config file
   
   export_default VISUAL_MODE 3 # "1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
-  export_default USE_THERMAL_INFO false # if "true", thermal information from FLIR camera is used in the camera_detector
-  export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default RVIZ_CONFIG $(rospack find mesapro)/config/row_traversal_action_sim.rviz
   ##############################################################################################
   # Source ROS
@@ -28,8 +26,11 @@ init_cmd: |
   source $CATKIN_WORKSPACE/devel/setup.bash
   #########################################################################################
   #Set up ROS MASTER AND ROS IP
-  export_default ROS_IP "10.101.12.112" #My laptop IP address, connected to Rasberry wifi
-  export_default ROS_MASTER "10.101.12.138" #NUC IP address, using wifi, as MASTER
+  #export_default ROS_IP "10.101.12.112" #My laptop IP address, connected to Rasberry wifi
+  #export_default ROS_MASTER "10.101.12.138" #NUC IP address, using wifi, as MASTER
+  export ROS_IP="192.168.20.155" #My laptop IP address, connected to Rasberry wifi
+  export ROS_MASTER="192.168.20.247" #NUC IP address, using wifi, as MASTER
+  
   export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
   export ROS_IP=$ROS_IP  
   
@@ -41,7 +42,7 @@ init_cmd: |
 windows:
 - name: hri_visualization
   panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS 
+  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT  
 - name: rviz
   panes:
   - DISPLAY=:0 rviz -d $RVIZ_CONFIG

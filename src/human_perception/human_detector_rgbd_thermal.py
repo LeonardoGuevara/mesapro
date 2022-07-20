@@ -66,6 +66,8 @@ datum = op.Datum()
 #ROS PUBLISHER SET UP
 pub = rospy.Publisher('human_info_camera', human_detector_msg,queue_size=1) # small queue means priority to new data
 msg = human_detector_msg()
+pub_img = rospy.Publisher('openpose_output', Image,queue_size=10)
+msg_img = Image()       
 #THERMAL INFORMATION
 thermal_info=rospy.get_param("/hri_camera_detector/thermal_info",False) # you have to change /hri_camera_detector/ if the node is not named like this
 #PARAMETERS TO MATCH RGBD + THERMAL IMAGES 
@@ -445,6 +447,7 @@ class human_class:
         ####################################################################################################
         if performance=="low":
             self.n_human=0
+            self.image_show = color_image
         else:
             datum.cvInputData = color_image
             opWrapper.emplaceAndPop(op.VectorDatum([datum]))
@@ -502,7 +505,18 @@ class human_class:
             msg.thermal_detection=self.thermal_detection
             msg.intensity=[] #to ensure publish int
             pub.publish(msg)
-        
+        #Publishing OPENPOSE OUTPUT AS AN IMAGE
+        scaling=0.5
+        openpose_image=cv2.resize(self.image_show,(int(self.image_show.shape[1]*scaling),int(self.image_show.shape[0]*scaling))) #resizing it to fit the screen
+        msg_img.header.stamp = rospy.Time.now()
+        msg_img.height = openpose_image.shape[0]
+        msg_img.width = openpose_image.shape[1]
+        msg_img.encoding = "rgb8"
+        msg_img.is_bigendian = False
+        msg_img.step = 3 * openpose_image.shape[1]
+        msg_img.data = np.array(openpose_image).tobytes()
+        pub_img.publish(msg_img)
+            
 ################################################################################################################            
     def feature_extraction_3D(self,poseKeypoints,depth_array,therm_array,n_joints,n_features):
         posture=np.zeros([len(poseKeypoints[:,0,0]),2])
@@ -784,7 +798,7 @@ if __name__ == '__main__':
                     for k in range(0,len(centroids_x)):    
                         center_coordinates = (int(centroids_x[k]), int(centroids_y[k])) 
                         image = cv2.circle(image, center_coordinates, 5, (255, 0, 0), 20) #BLUE           
-                cv2.imshow("Human detector",image  )
+                cv2.imshow("Human detector",image)
                 cv2.waitKey(10)  
             new_data=False
         rate.sleep() #to keep fixed the publishing loop rate
