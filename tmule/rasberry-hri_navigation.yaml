@@ -65,9 +65,9 @@ init_cmd: |
 
   # Site details and site specific configs:
   # Used to retrieve site and task specific config files
-  export_default FARM_NAME "riseholme"
-  export_default FIELD_NAME "polytunnel"
-  export_default APPLICATION "uv"
+  export_default FARM_NAME "clockhouse" #"riseholme"
+  export_default FIELD_NAME "hatchgate_west" #"polytunnel"
+  export_default APPLICATION "transportation" #"transportation"
   export_default RES_ROBOT_TYPE ""
 
   # Config Paths

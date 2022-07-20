@@ -1,4 +1,4 @@
-default_speed: 0.75               # Default forward velocity
+default_speed: 0.5               # Default forward velocity
 get_speed_from_topic: False       # Whether to get the forward speed from a topic
 constant_forward_speed: False     # Stop when obstacle in safety area (no slowdown)
 force_forwards_facing: False      # Force Robot to face forwards during traversal
