@@ -19,7 +19,7 @@ init_cmd: |
   export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of mesapro config file
   export_default CONDA_DIRECT "$HOME/anaconda3 || $HOME/miniconda3" # directory where conda or minicoda is installed 
   export_default CONDA_ENV "mypython3" #name of the conda environment with python3 
-  export_default BAG_FILE "$HOME/Documents/mesapro/bags/evaluation/all_data_test_2022-04-20-13-24-45.bag" #full name of the bag file to be reproduced 
+  export_default BAG_FILE "$HOME/Documents/mesapro/bags/evaluation/06-07-2022/test_2022-07-06-15-06-18.bag" #full name of the bag file to be reproduced 
   export_default RVIZ_CONFIG $(rospack find mesapro)/config/row_traversal_action_sim.rviz
   
   export_default VISUAL_MODE 3 # "1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
@@ -95,7 +95,7 @@ windows:
   check: "rostopic list | grep -q /human_safety_info"
 - name: hri_visualization
   panes:
-  - sleep 5 ; if $USE_VISUALIZATION ; then roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT thermal_info:=$USE_THERMAL_INFO n_cameras:=$N_CAMERAS ; fi
+  - sleep 5 ; if $USE_VISUALIZATION ; then roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT ; fi
 - name: rviz
   panes:
   - if $USE_VISUALIZATION ; then DISPLAY=:0 rviz -d $RVIZ_CONFIG ; fi
