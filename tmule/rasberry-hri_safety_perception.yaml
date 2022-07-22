@@ -49,11 +49,15 @@ init_cmd: |
   source $CATKIN_WORKSPACE/devel/setup.bash
   #########################################################################################
   #Set up ROS MASTER AND ROS IP
-  #export_default ROS_IP "192.168.0.224" #Zotac IP address, using ethernet
-  #export_default ROS_MASTER "192.168.0.101" #NUC IP address,using ethernet, as MASTER
+  export_default ROS_IP "192.168.0.224" #Zotac IP address, using ethernet
+  #export_default ROS_MASTER "192.168.0.224" #NUC IP address,using ethernet, as MASTER
+  export_default ROS_MASTER "192.168.0.101" #NUC IP address,using ethernet, as MASTER
   
-  export_default ROS_IP "10.101.12.133" #Zotac IP address, using wifi
-  export_default ROS_MASTER "10.101.12.138" #NUC IP address, using wifi, as MASTER
+  #export_default ROS_IP "10.101.12.133" #Zotac IP address, using wifi
+  #export_default ROS_MASTER "10.101.12.138" #NUC IP address, using wifi, as MASTER
+  #export_default ROS_IP "192.168.20.164" #Zotac IP address, using wifi
+  #export_default ROS_MASTER "192.168.20.247" #NUC IP address, using wifi, as MASTER
+  
   export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
   export ROS_IP=$ROS_IP  
   
@@ -99,5 +103,6 @@ windows:
 - name: rviz
   panes:
   - if $USE_VISUALIZATION ; then DISPLAY=:0 rviz -d $RVIZ_CONFIG ; fi
+#  - rosrun web_video_server web_video_server
 #############################################################################################
 

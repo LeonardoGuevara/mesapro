@@ -66,7 +66,7 @@ datum = op.Datum()
 #ROS PUBLISHER SET UP
 pub = rospy.Publisher('human_info_camera', human_detector_msg,queue_size=1) # small queue means priority to new data
 msg = human_detector_msg()
-pub_img = rospy.Publisher('openpose_output', Image,queue_size=10)
+pub_img = rospy.Publisher('openpose_output', Image,queue_size=1)
 msg_img = Image()       
 #THERMAL INFORMATION
 thermal_info=rospy.get_param("/hri_camera_detector/thermal_info",False) # you have to change /hri_camera_detector/ if the node is not named like this

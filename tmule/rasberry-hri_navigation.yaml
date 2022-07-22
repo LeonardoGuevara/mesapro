@@ -52,12 +52,12 @@ init_cmd: |
   #export_default ROS_HOSTNAME "$ROS_IP"
   #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
   
-  #export_default ROS_IP "192.168.0.101" #NUC IP address, using ethernet
-  #export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
-  export_default ROS_IP "10.101.12.138" #NUC IP address, using wifi
-  export_default ROS_MASTER "10.101.12.138" #NUC IP address, as MASTER
-  export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
-  export ROS_IP=$ROS_IP  
+  export_default ROS_IP "192.168.0.101" #NUC IP address, using ethernet
+  export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
+  #export_default ROS_IP "10.101.12.138" #NUC IP address, using wifi
+  #export_default ROS_MASTER "10.101.12.138" #NUC IP address, as MASTER
+  #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  #export ROS_IP=$ROS_IP  
   ################################################################################################
   
   # Figure out the robot number from the hostname, assuming it is like `thorvald-XXX`
@@ -77,7 +77,8 @@ init_cmd: |
   export_default DATUM_FILE "${SITE_PATH}/datum.yaml"
   export_default METRIC_MAP "${SITE_PATH}/map.yaml"
   export_default NOGO_MAP "${SITE_PATH}/nogo_map.yaml"
-  export_default TMAP_FILE "${SITE_PATH}/${APPLICATION}/tmap.tmap2"
+  #export_default TMAP_FILE "${SITE_PATH}/${APPLICATION}/tmap.tmap2"
+  export_default TMAP_FILE "$(rospack find mesapro)/config/tmap.tmap2"
   export_default POLE_POSITIONS "${SITE_PATH}/poles.yaml"
   export_default POLE_LIKELIHOOD_FIELD "${SITE_PATH}/likelihood_field_poles.yaml"
   export_default DOCK_FILE "${SITE_PATH}/dock.yaml"
@@ -262,6 +263,9 @@ windows:
   - roslaunch toc robot.launch
   - if [ "$SLACK_WEBHOOK" ] && $STARTUP_SLACKEROS; then roslaunch slackeros slackeros.launch webhook:="$SLACK_WEBHOOK" topics:="/sentor/event" loggers:="/rosout:error"; else cat; fi
   tags: [monitoring, site]
+- name: HAN_visual
+  panes:
+  - rosrun web_video_server web_video_server
 ########################################################################################
 - name: debug
   panes:
