@@ -52,7 +52,7 @@ action_recog_config:
   gesture_recogn_param: [4,0.6] # parameters used for gesture recognition (a single frame) and gesture inference (analyzing a set of frames) such that
   # 1st -> number of frames used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
   # 2nd -> minimum probability delivered by gesture recognition algoritm to consider a gesture valid for the gesture inference (when analyzing a set of frames)
-  motion_infer_param: [8,1] # parameters used for motion inference such that:
+  motion_infer_param: [8,0.6] # parameters used for motion inference such that:
   # 1st -> number of samples used for the motion inference
   # 2nd -> threshold to determine if human is static or not, < means static, > means slow motion, in m/s
   openpose_normal_performance: "-1x160" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160", used for human presence monitoring, "-1x320"
@@ -77,8 +77,8 @@ human_safety_config:
   collision_risk_distances: [3.6,1.2] #Human to robot distances (in meters) used to determine the HRI risk in case of collisions -> [risky,dangerous]
   uvc_risk_distances: [10,7] #Human to robot distances (in meters) used to determine the HRI risk during uvc treatment > [risky,dangerous]
   area_distribution: [60,1.3,1,2] # parameters to determine the detection area distribution -> [area angle "a",row width "w", "a" scaling factor, "w" scaling factor]
-  time_without_msg: 3 # Maximum time (in seconds) without receiving safety messages or human detection messages, it is necesary to activate emergency stops due to failure modes
-  time_without_hri: 8 # Maximum time (in seconds) without detecting humans while robot is "waiting for new human command", it is necesary to make the robot resume previos goal or move to the collection point
+  time_without_msg: 5 # Maximum time (in seconds) without receiving safety messages or human detection messages, it is necesary to activate emergency stops due to failure modes
+  time_without_hri: 5 # Maximum time (in seconds) without detecting humans while robot is "waiting for new human command", it is necesary to make the robot resume previos goal or move to the collection point
   collection_point: "WayPoint142" # Name of the topological node defined as collection point
 
 robot_config:
