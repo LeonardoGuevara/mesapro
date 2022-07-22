@@ -527,8 +527,7 @@ class hri_class:
                     if self.human_command==1: #sensor[self.critical_index]!=1 and posture[self.critical_index]==1:# and polytunnel==True and self.critical_dist>1.2 and self.critical_area==True: #picker is ordering the robot to approach (using both arms)
                         self.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
                         self.safety_action=1 # to make the robot approach to the picker
-                        self.new_goal=final_goal # the current goal is not changed
-                        #self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
+                        self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
                     #In case the picker wants the robot to stop  (polytunnel and footpath)
                     elif self.human_command==3:
                         self.audio_message=2 # start a message to ask the picker for a new order to approach/move away or move to a new goal
@@ -538,8 +537,7 @@ class hri_class:
                     elif self.human_command==2:
                         self.audio_message=5 #message moving away
                         self.safety_action=2 # to make the robot move away from the picker
-                        self.new_goal=final_goal # the current goal is not changed
-                        #self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
+                        self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
                     #In case the picker wants to control the robot velocities by performing gestures (only valid at footpaths)
                     elif self.human_command>=4 and self.human_command<=9:
                         self.audio_message=10 #alet of gesture control
