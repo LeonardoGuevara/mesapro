@@ -56,8 +56,6 @@ init_cmd: |
   export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
   #export_default ROS_IP "192.168.20.247" #NUC IP address, using wifi
   #export_default ROS_MASTER "192.168.20.247" #NUC IP address, as MASTER
-  #export_default ROS_IP "10.101.12.138" #NUC IP address, using wifi
-  #export_default ROS_MASTER "10.101.12.138" #NUC IP address, as MASTER
   #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
   #export ROS_IP=$ROS_IP  
   ################################################################################################
@@ -269,7 +267,6 @@ windows:
   - if [ "$SLACK_WEBHOOK" ] && $STARTUP_SLACKEROS; then roslaunch slackeros slackeros.launch webhook:="$SLACK_WEBHOOK" topics:="/sentor/event" loggers:="/rosout:error"; else cat; fi
   tags: [monitoring, site]
 - name: openpose_visual
-- name: HAN_visual
   panes:
   - rosrun web_video_server web_video_server
 ########################################################################################
