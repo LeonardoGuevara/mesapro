@@ -22,11 +22,13 @@ pose_msg = PoseStamped()
 pub_goal = rospy.Publisher("/goal/posestamped", PoseStamped, queue_size=1)
 goal_msg = PoseStamped()
 #Importing global parameters from .yaml file
-config_direct=rospy.get_param("/hri_safety_system/config_direct") #you have to change /hri_safety_system/ if the node is not named like this
+#config_direct=rospy.get_param("/hri_safety_system/config_direct") #you have to change /hri_safety_system/ if the node is not named like this
+config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 collision_risk_dist=parsed_yaml_file.get("human_safety_config").get("collision_risk_distances") #Human to robot distances (m) used to determine the HRI risk during logistics 
 uvc_risk_dist=parsed_yaml_file.get("human_safety_config").get("uvc_risk_distances") #Human to robot distances (m) used to determine the HRI risk during uvc treatment
+
 #########################################################################################################################
 
 class robot_class:
@@ -45,7 +47,7 @@ class robot_class:
         self.resume_goal=False # Flag to know if the robot can resume the previous goal after been stop or if can move to the collection point if previos goal was already completed
         self.time_without_hri=parsed_yaml_file.get("human_safety_config").get("time_without_hri") # Maximum time without receiving a new command while robot is "waiting for a command"
         self.efficient_timer_running=False #flag to know if the efficient timer is running or not
-        self.automatic_reactivation=rospy.get_param("/hri_safety_system/automatic_reactivation") # flag to know if automatic reactivation feature is required or not
+        self.automatic_reactivation=rospy.get_param("/hri_safety_system/automatic_reactivation",False) # flag to know if automatic reactivation feature is required or not
         #self.timer_efficient = threading.Timer(self.time_without_hri,self.efficient_timeout) # If "n" seconds elapse, call efficient_timeout()
         #self.timer_efficient.start()
         
@@ -60,10 +62,10 @@ class robot_class:
             self.polytunnel=polytunnel
             self.current_goal=robot_info.current_node
             self.current_goal_info=parent
-            self.final_goal=robot_info.goal_node
-            if self.final_goal!="Unknown":
-                parent=topo_map.rsearch.get_node_from_tmap2(self.final_goal)
-                self.goal_coord=[parent["node"]["pose"]["position"]["x"],parent["node"]["pose"]["position"]["y"]]
+        self.final_goal=robot_info.goal_node
+        if self.final_goal!="Unknown":
+            parent=topo_map.rsearch.get_node_from_tmap2(self.final_goal)
+            self.goal_coord=[parent["node"]["pose"]["position"]["x"],parent["node"]["pose"]["position"]["y"]]
         self.action=robot_info.action
         if self.automatic_reactivation==True:
             if self.efficient_timer_running==False:
@@ -423,9 +425,10 @@ class hri_class:
                     if child_y>=parent_y:
                         parent=child
             for edge in parent["node"]["edges"]:
-                if edge["action"]=="move_base":
+                if edge["action"]=="move_base" or edge["action"]=="row_change":
                     not_goal = False
                     break
+
         goal=parent["node"]["name"]
         return goal
     
@@ -444,6 +447,7 @@ class hri_class:
         return goal
     
     def get_connected_nodes_tmap(self, node):
+        print(node)
         children=[]
         for edge in node["node"]["edges"]:
             children.append(edge["node"])
@@ -527,8 +531,7 @@ class hri_class:
                     if self.human_command==1: #sensor[self.critical_index]!=1 and posture[self.critical_index]==1:# and polytunnel==True and self.critical_dist>1.2 and self.critical_area==True: #picker is ordering the robot to approach (using both arms)
                         self.audio_message=4 #alert to make the picker aware of the robot approaching to him/her
                         self.safety_action=1 # to make the robot approach to the picker
-                        self.new_goal=final_goal # the current goal is not changed
-                        #self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
+                        self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
                     #In case the picker wants the robot to stop  (polytunnel and footpath)
                     elif self.human_command==3:
                         self.audio_message=2 # start a message to ask the picker for a new order to approach/move away or move to a new goal
@@ -538,8 +541,7 @@ class hri_class:
                     elif self.human_command==2:
                         self.audio_message=5 #message moving away
                         self.safety_action=2 # to make the robot move away from the picker
-                        self.new_goal=final_goal # the current goal is not changed
-                        #self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
+                        self.new_goal=self.find_new_goal(self.pos_global_y,r_pos_y,current_goal_info)
                     #In case the picker wants to control the robot velocities by performing gestures (only valid at footpaths)
                     elif self.human_command>=4 and self.human_command<=9:
                         self.audio_message=10 #alet of gesture control

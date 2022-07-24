@@ -65,12 +65,9 @@ init_cmd: |
 
   # Site details and site specific configs:
   # Used to retrieve site and task specific config files
-  export_default FARM_NAME "clockhouse"
-  export_default FIELD_NAME "hatchgate_west"
+  export_default FARM_NAME "riseholme"
+  export_default FIELD_NAME "polytunnel"
   export_default APPLICATION "transportation"
-  export_default FARM_NAME "clockhouse" #"riseholme"
-  export_default FIELD_NAME "hatchgate_west" #"polytunnel"
-  export_default APPLICATION "transportation" #"transportation"
   export_default RES_ROBOT_TYPE ""
 
   # Config Paths
@@ -80,8 +77,10 @@ init_cmd: |
   export_default DATUM_FILE "${SITE_PATH}/datum.yaml"
   export_default METRIC_MAP "${SITE_PATH}/map.yaml"
   export_default NOGO_MAP "${SITE_PATH}/nogo_map.yaml"
+  ###############################################################################################################
   #export_default TMAP_FILE "${SITE_PATH}/${APPLICATION}/tmap.tmap2"
-  export_default TMAP_FILE "$(rospack find mesapro)/config/tmap.tmap2"
+  export_default TMAP_FILE "$(rospack find mesapro)/config/riseholme_tmap.tmap2"
+  ###############################################################################################################
   export_default POLE_POSITIONS "${SITE_PATH}/poles.yaml"
   export_default POLE_LIKELIHOOD_FIELD "${SITE_PATH}/likelihood_field_poles.yaml"
   export_default DOCK_FILE "${SITE_PATH}/dock.yaml"
@@ -266,7 +265,7 @@ windows:
   - roslaunch toc robot.launch
   - if [ "$SLACK_WEBHOOK" ] && $STARTUP_SLACKEROS; then roslaunch slackeros slackeros.launch webhook:="$SLACK_WEBHOOK" topics:="/sentor/event" loggers:="/rosout:error"; else cat; fi
   tags: [monitoring, site]
-- name: openpose_visual
+- name: hri_visualization
   panes:
   - rosrun web_video_server web_video_server
 ########################################################################################

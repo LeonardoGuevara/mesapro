@@ -13,41 +13,22 @@ init_cmd: |
   }
 
   
-  #######################################################################################
+  #############################################################################################
   # HUMAN-AWARE NAVIGATION PARAMETERS
   export_default CATKIN_WORKSPACE "$HOME/rasberry_ws"
   export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of mesapro config file
-  export_default ARDUINO_PORT "/dev/ttyACM0" #name of the port where arduino is connected
-  export_default VISUAL_MODE 2 #"1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
-  export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
-  export_default THERMAL_INFO true # if "true", thermal information from FLIR camera is used for the camera_detector 
-  export_default N_LANGUAGES 1 # "1" means, only english version of voice messages is reproduced, "2" means english+polish version
-  export_default USE_AUTOMATIC_REACTIVATION false # if "true", robot can resume the previos goal after being "waiting for a new command" for a long time
-  export_default USE_VISUAL_ALERTS true # if "true", colored beacon is activated
-  export_default USE_AUDIO_ALERTS true # if "true", voice messages are activated
-  export_default USE_GESTURE_CONTROL true # if "true", gesture detection is used to control robot actions
   export_default USE_HAN true # if "false", safety system actions are not used for the navigation.py or in_row_trav.py 
-  #########################################################################################
+  ##############################################################################################
   # Source ROS
   # source "/opt/ros/$(rosversion -d)/setup.bash"
   source $CATKIN_WORKSPACE/devel/setup.bash
-  ######################################################################################### 
-  #Set up ROS MASTER AND ROS IP
-  #export_default ROS_IP "192.168.0.224" #Zotac IP address
-  #export_default ROS_MASTER "192.168.0.224" #Zotac IP address, as MASTER
-  #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
-  #export ROS_IP=$ROS_IP  
-  
-  #############################################################################################
-
-  # Set up robot and scenario configs, catkin_workspace, robot number:
+  #################################################################################################
   # Load system-specific config file
   if [ -r "$HOME/.rasberryrc" ]; then echo "*** loading $HOME/.rasberryrc" ; source "$HOME/.rasberryrc"; fi
   
   if [ -r "$HOME/.treatmentrc" ]; then echo "*** loading $HOME/.treatmentrc" ; source "$HOME/.treatmentrc"; fi
-  
-   # Load env variables for robots and scenario 
-  ############################################################################################### To launch tmule file outside /rasberry_bringup/tmule
+  ################################################################################################## To launch tmule file outside /rasberry_bringup/tmule  
+  # Load env variables for robots and scenario 
   #export_default BASE_CONFIG_DIR `readlink -f . || echo .`
   export_default BASE_CONFIG_DIR "$(rospack find rasberry_bringup)/tmule"
   ##################################################################################################
@@ -57,16 +38,36 @@ init_cmd: |
   if [ -r "$BASE_CONFIG_DIR/robots/$ROBOT_NAME.sh" ]; then echo "*** loading $BASE_CONFIG_DIR/robots/$ROBOT_NAME.sh" ; source "$BASE_CONFIG_DIR/robots/$ROBOT_NAME.sh"; fi
   # Load scenario-specific config file
   if [ -r "$BASE_CONFIG_DIR/scenarios/$SCENARIO_NAME.sh" ]; then echo "*** loading $BASE_CONFIG_DIR/scenarios/$SCENARIO_NAME.sh" ; source "$BASE_CONFIG_DIR/scenarios/$SCENARIO_NAME.sh"; fi  
-
+  
+  ################################################################################################ CHANGING ROS_MASTER AND ROS_IP
+  # Search for VPN tun device
+  #export_default VPN_BASE_ADDR "10.8.0.0"
+  #default_iface=`route -n | grep "^$VPN_BASE_ADDR" | tr -s " " |  cut -f8 -d" " || echo lo`
+  #default_ip=`ip addr show dev "$default_iface" | grep "inet " | sed 's@ *inet \([0-9\.]*\).*@\1@' || echo 127.0.0.1`
+  # Set ROS_MASTER to the correct IP
+  #export_default ROS_MASTER $default_ip
+  # Set ROS_IP not to the IP that we will connect to remotely
+  #export_default ROS_IP `ip route get $ROS_MASTER | grep "src" | sed 's/.*src \([0-9\.]*\).*/\1/' || echo $ROS_MASTER`
+  # Set ROS_HOSTNAME to the ROS_IP to avoid configuring /etc/hosts for anyone who connects
+  #export_default ROS_HOSTNAME "$ROS_IP"
+  #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  
+  export_default ROS_IP "192.168.0.101" #NUC IP address, using ethernet
+  export_default ROS_MASTER "192.168.0.101" #NUC IP address, as MASTER
+  #export_default ROS_IP "192.168.20.247" #NUC IP address, using wifi
+  #export_default ROS_MASTER "192.168.20.247" #NUC IP address, as MASTER
+  #export ROS_MASTER_URI="http://$ROS_MASTER:11311/"
+  #export ROS_IP=$ROS_IP  
+  ################################################################################################
+  
   # Figure out the robot number from the hostname, assuming it is like `thorvald-XXX`
   export_default ROBOT_NO `hostname | cut -f2 -d"-"`
+
   # Site details and site specific configs:
   # Used to retrieve site and task specific config files
-  export_default FARM_NAME "riseholme"
-  export_default FIELD_NAME "polytunnel"
+  export_default FARM_NAME "clockhouse"
+  export_default FIELD_NAME "hatchgate_west"
   export_default APPLICATION "transportation"
-  #export_default FARM_NAME "clockhouse"
-  #export_default FIELD_NAME "hatchgate_west"
   export_default RES_ROBOT_TYPE ""
 
   # Config Paths
@@ -78,8 +79,7 @@ init_cmd: |
   export_default NOGO_MAP "${SITE_PATH}/nogo_map.yaml"
   ###############################################################################################################
   #export_default TMAP_FILE "${SITE_PATH}/${APPLICATION}/tmap.tmap2"
-  export_default TMAP_FILE "$(rospack find mesapro)/config/riseholme_tmap.tmap2"
-  #export_default TMAP_FILE "$(rospack find mesapro)/config/hatchgate_tmap.tmap2"
+  export_default TMAP_FILE "$(rospack find mesapro)/config/hatchgate_error_tmap.tmap2"
   ###############################################################################################################
   export_default POLE_POSITIONS "${SITE_PATH}/poles.yaml"
   export_default POLE_LIKELIHOOD_FIELD "${SITE_PATH}/likelihood_field_poles.yaml"
@@ -172,10 +172,12 @@ init_cmd: |
     else export_default SENTOR_CONFIG "${DEFAULT_PATH}/sentor.yaml";
   fi
   export_default STARTUP_SLACKEROS false
-  ################################################################################################# To show the pose of the simulated pickers
+
+  ################################################################################################# To show the pose of the critical human detected
   #export_default RVIZ_CONFIG $(rospack find rasberry_bringup)/resources/row_traversal_action.rviz
   export_default RVIZ_CONFIG $(rospack find mesapro)/config/row_traversal_action_sim.rviz
   #################################################################################################
+
   
   # Home GUI
   export_default USE_HOME_GUI false
@@ -194,13 +196,29 @@ windows:
   - rosparam set /scenario_info/farm_name $FARM_NAME ; rosparam set /scenario_info/field_name $FIELD_NAME; rosparam set /scenario_info/application $APPLICATION
   check: "rosservice list | grep -q message_store"
   tags: [core, nav]
-######################################################################## without teleoperation for human simulation purposes
+################################################################################################### 
 - name: robot
   panes:
-  - roslaunch rasberry_bringup robot_bringup.launch robot_model:=$(rospack find rasberry_bringup)/config/robots/robot_$ROBOT_NO.yaml model_extras:=$(rospack find rasberry_bringup)/urdf/robot_${ROBOT_NO}_extras.xacro datum_file:="$DATUM_FILE" ekf_publish_tf:="$EKF_PUBLISH_TF" simple_sim:=$USE_SIM with_teleoperation:=false teleop_controller_type:=$TELEOP_CONTROLLER teleop_controller:=$(rospack find thorvald_teleop)/config/$TELEOP_CONTROLLER.yaml joy_dev:=$JOY_DEV world:=$GAZEBO_WORLD_PATH with_gui:=$USE_GUI start_pose_x:=$ROBOT_POS_X start_pose_y:=$ROBOT_POS_Y start_pose_Y:=$ROBOT_POS_A include_plants:=$INCLUDE_PLANTS can_interface_type:=$CAN_INTERFACE_TYPE can_interface_name:=$CAN_INTERFACE_NAME with_actors:=false
+  - roslaunch rasberry_bringup robot_bringup.launch robot_model:=$(rospack find rasberry_bringup)/config/robots/robot_$ROBOT_NO.yaml model_extras:=$(rospack find rasberry_bringup)/urdf/robot_${ROBOT_NO}_extras.xacro datum_file:="$DATUM_FILE" ekf_publish_tf:="$EKF_PUBLISH_TF" simple_sim:=$USE_SIM with_teleoperation:=True teleop_controller_type:=$TELEOP_CONTROLLER teleop_controller:=$(rospack find thorvald_teleop)/config/$TELEOP_CONTROLLER.yaml joy_dev:=$JOY_DEV world:=$GAZEBO_WORLD_PATH with_gui:=$USE_GUI start_pose_x:=$ROBOT_POS_X start_pose_y:=$ROBOT_POS_Y start_pose_Y:=$ROBOT_POS_A include_plants:=$INCLUDE_PLANTS can_interface_type:=$CAN_INTERFACE_TYPE can_interface_name:=$CAN_INTERFACE_NAME
   check: "rostopic list | grep -q -e base_state"
   tags: [core, nav]
-######################################################################## 
+################################################################################################## 
+- name: lidars_bringup
+  panes:
+  - if ! $USE_SIM; then roslaunch rasberry_bringup rasberry_lidar.launch lidar_type:="$LIDAR_TYPE_FRONT" position:="front" ip_address:="192.168.0.11"; fi
+  - if ! $USE_SIM; then roslaunch rasberry_bringup rasberry_lidar.launch lidar_type:="$LIDAR_TYPE_BACK" position:="back"  ip_address:="192.168.0.10"; fi
+  - if ! $USE_SIM && $USE_TOP_LASER; then roslaunch rasberry_bringup rasberry_lidar.launch lidar_type:="$LIDAR_TYPE_TOP" ip_address:="192.168.0.12"; fi
+  - if $FILTER_LASERSCAN; then roslaunch rasberry_navigation laser_box_filter_from_tf_tree.launch robot_no:=$ROBOT_NO; fi
+  check: "[ -r ~/.cache/laser_filter_robot_${ROBOT_NO}.yaml ] || ! $FILTER_LASERSCAN"
+#  check: if ! $USE_SIM; then "rostopic list | grep -q -e scanner_front/scan -e scanner_back/scan"; fi
+  tags: [core, nav]
+#####################################################################################################
+- name: sensors_bringup
+  panes:
+  - if ! $USE_SIM && $USE_IMU; then roslaunch rasberry_bringup rasberry_imu.launch use_imu:="$USE_IMU" um7_imu_port:="$UM7_IMU_PORT" use_xsens:="$USE_XSENS"; fi
+  - if ! $USE_SIM && $USE_RTK; then roslaunch rasberry_bringup rasberry_gnss.launch rtk_ip:="$RTK_IP" rtk_port:="$RTK_PORT" gnss_type:="$GNSS_TYPE" ins_activated:=$GNSS_INS_ACTIVATED; fi
+#  check: if ! $USE_SIM; then "rostopic list | grep -q -e gps/fix"; fi
+  tags: [core, nav]
 - name: localisation_prelims
   panes:
   - roslaunch rasberry_navigation map_server.launch map:="$METRIC_MAP" use_no_go_map:=true no_go_map:=$NOGO_MAP
@@ -219,10 +237,10 @@ windows:
   - roslaunch rasberry_navigation topological_map_manager2_central.launch tmap_file:=$TMAP_FILE use_restrictions:=$USE_RESTRICTIONS
   check: "rostopic list | grep -q /topological_map_2"
   tags: [nav]
-############################################################################################ launching modified scripts from mesapro package
+############################################################################################ 
 - name: topo_nav
   panes:
-  - if ! $USE_TEB_PLANNER; then roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/DWAPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS  use_han:=$USE_HAN config_direct:=$CONFIG_DIRECT; else roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/TebLocalPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS use_han:=$USE_HAN config_direct:=$CONFIG_DIRECT; fi
+  - if ! $USE_TEB_PLANNER; then roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/DWAPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS use_han:=$USE_HAN config_direct:=$CONFIG_DIRECT; else roslaunch mesapro topological_navigation_robot.launch move_base_planner:=move_base/TebLocalPlannerROS reconfigure_edges:=$RECONF_EDGES use_restrictions:=$USE_RESTRICTIONS use_han:=$USE_HAN config_direct:=$CONFIG_DIRECT; fi
   check: "rosservice list | grep -q topological_navigation"
   tags: [nav, site]
 - name: nav_actions
@@ -232,21 +250,7 @@ windows:
   - if $USE_HAN ; then roslaunch mesapro hri_footpath_gesture_control.launch config_direct:=$CONFIG_DIRECT; fi
   check: "rosrun dynamic_reconfigure dynparam list | grep row_traversal"
   tags: [nav, site]
-########################################################################################
-######################################################################################### Emulating human perception
-- name: hri_perception
-  panes:
-  - roslaunch mesapro ds4_driver.launch
-  - roslaunch mesapro hri_virtual_picker_detection.launch config_direct:=$CONFIG_DIRECT
-- name: hri_safety_system
-  panes:
-  - roslaunch mesapro hri_safety_system.launch config_direct:=$CONFIG_DIRECT gesture_control:=$USE_GESTURE_CONTROL automatic_reactivation:=$USE_AUTOMATIC_REACTIVATION
-  - sleep 5 ; roslaunch mesapro hri_audio_visual_alerts.launch config_direct:=$CONFIG_DIRECT arduino_port:=$ARDUINO_PORT use_visual_alerts:=$USE_VISUAL_ALERTS use_audio_alerts:=$USE_AUDIO_ALERTS n_languages:=$N_LANGUAGES
-- name: hri_visualization
-  panes:
-  - roslaunch mesapro hri_visualization.launch visual_mode:=$VISUAL_MODE config_direct:=$CONFIG_DIRECT
-  - rosrun web_video_server web_video_server
-#############################################################################################
+######################################################################################## 
 - name: localisation_prelims_aditional
   panes:
   - roslaunch rasberry_bringup corner_lasers_merger.launch
@@ -261,6 +265,10 @@ windows:
   - roslaunch toc robot.launch
   - if [ "$SLACK_WEBHOOK" ] && $STARTUP_SLACKEROS; then roslaunch slackeros slackeros.launch webhook:="$SLACK_WEBHOOK" topics:="/sentor/event" loggers:="/rosout:error"; else cat; fi
   tags: [monitoring, site]
+- name: hri_visualization
+  panes:
+  - rosrun web_video_server web_video_server
+########################################################################################
 - name: debug
   panes:
   - ls

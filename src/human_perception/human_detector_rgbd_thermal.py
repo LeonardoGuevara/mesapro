@@ -84,7 +84,6 @@ mtx =  np.array([[intr_param[0], 0, intr_param[1]],
 distor=np.array(dist_param)
 #VISUALIZATION VARIABLES
 n_cameras=rospy.get_param("/hri_camera_detector/n_cameras",1) # 1 means that the back camera is emulated by reproducing the front camera image
-openpose_visual=rospy.get_param("/hri_camera_detector/openpose_visual",False)  #to show or not a window with the human detection delivered by openpose
 #########################################################################################################################
 
 class human_class:
@@ -507,7 +506,7 @@ class human_class:
             pub.publish(msg)
         #Publishing OPENPOSE OUTPUT AS AN IMAGE
         scaling=0.5
-        openpose_image=cv2.resize(self.image_show,(int(self.image_show.shape[1]*scaling),int(self.image_show.shape[0]*scaling))) #resizing it to fit the screen
+        openpose_image=cv2.resize(self.image_show,(int(self.image_show.shape[1]*scaling),int(self.image_show.shape[0]*scaling))) #resizing it 
         msg_img.header.stamp = rospy.Time.now()
         msg_img.height = openpose_image.shape[0]
         msg_img.width = openpose_image.shape[1]
@@ -785,20 +784,5 @@ if __name__ == '__main__':
             depth_array=human.depth_array
             therm_array=human.therm_array
             human.processing(color_image,depth_array,therm_array)
-            image=human.image_show
-            centroids_x=human.centroid[:,0]
-            centroids_y=human.centroid[:,1]
-            if openpose_visual==True:            
-                intensity_image=cv2.cvtColor(therm_array,cv2.COLOR_GRAY2RGB)
-                if thermal_info==True:
-                    #print("COLOR",image.shape)
-                    #print("INTENSITY",intensity_image.shape)
-                    image = cv2.addWeighted(image,0.7,intensity_image,0.7,0)
-                if human.n_human>0:
-                    for k in range(0,len(centroids_x)):    
-                        center_coordinates = (int(centroids_x[k]), int(centroids_y[k])) 
-                        image = cv2.circle(image, center_coordinates, 5, (255, 0, 0), 20) #BLUE           
-                cv2.imshow("Human detector",image)
-                cv2.waitKey(10)  
             new_data=False
         rate.sleep() #to keep fixed the publishing loop rate

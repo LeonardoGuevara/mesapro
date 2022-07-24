@@ -33,6 +33,11 @@ action_label=parsed_yaml_file.get("robot_config").get("action") # labels of the 
 #PLOT HRI PARAMETERS
 black_image_size=[680,650] #size of the black background where the parameters are shown
 visual_mode = rospy.get_param("/hri_visualization/visual_mode",1) #"1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
+################################################################################################################################
+#ROS PUBLISHER SET UP
+pub_img = rospy.Publisher('han_param_visual', Image,queue_size=1)
+msg_img = Image()  
+###################################################################################################################################
 
 class human_class:
     def __init__(self): #It is done only the first iteration
@@ -73,9 +78,9 @@ class human_class:
         ##################################################################################33
         #Front cameras info extraction
         #Color image
-        openpose_image = ros_numpy.numpify(rgb)
-        color_image = openpose_image[...,[2,1,0]].copy() #from bgr to rgb
-        scaling=2
+        color_image = ros_numpy.numpify(rgb)
+        #color_image = color_image1[...,[2,1,0]].copy() #from bgr to rgb
+        scaling=2 #to recover the original image size
         color_image=cv2.resize(color_image,(int(color_image.shape[1]*scaling),int(color_image.shape[0]*scaling))) #resizing it to fit the screen
         self.image=color_image
         
@@ -205,8 +210,19 @@ def visual_outputs(color_image):
         scaling=0.75
         color_image=cv2.resize(color_image,(int(color_image.shape[1]*scaling),int(color_image.shape[0]*scaling))) #resizing it to fit the screen
         
-    cv2.imshow("System outputs",color_image)
-    cv2.waitKey(5)
+    #cv2.imshow("System outputs",color_image)
+    #cv2.waitKey(5)
+    # From bgr to rgb
+    color_image = color_image[...,[2,1,0]].copy()
+    #Publishing IMAGE
+    msg_img.header.stamp = rospy.Time.now()
+    msg_img.height = color_image.shape[0]
+    msg_img.width = color_image.shape[1]
+    msg_img.encoding = "rgb8"
+    msg_img.is_bigendian = False
+    msg_img.step = 3 * color_image.shape[1]
+    msg_img.data = np.array(color_image).tobytes()
+    pub_img.publish(msg_img)
     
 ###############################################################################################
 # Main Script
