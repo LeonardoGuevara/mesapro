@@ -135,7 +135,8 @@ class robot_class:
 
 def visual_outputs(color_image):
     if visual_mode!=2: #only when images from camera are goint to be visualized
-        black_image=np.zeros((black_image_size[0],black_image_size[1],3), np.uint8)
+        #black_image=np.zeros((black_image_size[0],black_image_size[1],3), np.uint8)
+        black_image=np.ones((black_image_size[0],black_image_size[1],3), np.uint8)*255
         proportion=black_image.shape[0]/color_image.shape[0] #proportion used to resize the image to match the high of the black_image
         color_image=cv2.resize(color_image,(int(color_image.shape[1]*proportion),black_image.shape[0])) #to resize it proportionally
         color_image=np.append(black_image,color_image,axis=1) 
@@ -151,50 +152,50 @@ def visual_outputs(color_image):
     font = cv2.FONT_HERSHEY_SIMPLEX
     if visual_mode>=2:
         #Print SAFETY SYMTEM INFO    
-        color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 330) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"***SAFETY SYSTEM***",(50, 330) , font, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
         if hri.audio_message!=7:
-            color_image = cv2.putText(color_image,"hri status:           "+hri_status_label[int(hri.status)],(50, 360) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"audio message:     "+audio_message_label[int(hri.audio_message)],(50, 390) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"human command:   "+human_command_label[int(hri.human_command)],(50, 420) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"safety action:        "+safety_action_label[int(hri.safety_action)],(50, 450) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"hri status:           "+hri_status_label[int(hri.status)],(50, 360) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"audio message:     "+audio_message_label[int(hri.audio_message)],(50, 390) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"human command:   "+human_command_label[int(hri.human_command)],(50, 420) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"safety action:        "+safety_action_label[int(hri.safety_action)],(50, 450) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
             
         #Print ROBOT ACTION INFO
-        color_image = cv2.putText(color_image,"***ROBOT ACTION***",(50, 480) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"action:   "+action_label[int(robot.action)],(50, 510) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"x:           "+str(round(robot.pos_x,2))+"m",(50, 540), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"y:           "+str(round(robot.pos_y,2))+"m",(50, 570) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"speed:       "+str(round(robot.speed,2))+"m/s",(50, 600) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"current node:   "+robot.current_node,(50, 630) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-        color_image = cv2.putText(color_image,"goal node:      "+robot.goal_node,(50, 660) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"***ROBOT ACTION***",(50, 480) , font, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"action:      "+action_label[int(robot.action)],(50, 510) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"x:           "+str(round(robot.pos_x,2))+"m",(50, 540), font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"y:           "+str(round(robot.pos_y,2))+"m",(50, 570) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"speed:       "+str(round(robot.speed,2))+"m/s",(50, 600) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"current node:   "+robot.current_node,(50, 630) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+        color_image = cv2.putText(color_image,"goal node:      "+robot.goal_node,(50, 660) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
     #Print HUMAN PERCEPTION INFO
     if human.n_human==0: #None human detected
         if human.thermal_detection=="active":
-            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"thermal:     "+human.thermal_detection,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"thermal:     "+human.thermal_detection,(50, 60) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
         else:
-            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-            #color_image = cv2.putText(color_image,"no human detection:      ",(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
+            #color_image = cv2.putText(color_image,"no human detection:      ",(50, 60) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
     else:
         if sensor=="lidar":# and human.centroids_x[hri.critical_index]+human.centroids_y[hri.critical_index]!=0:
-            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 90) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 120) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 150), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 180) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"area:        "+str(human.area),(50, 210) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 90) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 120) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 150), font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 180) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"area:        "+str(human.area),(50, 210) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
             
         else:
-            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"thermal:     "+str(human.thermal_detection),(50, 90) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 120) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"orientation:  "+orientation_labels[int(human.orientation)],(50, 150) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"posture:     "+posture_labels[int(human.posture)],(50, 180) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 210) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 240), font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 270) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
-            color_image = cv2.putText(color_image,"area:        "+str(human.area),(50, 300) , font, 0.7, (0, 0, 255), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"***HUMAN SENSING***",(50, 30) , font, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"sensor:      "+sensor,(50, 60) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"thermal:     "+str(human.thermal_detection),(50, 90) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"motion:      "+motion_labels[int(human.motion)],(50, 120) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"orientation:  "+orientation_labels[int(human.orientation)],(50, 150) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"posture:     "+posture_labels[int(human.posture)],(50, 180) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"distance:    "+str(round(human.distance,2))+"m",(50, 210) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"x:           "+str(round(human.position_x,2))+"m",(50, 240), font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"y:           "+str(round(human.position_y,2))+"m",(50, 270) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
+            color_image = cv2.putText(color_image,"area:        "+str(human.area),(50, 300) , font, 0.7, (0, 0, 0), 2, cv2.LINE_AA)
             if visual_mode!=2 : #visual_mode==1 or visual_mode==3
                 centroids_x=human.centroids_x
                 centroids_y=human.centroids_y
@@ -203,7 +204,7 @@ def visual_outputs(color_image):
                         center_coordinates = (int(centroids_x[k]*proportion)+extra, int(centroids_y[k]*proportion)) 
                         #center_coordinates=(0,480)
                         if k==hri.critical_index:
-                            color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 255), 20) #RED
+                            color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 0), 20) #RED
                         else:
                             color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
     if visual_mode!=2: #To resize the window with images and text
@@ -245,7 +246,8 @@ if __name__ == '__main__':
     rate = rospy.Rate(1/pub_hz)  # main loop frecuency in Hz
     while not rospy.is_shutdown():	
         if visual_mode==2:  
-            color_image = np.zeros((black_image_size[0],black_image_size[1],3), np.uint8) 
+            color_image = np.ones((black_image_size[0],black_image_size[1],3), np.uint8)*255 
+            #color_image = np.zeros((black_image_size[0],black_image_size[1],3), np.uint8) 
         else: #visual_mode=1 or 3
             color_image=human.image
         visual_outputs(color_image)
