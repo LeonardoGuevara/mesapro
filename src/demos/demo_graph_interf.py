@@ -204,7 +204,7 @@ def visual_outputs(color_image):
                         center_coordinates = (int(centroids_x[k]*proportion)+extra, int(centroids_y[k]*proportion)) 
                         #center_coordinates=(0,480)
                         if k==hri.critical_index:
-                            color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 0), 20) #RED
+                            color_image = cv2.circle(color_image, center_coordinates, 5, (0, 0, 255), 20) #RED
                         else:
                             color_image = cv2.circle(color_image, center_coordinates, 5, (255, 0, 0), 20) #BLUE
     if visual_mode!=2: #To resize the window with images and text
