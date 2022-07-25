@@ -22,8 +22,8 @@ pose_msg = PoseStamped()
 pub_goal = rospy.Publisher("/goal/posestamped", PoseStamped, queue_size=1)
 goal_msg = PoseStamped()
 #Importing global parameters from .yaml file
-#config_direct=rospy.get_param("/hri_safety_system/config_direct") #you have to change /hri_safety_system/ if the node is not named like this
-config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
+config_direct=rospy.get_param("/hri_safety_system/config_direct") #you have to change /hri_safety_system/ if the node is not named like this
+#config_direct="/home/leo/rasberry_ws/src/mesapro/config/"
 a_yaml_file = open(config_direct+"global_config.yaml")
 parsed_yaml_file = yaml.load(a_yaml_file, Loader=yaml.FullLoader)
 collision_risk_dist=parsed_yaml_file.get("human_safety_config").get("collision_risk_distances") #Human to robot distances (m) used to determine the HRI risk during logistics 
