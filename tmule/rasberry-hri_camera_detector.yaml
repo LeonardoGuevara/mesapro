@@ -17,15 +17,15 @@ init_cmd: |
   # HUMAN-AWARE NAVIGATION PARAMETERS
   export_default CATKIN_WORKSPACE "$HOME/rasberry_ws"
   export_default CONFIG_DIRECT "$(rospack find mesapro)/config/" #directory of mesapro config file
-  export_default BAG_FILE "$HOME/Documents/mesapro/bags/evaluation/06-07-2022/test_2022-07-06-15-06-18.bag" #full name of the bag file to be reproduced 
+  export_default BAG_FILE "$HOME/Documents/mesapro/bags/detection_inside.bag" #full name of the bag file to be reproduced 
  
   export_default VISUAL_MODE 1 # "1" for testing only camera perception, "2" for gazebo simulation, "3" for real implementation 
   export_default USE_CAMERA_DETECTOR true #if "false", the rgbd+thermal human detector is not launched
-  export_default USE_THERMAL_INFO false # if "true", thermal information from FLIR camera is used in the camera_detector
+  export_default USE_THERMAL_INFO true # if "true", thermal information from FLIR camera is used in the camera_detector
   export_default USE_GESTURE_CONTROL false # if "true", gesture detection is used to control robot actions
   export_default USE_BAG true #if "true", a bag file is launched instead of getting on-line data from sensors
   export_default USE_AUTOMATIC_REACTIVATION false # if "true", robot can resume the previos goal after being "waiting for a new command" for a long time
-  export_default N_CAMERAS 2 # "1" means, the second camera is emulated, "2" means both are real cameras
+  export_default N_CAMERAS 1 # "1" means, the second camera is emulated, "2" means both are real cameras
   export_default RS_SERIAL_N2 "146222253484" #serial number realsense camera back
   export_default RS_SERIAL_N1 "146222254714" #serial number realsense camera front
   export_default FLIR_SERIAL_N2 "801b002f-5119-3038-3532-373600000000" #serial number thermal camera back

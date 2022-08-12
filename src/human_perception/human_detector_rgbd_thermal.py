@@ -153,7 +153,7 @@ class human_class:
             ##################################################################################
             #Back cameras emulation
             #Color image
-            color_image_back=color_image_front
+            color_image_back=color_image_front*0
             if resize_param[4]==90:
                 img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
             elif resize_param[4]==270:
@@ -161,7 +161,7 @@ class human_class:
             else: #0 degrees
                 img_rgb_rot_back=color_image_back            
             #Depth image
-            depth_array_back=depth_array_front
+            depth_array_back=depth_array_front*0
             if resize_param[4]==90:
                 img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
             elif resize_param[4]==270:
@@ -169,7 +169,7 @@ class human_class:
             else: #0 degrees
                 img_d_rot_back=depth_array_back            
             #Thermal image
-            therm_image_back=therm_image_front
+            therm_image_back=therm_image_front*0
             if resize_param[4]==90:
                 img_t_rot_back=cv2.rotate(therm_image_back,cv2.ROTATE_90_CLOCKWISE)
             elif resize_param[4]==270:
@@ -225,7 +225,7 @@ class human_class:
             ##################################################################################
             #Back cameras emulation
             #Color image
-            color_image_back=color_image_front
+            color_image_back=color_image_front*0
             if resize_param[4]==90:
                 img_rgb_rot_back=cv2.rotate(color_image_back,cv2.ROTATE_90_CLOCKWISE)
             elif resize_param[4]==270:
@@ -233,7 +233,7 @@ class human_class:
             else: #0 degrees
                 img_rgb_rot_back=color_image_back            
             #Depth image
-            depth_array_back=depth_array_front
+            depth_array_back=depth_array_front*0
             if resize_param[4]==90:
                 img_d_rot_back=cv2.rotate(depth_array_back,cv2.ROTATE_90_CLOCKWISE)
             elif resize_param[4]==270:

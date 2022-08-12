@@ -49,7 +49,7 @@ action_recog_config:
   motion_labels: ["not_defined","mostly_static", "moving"]
   orientation_labels: ["facing_the_robot", "giving_the_back", "left_side", "right_side"]
   feature_extract_param: [0,1,2,3,4,5,6,7,8,9,12,15,16,17,18] #list with indexes of the skeleton joints (openpose output) used for gesture recognition algorithm
-  gesture_recogn_param: [4,0.6] # parameters used for gesture recognition (a single frame) and gesture inference (analyzing a set of frames) such that
+  gesture_recogn_param: [4,0.7] # parameters used for gesture recognition (a single frame) and gesture inference (analyzing a set of frames) such that
   # 1st -> number of frames used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
   # 2nd -> minimum probability delivered by gesture recognition algoritm to consider a gesture valid for the gesture inference (when analyzing a set of frames)
   motion_infer_param: [8,0.6] # parameters used for motion inference such that:

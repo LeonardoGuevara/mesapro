@@ -3,7 +3,7 @@
     <arg name="bag_file" default="/home/leo/Documents/mesapro/bags/people_detection_zotac_3_2021-11-05-12-12-12.bag" />
     
     <node pkg="rosbag" type="play" name="rosbag_play_sensors"
-    args="--loop $(arg bag_file) --topics /camera/camera1/aligned_depth_to_color/image_raw /camera/camera1/color/image_raw /scan /tf /tf_static /no_go_map /map"/>  
+    args="--loop $(arg bag_file) --topics /camera1/aligned_depth_to_color/image_raw /camera1/color/image_raw /flir_module_driver1/thermal/image_raw /flir_module_driver1/thermal/temp_meas_range /camera2/aligned_depth_to_color/image_raw /camera2/color/image_raw /flir_module_driver2/thermal/image_raw /flir_module_driver2/thermal/temp_meas_range /scan /tf /tf_static /no_go_map /map"/>  
      
 </launch>
 
