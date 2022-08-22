@@ -45,9 +45,9 @@ thermal_config:
 ################################################################################################################################
 
 action_recog_config:
-  posture_labels: ["no_gesture","left_arm_up","left_hand_front","left_arm_sideways","left_forearm_sideways","right_arm_up","right_hand_front","right_arm_sideways","right_forearm_sideways","both_arms_up","both_hands_front"]
-  motion_labels: ["not_defined","mostly_static", "moving"]
-  orientation_labels: ["facing_the_robot", "giving_the_back", "left_side", "right_side"]
+  posture_labels: ["no gesture","left arm up","left hand front","left arm sideways","left forearm sideways","right arm up","right hand front","right arm sideways","right forearm sideways","both arms up","both hands front"]
+  motion_labels: ["not defined","mostly static", "moving"]
+  orientation_labels: ["facing the robot", "giving the back", "left side", "right side"]
   feature_extract_param: [0,1,2,3,4,5,6,7,8,9,12,15,16,17,18] #list with indexes of the skeleton joints (openpose output) used for gesture recognition algorithm
   gesture_recogn_param: [4,0.7] # parameters used for gesture recognition (a single frame) and gesture inference (analyzing a set of frames) such that
   # 1st -> number of frames used for the gesture inference, it has to be long enough to avoid recognize unnecesary gestures  (e.g. while rising arms, it can be detected as hands in the middle of the movement)
@@ -56,7 +56,7 @@ action_recog_config:
   # 1st -> number of samples used for the motion inference
   # 2nd -> threshold to determine if human is static or not, < means static, > means slow motion, in m/s
   openpose_normal_performance: "-1x160" # net resolution of the openpose when working on "normal" performance mode, has to be numbers multiple of 16, the default is "-1x368", and the fastest performance is "-1x160", used for human presence monitoring, "-1x320"
-  openpose_high_performance: "-1x480" # net resolution of the openpose when working on "high" performance mode, used for gesture recognition, "-1x480"
+  openpose_high_performance: "-1x320" # net resolution of the openpose when working on "high" performance mode, used for gesture recognition, "-1x480"
   dynamic_performance: [3.6,3] #parameters to calibrate dynamic changes on the openpose performance
   # 1st -> distance (in meters) in which a human detection makes the openpose performance change from "normal" to "high" where "high" is for distances below dist_performance_change
   # 2nd -> minimum time allowed (in seconds) between two consecute changes of openpose performance
@@ -68,10 +68,10 @@ action_recog_config:
 #############################################################################
 
 human_safety_config:
-  hri_status: ["no_human","safe","warning","danger"]
-  audio_message: ["no_message","alert_UVC_danger","ask_for_next_action","ask_for_free_space","alert_approaching","alert_moving_away","alert_moving_to_goal","safety_system_error","human_perception_error","teleoperation_mode","gesture_control_mode","collision_detected"]
-  safety_action: ["move_to_goal","approach_to_human","move_away_from_human","pause","wait_for_new_human_command","teleoperation","gesture_control","no_safety_action"]
-  human_command: ["no_command","approach","move_away","stop","move_forwards","move_backwards","move_right","move_left","rotate_clockwise","rotate_counterclockwise"]
+  hri_status: ["no human","safe","warning","danger"]
+  audio_message: ["no message","alert UVC danger","asking for next action","asking for free space","moving towards you","moving away from you","moving to goal","safety system error","human sensing error","teleoperation mode","gesture control mode","collision detected"]
+  safety_action: ["move to goal","reduced speed","move away from human","pause","wait for new human command","teleoperation","gesture control","no safety action"]
+  human_command: ["no command","move towards me","move away from me","stop","move forwards","move backwards","move right","move left","rotate clockwise","rotate counterclockwise"]
   operation_mode: ["logistics","UVC-Treatment"]
   han_distances: [3.6,1.0] #Human to robot distances (in meters) at which the robot starts to slow down or stop -> [slow_down,stop]
   collision_risk_distances: [3.6,1.2] #Human to robot distances (in meters) used to determine the HRI risk in case of collisions -> [risky,dangerous]
@@ -82,7 +82,7 @@ human_safety_config:
   collection_point: "WayPoint142" # Name of the topological node defined as collection point
 
 robot_config:
-  action: ["moving_to_goal","approaching","moving_away","pause","waiting_for_new_human_command","teleoperation","gesture_control"]
+  action: ["moving to goal","moving towards human","moving away from human","pause","waiting for new human command","teleoperation","gesture control"]
   max_vel: [0.3,0.1]     # maximum velocities admitted during human robot interactions -> [linear velocity (m/s), angular velocity (rad/s)]
   align_tolerance: 0.2   # tolerance (in meters) to consider the robot aligned to the human when performing gesture control at footpaths
   turning_kp: 0.5        # Gain for tunning speed control when performing gesture control at footpaths
