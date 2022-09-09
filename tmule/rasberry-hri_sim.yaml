@@ -79,7 +79,7 @@ init_cmd: |
   ###############################################################################################################
   #export_default TMAP_FILE "${SITE_PATH}/${APPLICATION}/tmap.tmap2"
   export_default TMAP_FILE "$(rospack find mesapro)/config/riseholme_tmap.tmap2"
-  #export_default TMAP_FILE "$(rospack find mesapro)/config/hatchgate_tmap.tmap2"
+  #export_default TMAP_FILE "$(rospack find mesapro)/config/hatchgate_demo_tmap.tmap2"
   ###############################################################################################################
   export_default POLE_POSITIONS "${SITE_PATH}/poles.yaml"
   export_default POLE_LIKELIHOOD_FIELD "${SITE_PATH}/likelihood_field_poles.yaml"
