@@ -5,788 +5,6 @@ name: hatchgate_RH_demo
 nodes:
 - meta:
     map: map_2d
-    node: r0.7-ca
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-ca_r0.7-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r0.7-ca_r1.5-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r1.5-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r0.7-ca
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242591182139049
-        x: 0.0
-        y: 0.0
-        z: 0.5662127745302432
-      position:
-        x: -86.28129016485575
-        y: 55.872649280367156
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.020261641910210848
-      y: 0.7470331069309983
-    - x: -0.35436404899532753
-      y: 0.4437286675432355
-    - x: -0.5603556351342138
-      y: -0.09203570933822322
-    - x: -0.5155027349712479
-      y: -0.541041520792112
-    - x: 0.020261641910210848
-      y: -0.7470331069309983
-    - x: 0.35436404899532753
-      y: -0.4437286675432355
-    - x: 0.5603556351342138
-      y: 0.09203570933822322
-    - x: 0.5155027349712479
-      y: 0.541041520792112
-- meta:
-    map: map_2d
-    node: r0.7-c1
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r0.7-c1_r0.7-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c1_r0.7-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r0.7-c1
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242591182139049
-        x: 0.0
-        y: 0.0
-        z: 0.5662127745302432
-      position:
-        x: -82.71259135164259
-        y: 65.15639830813096
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r0.7-c2
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c2_r0.7-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c2_r0.7-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r0.7-c2
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242591182139049
-        x: 0.0
-        y: 0.0
-        z: 0.5662127745302432
-      position:
-        x: -79.14389253842934
-        y: 74.44014733589498
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r0.7-c3
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c3_r0.7-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c3_r0.7-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r0.7-c3
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242591182139049
-        x: 0.0
-        y: 0.0
-        z: 0.5662127745302432
-      position:
-        x: -75.57519372521622
-        y: 83.72389636365871
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r0.7-c4
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c4_r0.7-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c4_r0.7-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r0.7-c4
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242591182139049
-        x: 0.0
-        y: 0.0
-        z: 0.5662127745302432
-      position:
-        x: -72.00649491200309
-        y: 93.00764539142243
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r0.7-c5
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c5_r0.7-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c5_r0.7-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r0.7-c5
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242591182139049
-        x: 0.0
-        y: 0.0
-        z: 0.5662127745302432
-      position:
-        x: -68.43779609878992
-        y: 102.29139441918625
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r0.7-c6
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c6_r0.7-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c6_r0.7-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r0.7-c6
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242591182139049
-        x: 0.0
-        y: 0.0
-        z: 0.5662127745302432
-      position:
-        x: -64.86909728557664
-        y: 111.57514344695036
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r0.7-c7
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c7_r0.7-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c7_r0.7-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r0.7-c7
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242591182139049
-        x: 0.0
-        y: 0.0
-        z: 0.5662127745302432
-      position:
-        x: -61.30039847236352
-        y: 120.8588924747141
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r0.7-c8
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-c8_r0.7-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r0.7-c8_r0.7-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r0.7-c8
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242591182139049
-        x: 0.0
-        y: 0.0
-        z: 0.5662127745302432
-      position:
-        x: -57.731699659150394
-        y: 130.1426415024778
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r0.7-cz
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r0.7-cz_r0.7-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r0.7-cz_r1.5-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r1.5-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r0.7-cz
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242591182139049
-        x: 0.0
-        y: 0.0
-        z: 0.5662127745302432
-      position:
-        x: -54.16300084593718
-        y: 139.42639053024178
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.020261641910210848
-      y: 0.7470331069309983
-    - x: -0.35436404899532753
-      y: 0.4437286675432355
-    - x: -0.5603556351342138
-      y: -0.09203570933822322
-    - x: -0.5155027349712479
-      y: -0.541041520792112
-    - x: 0.020261641910210848
-      y: -0.7470331069309983
-    - x: 0.35436404899532753
-      y: -0.4437286675432355
-    - x: 0.5603556351342138
-      y: 0.09203570933822322
-    - x: 0.5155027349712479
-      y: 0.541041520792112
-- meta:
-    map: map_2d
     node: r1.5-ca
     pointset: hatchgate_RH_demo
   node:
@@ -807,21 +25,6 @@ nodes:
             frame_id: $node.parent_frame
           pose: $node.pose
       node: r1.5-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r1.5-ca_r0.7-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-ca
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
       restrictions_runtime: 'True'
@@ -1535,21 +738,6 @@ nodes:
     - action: row_change
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: r1.5-cz_r0.7-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r0.7-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
       edge_id: r1.5-cz_r2.5-cz
       fail_policy: fail
       fluid_navigation: true
@@ -1655,7 +843,7 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: r2.5-ca_WayPoint2
+      edge_id: r2.5-ca_WayPoint1
       fail_policy: fail
       fluid_navigation: true
       goal:
@@ -1663,7 +851,7 @@ nodes:
           header:
             frame_id: $node.parent_frame
           pose: $node.pose
-      node: WayPoint2
+      node: WayPoint1
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
@@ -2478,6 +1666,21 @@ nodes:
       node: r4.5-ca
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r3.5-ca_WayPoint2
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: WayPoint2
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r3.5-ca
@@ -4103,21 +3306,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
       restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r5.5-ca_r6.3-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r5.5-ca
     parent_frame: map
@@ -4825,21 +4013,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
       restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r5.5-cz_r6.3-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r5.5-cz
     parent_frame: map
@@ -4877,1570 +4050,6 @@ nodes:
       y: 0.541041520792112
 - meta:
     map: map_2d
-    node: r6.3-ca
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-ca_r6.3-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r6.3-ca_r5.5-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r5.5-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.3-ca
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242785811030545
-        x: 0.0
-        y: 0.0
-        z: 0.5661844405622033
-      position:
-        x: -79.04105623918731
-        y: 53.06276640014178
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.020261641910210848
-      y: 0.7470331069309983
-    - x: -0.35436404899532753
-      y: 0.4437286675432355
-    - x: -0.5603556351342138
-      y: -0.09203570933822322
-    - x: -0.5155027349712479
-      y: -0.541041520792112
-    - x: 0.020261641910210848
-      y: -0.7470331069309983
-    - x: 0.35436404899532753
-      y: -0.4437286675432355
-    - x: 0.5603556351342138
-      y: 0.09203570933822322
-    - x: 0.5155027349712479
-      y: 0.541041520792112
-- meta:
-    map: map_2d
-    node: r6.3-c1
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r6.3-c1_r6.3-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c1_r6.3-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.3-c1
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242785811030545
-        x: 0.0
-        y: 0.0
-        z: 0.5661844405622033
-      position:
-        x: -75.46938720518895
-        y: 62.35233531067358
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r6.3-c2
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c2_r6.3-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c2_r6.3-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.3-c2
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242785811030545
-        x: 0.0
-        y: 0.0
-        z: 0.5661844405622033
-      position:
-        x: -71.89771817119056
-        y: 71.64190422120542
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r6.3-c3
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c3_r6.3-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c3_r6.3-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.3-c3
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242785811030545
-        x: 0.0
-        y: 0.0
-        z: 0.5661844405622033
-      position:
-        x: -68.32604913719221
-        y: 80.9314731317372
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r6.3-c4
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c4_r6.3-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c4_r6.3-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.3-c4
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242785811030545
-        x: 0.0
-        y: 0.0
-        z: 0.5661844405622033
-      position:
-        x: -64.75438010319385
-        y: 90.221042042269
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r6.3-c5
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c5_r6.3-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c5_r6.3-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.3-c5
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242785811030545
-        x: 0.0
-        y: 0.0
-        z: 0.5661844405622033
-      position:
-        x: -61.18271106919544
-        y: 99.51061095280093
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r6.3-c6
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c6_r6.3-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c6_r6.3-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.3-c6
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242785811030545
-        x: 0.0
-        y: 0.0
-        z: 0.5661844405622033
-      position:
-        x: -57.611042035197066
-        y: 108.80017986333279
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r6.3-c7
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c7_r6.3-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c7_r6.3-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.3-c7
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242785811030545
-        x: 0.0
-        y: 0.0
-        z: 0.5661844405622033
-      position:
-        x: -54.03937300119873
-        y: 118.0897487738645
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r6.3-c8
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-c8_r6.3-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r6.3-c8_r6.3-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.3-c8
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242785811030545
-        x: 0.0
-        y: 0.0
-        z: 0.5661844405622033
-      position:
-        x: -50.467703967200364
-        y: 127.37931768439633
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6292937078855948
-      y: 2.436464329615642
-    - x: 0.4398160542615535
-      y: 2.5093150156487045
-    - x: -1.354535738391095
-      y: -2.1576220574436924
-    - x: -1.1650580847670535
-      y: -2.2304727434767555
-    - x: -0.6292937078855948
-      y: -2.436464329615642
-    - x: -0.4398160542615535
-      y: -2.5093150156487045
-    - x: 1.354535738391095
-      y: 2.1576220574436924
-    - x: 1.1650580847670535
-      y: 2.2304727434767555
-- meta:
-    map: map_2d
-    node: r6.3-cz
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.3-cz_r6.3-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.3-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r6.3-cz_r5.5-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r5.5-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.3-cz
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242785811030545
-        x: 0.0
-        y: 0.0
-        z: 0.5661844405622033
-      position:
-        x: -46.89603493320202
-        y: 136.66888659492807
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.020261641910210848
-      y: 0.7470331069309983
-    - x: -0.35436404899532753
-      y: 0.4437286675432355
-    - x: -0.5603556351342138
-      y: -0.09203570933822322
-    - x: -0.5155027349712479
-      y: -0.541041520792112
-    - x: 0.020261641910210848
-      y: -0.7470331069309983
-    - x: 0.35436404899532753
-      y: -0.4437286675432355
-    - x: 0.5603556351342138
-      y: 0.09203570933822322
-    - x: 0.5155027349712479
-      y: 0.541041520792112
-- meta:
-    map: map_2d
-    node: r6.7-ca
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-ca_r6.7-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r6.7-ca_r7.5-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r7.5-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.7-ca
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242368921005249
-        x: 0.0
-        y: 0.0
-        z: 0.5662451286328808
-      position:
-        x: -77.95681694985491
-        y: 52.58271516421318
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.02005528708186996
-      y: 0.7470386753334406
-    - x: -0.354241463652324
-      y: 0.44382653711728115
-    - x: -0.5603810369151099
-      y: -0.09188091796452794
-    - x: -0.5156521679999391
-      y: -0.5408991020706546
-    - x: 0.02005528708186996
-      y: -0.7470386753334406
-    - x: 0.354241463652324
-      y: -0.44382653711728115
-    - x: 0.5603810369151099
-      y: 0.09188091796452794
-    - x: 0.5156521679999391
-      y: 0.5408991020706546
-- meta:
-    map: map_2d
-    node: r6.7-c1
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r6.7-c1_r6.7-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c1_r6.7-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.7-c1
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242368921005249
-        x: 0.0
-        y: 0.0
-        z: 0.5662451286328808
-      position:
-        x: -74.38394372885273
-        y: 61.87950280935431
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r6.7-c2
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c2_r6.7-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c2_r6.7-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.7-c2
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242368921005249
-        x: 0.0
-        y: 0.0
-        z: 0.5662451286328808
-      position:
-        x: -70.81107050785054
-        y: 71.17629045449543
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r6.7-c3
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c3_r6.7-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c3_r6.7-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.7-c3
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242368921005249
-        x: 0.0
-        y: 0.0
-        z: 0.5662451286328808
-      position:
-        x: -67.23819728684836
-        y: 80.47307809963657
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r6.7-c4
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c4_r6.7-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c4_r6.7-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.7-c4
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242368921005249
-        x: 0.0
-        y: 0.0
-        z: 0.5662451286328808
-      position:
-        x: -63.665324065846185
-        y: 89.76986574477769
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r6.7-c5
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c5_r6.7-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c5_r6.7-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.7-c5
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242368921005249
-        x: 0.0
-        y: 0.0
-        z: 0.5662451286328808
-      position:
-        x: -60.09245084484402
-        y: 99.06665338991878
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r6.7-c6
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c6_r6.7-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c6_r6.7-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.7-c6
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242368921005249
-        x: 0.0
-        y: 0.0
-        z: 0.5662451286328808
-      position:
-        x: -56.51957762384184
-        y: 108.36344103505994
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r6.7-c7
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c7_r6.7-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c7_r6.7-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.7-c7
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242368921005249
-        x: 0.0
-        y: 0.0
-        z: 0.5662451286328808
-      position:
-        x: -52.946704402839636
-        y: 117.66022868020113
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r6.7-c8
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-c8_r6.7-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r6.7-c8_r6.7-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.7-c8
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242368921005249
-        x: 0.0
-        y: 0.0
-        z: 0.5662451286328808
-      position:
-        x: -49.373831181837474
-        y: 126.9570163253422
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r6.7-cz
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r6.7-cz_r6.7-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r6.7-cz_r7.5-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r7.5-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r6.7-cz
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242368921005249
-        x: 0.0
-        y: 0.0
-        z: 0.5662451286328808
-      position:
-        x: -45.80095796083535
-        y: 136.25380397048323
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.02005528708186996
-      y: 0.7470386753334406
-    - x: -0.354241463652324
-      y: 0.44382653711728115
-    - x: -0.5603810369151099
-      y: -0.09188091796452794
-    - x: -0.5156521679999391
-      y: -0.5408991020706546
-    - x: 0.02005528708186996
-      y: -0.7470386753334406
-    - x: 0.354241463652324
-      y: -0.44382653711728115
-    - x: 0.5603810369151099
-      y: 0.09188091796452794
-    - x: 0.5156521679999391
-      y: 0.5408991020706546
-- meta:
-    map: map_2d
     node: r7.5-ca
     pointset: hatchgate_RH_demo
   node:
@@ -6467,21 +4076,6 @@ nodes:
     - action: row_change
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: r7.5-ca_r6.7-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
       edge_id: r7.5-ca_r8.5-ca
       fail_policy: fail
       fluid_navigation: true
@@ -6493,21 +4087,6 @@ nodes:
       node: r8.5-ca
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r7.5-ca_WayPoint5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint5
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r7.5-ca
@@ -7204,21 +4783,6 @@ nodes:
     - action: row_change
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: r7.5-cz_r6.7-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6.7-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
       edge_id: r7.5-cz_r8.5-cz
       fail_policy: fail
       fluid_navigation: true
@@ -7320,6 +4884,21 @@ nodes:
       node: r9.5-ca
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r8.5-ca_WayPoint5
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: WayPoint5
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r8.5-ca
@@ -8146,7 +5725,7 @@ nodes:
           pose: $node.pose
       node: WayPoint6
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r9.5-ca
@@ -8960,6 +6539,21 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
       restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r10.5-ca_WayPoint7
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: WayPoint7
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r10.5-ca
     parent_frame: map
@@ -9757,36 +7351,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
       restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r11.5-ca_r12.3-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r11.5-ca_WayPoint7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint7
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r11.5-ca
     parent_frame: map
@@ -10494,21 +8058,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
       restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r11.5-cz_r12.3-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r11.5-cz
     parent_frame: map
@@ -10546,1585 +8095,6 @@ nodes:
       y: 0.5408991020706546
 - meta:
     map: map_2d
-    node: r12.3-ca
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-ca_r12.3-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r12.3-ca_r11.5-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r11.5-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.3-ca
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243567722227813
-        x: 0.0
-        y: 0.0
-        z: 0.5660705893176553
-      position:
-        x: -70.69860427592697
-        y: 49.80716853375488
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.02005528708186996
-      y: 0.7470386753334406
-    - x: -0.354241463652324
-      y: 0.44382653711728115
-    - x: -0.5603810369151099
-      y: -0.09188091796452794
-    - x: -0.5156521679999391
-      y: -0.5408991020706546
-    - x: 0.02005528708186996
-      y: -0.7470386753334406
-    - x: 0.354241463652324
-      y: -0.44382653711728115
-    - x: 0.5603810369151099
-      y: 0.09188091796452794
-    - x: 0.5156521679999391
-      y: 0.5408991020706546
-- meta:
-    map: map_2d
-    node: r12.3-c1
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r12.3-c1_r12.3-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c1_r12.3-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.3-c1
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243567722227813
-        x: 0.0
-        y: 0.0
-        z: 0.5660705893176553
-      position:
-        x: -67.12089883501199
-        y: 59.10476940897171
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r12.3-c2
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c2_r12.3-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c2_r12.3-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.3-c2
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243567722227813
-        x: 0.0
-        y: 0.0
-        z: 0.5660705893176553
-      position:
-        x: -63.54319339409699
-        y: 68.40237028418858
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r12.3-c3
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c3_r12.3-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c3_r12.3-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.3-c3
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243567722227813
-        x: 0.0
-        y: 0.0
-        z: 0.5660705893176553
-      position:
-        x: -59.96548795318201
-        y: 77.69997115940542
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r12.3-c4
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c4_r12.3-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c4_r12.3-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.3-c4
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243567722227813
-        x: 0.0
-        y: 0.0
-        z: 0.5660705893176553
-      position:
-        x: -56.38778251226699
-        y: 86.99757203462237
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r12.3-c5
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c5_r12.3-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c5_r12.3-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.3-c5
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243567722227813
-        x: 0.0
-        y: 0.0
-        z: 0.5660705893176553
-      position:
-        x: -52.810077071352005
-        y: 96.29517290983921
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r12.3-c6
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c6_r12.3-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c6_r12.3-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.3-c6
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243567722227813
-        x: 0.0
-        y: 0.0
-        z: 0.5660705893176553
-      position:
-        x: -49.23237163043702
-        y: 105.59277378505604
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r12.3-c7
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c7_r12.3-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c7_r12.3-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.3-c7
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243567722227813
-        x: 0.0
-        y: 0.0
-        z: 0.5660705893176553
-      position:
-        x: -45.65466618952208
-        y: 114.89037466027277
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r12.3-c8
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-c8_r12.3-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r12.3-c8_r12.3-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.3-c8
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243567722227813
-        x: 0.0
-        y: 0.0
-        z: 0.5660705893176553
-      position:
-        x: -42.07696074860702
-        y: 124.18797553548981
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6299667120069078
-      y: 2.4362904059321426
-    - x: 0.4405091892640953
-      y: 2.5091934288771265
-    - x: -1.3551316898315293
-      y: -2.157247809724373
-    - x: -1.1656741670887167
-      y: -2.2301508326693567
-    - x: -0.6299667120069078
-      y: -2.4362904059321426
-    - x: -0.4405091892640953
-      y: -2.5091934288771265
-    - x: 1.3551316898315293
-      y: 2.157247809724373
-    - x: 1.1656741670887167
-      y: 2.2301508326693567
-- meta:
-    map: map_2d
-    node: r12.3-cz
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.3-cz_r12.3-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.3-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r12.3-cz_r11.5-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r11.5-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.3-cz
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243567722227813
-        x: 0.0
-        y: 0.0
-        z: 0.5660705893176553
-      position:
-        x: -38.499255307692074
-        y: 133.48557641070656
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.02005528708186996
-      y: 0.7470386753334406
-    - x: -0.354241463652324
-      y: 0.44382653711728115
-    - x: -0.5603810369151099
-      y: -0.09188091796452794
-    - x: -0.5156521679999391
-      y: -0.5408991020706546
-    - x: 0.02005528708186996
-      y: -0.7470386753334406
-    - x: 0.354241463652324
-      y: -0.44382653711728115
-    - x: 0.5603810369151099
-      y: 0.09188091796452794
-    - x: 0.5156521679999391
-      y: 0.5408991020706546
-- meta:
-    map: map_2d
-    node: r12.7-ca
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-ca_r12.7-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r12.7-ca_r13.5-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r13.5-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r12.7-ca_WayPoint8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint8
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.7-ca
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242985120714982
-        x: 0.0
-        y: 0.0
-        z: 0.5661554230038905
-      position:
-        x: -69.5419561474106
-        y: 49.25547255272899
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.020180688567209643
-      y: 0.7470352982241409
-    - x: -0.35431596167463536
-      y: 0.4437670660635335
-    - x: -0.560365605414566
-      y: -0.09197498512326635
-    - x: -0.5155613626195902
-      y: -0.5409856544842103
-    - x: 0.020180688567209643
-      y: -0.7470352982241409
-    - x: 0.35431596167463536
-      y: -0.4437670660635335
-    - x: 0.560365605414566
-      y: 0.09197498512326635
-    - x: 0.5155613626195902
-      y: 0.5409856544842103
-- meta:
-    map: map_2d
-    node: r12.7-c1
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r12.7-c1_r12.7-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c1_r12.7-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.7-c1
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242985120714982
-        x: 0.0
-        y: 0.0
-        z: 0.5661554230038905
-      position:
-        x: -65.96561133413599
-        y: 58.55524794432974
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r12.7-c2
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c2_r12.7-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c2_r12.7-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.7-c2
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242985120714982
-        x: 0.0
-        y: 0.0
-        z: 0.5661554230038905
-      position:
-        x: -62.389266520861284
-        y: 67.85502333593071
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r12.7-c3
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c3_r12.7-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c3_r12.7-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.7-c3
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242985120714982
-        x: 0.0
-        y: 0.0
-        z: 0.5661554230038905
-      position:
-        x: -58.81292170758668
-        y: 77.15479872753143
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r12.7-c4
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c4_r12.7-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c4_r12.7-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.7-c4
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242985120714982
-        x: 0.0
-        y: 0.0
-        z: 0.5661554230038905
-      position:
-        x: -55.236576894312016
-        y: 86.4545741191323
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r12.7-c5
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c5_r12.7-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c5_r12.7-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.7-c5
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242985120714982
-        x: 0.0
-        y: 0.0
-        z: 0.5661554230038905
-      position:
-        x: -51.66023208103731
-        y: 95.75434951073328
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r12.7-c6
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c6_r12.7-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c6_r12.7-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.7-c6
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242985120714982
-        x: 0.0
-        y: 0.0
-        z: 0.5661554230038905
-      position:
-        x: -48.083887267762734
-        y: 105.0541249023339
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r12.7-c7
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c7_r12.7-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c7_r12.7-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.7-c7
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242985120714982
-        x: 0.0
-        y: 0.0
-        z: 0.5661554230038905
-      position:
-        x: -44.50754245448811
-        y: 114.35390029393467
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r12.7-c8
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-c8_r12.7-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r12.7-c8_r12.7-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.7-c8
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242985120714982
-        x: 0.0
-        y: 0.0
-        z: 0.5661554230038905
-      position:
-        x: -40.93119764121337
-        y: 123.65367568553573
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r12.7-cz
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r12.7-cz_r12.7-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r12.7-cz_r13.5-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r13.5-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r12.7-cz
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8242985120714982
-        x: 0.0
-        y: 0.0
-        z: 0.5661554230038905
-      position:
-        x: -37.35485282793879
-        y: 132.9534510771364
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.020180688567209643
-      y: 0.7470352982241409
-    - x: -0.35431596167463536
-      y: 0.4437670660635335
-    - x: -0.560365605414566
-      y: -0.09197498512326635
-    - x: -0.5155613626195902
-      y: -0.5409856544842103
-    - x: 0.020180688567209643
-      y: -0.7470352982241409
-    - x: 0.35431596167463536
-      y: -0.4437670660635335
-    - x: 0.560365605414566
-      y: 0.09197498512326635
-    - x: 0.5155613626195902
-      y: 0.5409856544842103
-- meta:
-    map: map_2d
     node: r13.5-ca
     pointset: hatchgate_RH_demo
   node:
@@ -12145,21 +8115,6 @@ nodes:
             frame_id: $node.parent_frame
           pose: $node.pose
       node: r13.5-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r13.5-ca_r12.7-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-ca
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
       restrictions_runtime: 'True'
@@ -12873,21 +8828,6 @@ nodes:
     - action: row_change
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: r13.5-cz_r12.7-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
       edge_id: r13.5-cz_r14.5-cz
       fail_policy: fail
       fluid_navigation: true
@@ -12989,6 +8929,21 @@ nodes:
       node: r15.5-ca
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r14.5-ca_WayPoint8
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: WayPoint8
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r14.5-ca
@@ -13815,7 +9770,7 @@ nodes:
           pose: $node.pose
       node: WayPoint9
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r15.5-ca
@@ -14629,6 +10584,21 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
       restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r16.5-ca_WayPoint26
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: WayPoint26
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r16.5-ca
     parent_frame: map
@@ -15426,21 +11396,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
       restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r17.5-ca_r18.3-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r17.5-ca
     parent_frame: map
@@ -16148,21 +12103,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_short
       restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r17.5-cz_r18.3-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r17.5-cz
     parent_frame: map
@@ -16175,803 +12115,6 @@ nodes:
       position:
         x: -31.239659729244227
         y: 130.53336734632757
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.020180688567209643
-      y: 0.7470352982241409
-    - x: -0.35431596167463536
-      y: 0.4437670660635335
-    - x: -0.560365605414566
-      y: -0.09197498512326635
-    - x: -0.5155613626195902
-      y: -0.5409856544842103
-    - x: 0.020180688567209643
-      y: -0.7470352982241409
-    - x: 0.35431596167463536
-      y: -0.4437670660635335
-    - x: 0.560365605414566
-      y: 0.09197498512326635
-    - x: 0.5155613626195902
-      y: 0.5409856544842103
-- meta:
-    map: map_2d
-    node: r18.3-ca
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-ca_r18.3-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r18.3-ca_r17.5-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r17.5-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r18.3-ca_WayPoint22
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint22
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r18.3-ca
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243092575534926
-        x: 0.0
-        y: 0.0
-        z: 0.5661397777153712
-      position:
-        x: -62.295325417236995
-        y: 46.44379688555217
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: -0.020180688567209643
-      y: 0.7470352982241409
-    - x: -0.35431596167463536
-      y: 0.4437670660635335
-    - x: -0.560365605414566
-      y: -0.09197498512326635
-    - x: -0.5155613626195902
-      y: -0.5409856544842103
-    - x: 0.020180688567209643
-      y: -0.7470352982241409
-    - x: 0.35431596167463536
-      y: -0.4437670660635335
-    - x: 0.560365605414566
-      y: 0.09197498512326635
-    - x: 0.5155613626195902
-      y: 0.5409856544842103
-- meta:
-    map: map_2d
-    node: r18.3-c1
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r18.3-c1_r18.3-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c1_r18.3-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r18.3-c1
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243092575534926
-        x: 0.0
-        y: 0.0
-        z: 0.5661397777153712
-      position:
-        x: -58.72025317820169
-        y: 55.73920987301266
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r18.3-c2
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c2_r18.3-c1
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c1
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c2_r18.3-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r18.3-c2
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243092575534926
-        x: 0.0
-        y: 0.0
-        z: 0.5661397777153712
-      position:
-        x: -55.14518093916636
-        y: 65.03462286047318
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r18.3-c3
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c3_r18.3-c2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c2
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c3_r18.3-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r18.3-c3
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243092575534926
-        x: 0.0
-        y: 0.0
-        z: 0.5661397777153712
-      position:
-        x: -51.57010870013106
-        y: 74.33003584793367
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r18.3-c4
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c4_r18.3-c3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c3
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c4_r18.3-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r18.3-c4
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243092575534926
-        x: 0.0
-        y: 0.0
-        z: 0.5661397777153712
-      position:
-        x: -47.99503646109569
-        y: 83.62544883539432
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r18.3-c5
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c5_r18.3-c4
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c4
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c5_r18.3-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r18.3-c5
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243092575534926
-        x: 0.0
-        y: 0.0
-        z: 0.5661397777153712
-      position:
-        x: -44.41996422206047
-        y: 92.92086182285459
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r18.3-c6
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c6_r18.3-c5
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c5
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c6_r18.3-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r18.3-c6
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243092575534926
-        x: 0.0
-        y: 0.0
-        z: 0.5661397777153712
-      position:
-        x: -40.84489198302511
-        y: 102.21627481031521
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r18.3-c7
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c7_r18.3-c6
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c6
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c7_r18.3-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r18.3-c7
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243092575534926
-        x: 0.0
-        y: 0.0
-        z: 0.5661397777153712
-      position:
-        x: -37.269819743989785
-        y: 111.51168779777574
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r18.3-c8
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-c8_r18.3-c7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c7
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: false
-      edge_id: r18.3-c8_r18.3-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r18.3-c8
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243092575534926
-        x: 0.0
-        y: 0.0
-        z: 0.5661397777153712
-      position:
-        x: -33.69474750495447
-        y: 120.80710078523624
-        z: 0.0
-    properties:
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 0.1
-    restrictions_planning: robot_short
-    restrictions_runtime: 'True'
-    verts:
-    - x: 0.6295577348485506
-      y: 2.43639612107025
-    - x: 0.4400879768973497
-      y: 2.5092673396704184
-    - x: -1.3547695439865513
-      y: -2.157475258730151
-    - x: -1.1652997860353504
-      y: -2.230346477330319
-    - x: -0.6295577348485506
-      y: -2.43639612107025
-    - x: -0.4400879768973497
-      y: -2.5092673396704184
-    - x: 1.3547695439865513
-      y: 2.157475258730151
-    - x: 1.1652997860353504
-      y: 2.230346477330319
-- meta:
-    map: map_2d
-    node: r18.3-cz
-    pointset: hatchgate_RH_demo
-  node:
-    edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config:
-      - name: in_row
-        namespace: row_traversal
-        reset: false
-        value: true
-      edge_id: r18.3-cz_r18.3-c8
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-c8
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    - action: row_change
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r18.3-cz_r17.5-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r17.5-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_short
-      restrictions_runtime: 'True'
-    localise_by_topic: ''
-    name: r18.3-cz
-    parent_frame: map
-    pose:
-      orientation:
-        w: 0.8243092575534926
-        x: 0.0
-        y: 0.0
-        z: 0.5661397777153712
-      position:
-        x: -30.1196752659192
-        y: 130.10251377269662
         z: 0.0
     properties:
       xy_goal_tolerance: 0.3
@@ -17044,7 +12187,7 @@ nodes:
           pose: $node.pose
       node: WayPoint1
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r1-ca
@@ -17375,21 +12518,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_tall
       restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r11-ca_WayPoint7
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint7
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r11-ca
     parent_frame: map
@@ -17546,6 +12674,21 @@ nodes:
       node: r11-ca
       recovery_behaviours_config: ''
       restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r12-ca_WayPoint7
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: WayPoint7
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r12-ca
@@ -17988,21 +13131,6 @@ nodes:
     pointset: hatchgate_RH_demo
   node:
     edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r15-ca_r15-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r15-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_tall
-      restrictions_runtime: 'True'
     - action: row_change
       action_type: move_base_msgs/MoveBaseGoal
       config: []
@@ -18030,6 +13158,21 @@ nodes:
             frame_id: $node.parent_frame
           pose: $node.pose
       node: r16-ca
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-ca_r15-cb
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-cb
       recovery_behaviours_config: ''
       restrictions_planning: robot_tall
       restrictions_runtime: 'True'
@@ -18074,21 +13217,6 @@ nodes:
     pointset: hatchgate_RH_demo
   node:
     edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r15-cz_r15-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r15-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_tall
-      restrictions_runtime: 'True'
     - action: row_change
       action_type: move_base_msgs/MoveBaseGoal
       config: []
@@ -18116,6 +13244,21 @@ nodes:
             frame_id: $node.parent_frame
           pose: $node.pose
       node: r16-cz
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-cz_r15-cy
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-cy
       recovery_behaviours_config: ''
       restrictions_planning: robot_tall
       restrictions_runtime: 'True'
@@ -18204,21 +13347,6 @@ nodes:
       node: r17-ca
       recovery_behaviours_config: ''
       restrictions_planning: robot_tall
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r16-ca_WayPoint9
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint9
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r16-ca
@@ -18552,7 +13680,7 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: r18-ca_WayPoint10
+      edge_id: r18-ca_WayPoint26
       fail_policy: fail
       fluid_navigation: true
       goal:
@@ -18560,7 +13688,7 @@ nodes:
           header:
             frame_id: $node.parent_frame
           pose: $node.pose
-      node: WayPoint10
+      node: WayPoint26
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
@@ -18878,21 +14006,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_tall
       restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r3-ca_WayPoint2
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint2
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
     - action: row_traversal
       action_type: move_base_msgs/MoveBaseGoal
       config: []
@@ -18906,7 +14019,7 @@ nodes:
           pose: $node.pose
       node: r3-cb
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r3-ca
@@ -18992,7 +14105,7 @@ nodes:
           pose: $node.pose
       node: r3-cy
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r3-cz
@@ -19079,21 +14192,6 @@ nodes:
       node: r5-ca
       recovery_behaviours_config: ''
       restrictions_planning: robot_tall
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r4-ca_WayPoint3
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint3
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r4-ca
@@ -19427,7 +14525,7 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: r6-ca_WayPoint4
+      edge_id: r6-ca_WayPoint3
       fail_policy: fail
       fluid_navigation: true
       goal:
@@ -19435,7 +14533,7 @@ nodes:
           header:
             frame_id: $node.parent_frame
           pose: $node.pose
-      node: WayPoint4
+      node: WayPoint3
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
@@ -19880,21 +14978,6 @@ nodes:
     pointset: hatchgate_RH_demo
   node:
     edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r9-ca_r9-cz
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r9-cz
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_tall
-      restrictions_runtime: 'True'
     - action: row_change
       action_type: move_base_msgs/MoveBaseGoal
       config: []
@@ -19925,10 +15008,10 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: robot_tall
       restrictions_runtime: 'True'
-    - action: move_base
+    - action: row_traversal
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: r9-ca_WayPoint6
+      edge_id: r9-ca_r9-cb
       fail_policy: fail
       fluid_navigation: true
       goal:
@@ -19936,9 +15019,9 @@ nodes:
           header:
             frame_id: $node.parent_frame
           pose: $node.pose
-      node: WayPoint6
+      node: r9-cb
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r9-ca
@@ -19981,21 +15064,6 @@ nodes:
     pointset: hatchgate_RH_demo
   node:
     edges:
-    - action: row_traversal
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: r9-cz_r9-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r9-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: robot_tall
-      restrictions_runtime: 'True'
     - action: row_change
       action_type: move_base_msgs/MoveBaseGoal
       config: []
@@ -20023,6 +15091,21 @@ nodes:
             frame_id: $node.parent_frame
           pose: $node.pose
       node: r10-cz
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-cz_r9-cy
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-cy
       recovery_behaviours_config: ''
       restrictions_planning: robot_tall
       restrictions_runtime: 'True'
@@ -20095,7 +15178,7 @@ nodes:
           pose: $node.pose
       node: r1-ca
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
@@ -20110,6 +15193,21 @@ nodes:
           pose: $node.pose
       node: WayPoint23
       recovery_behaviours_config: ''
+      restrictions_planning: robot_short
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: WayPoint1_r2.5-ca
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r2.5-ca
+      recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
     localise_by_topic: ''
@@ -20122,8 +15220,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -87.14999999999998
-        y: 53.900000000000006
+        x: -85.79999999999995
+        y: 53.2190553746
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -20171,21 +15269,6 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: WayPoint2_r2.5-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r2.5-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
       edge_id: WayPoint2_WayPoint3
       fail_policy: fail
       fluid_navigation: true
@@ -20201,7 +15284,7 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: WayPoint2_r3-ca
+      edge_id: WayPoint2_r3.5-ca
       fail_policy: fail
       fluid_navigation: true
       goal:
@@ -20209,7 +15292,7 @@ nodes:
           header:
             frame_id: $node.parent_frame
           pose: $node.pose
-      node: r3-ca
+      node: r3.5-ca
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
@@ -20223,8 +15306,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -84.75
-        y: 52.94999999999999
+        x: -83.44999999999999
+        y: 52.311970684
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -20254,21 +15337,6 @@ nodes:
     pointset: hatchgate_RH_demo
   node:
     edges:
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: WayPoint3_r4.5-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r4.5-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
@@ -20302,7 +15370,7 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: WayPoint3_r4-ca
+      edge_id: WayPoint3_r4.5-ca
       fail_policy: fail
       fluid_navigation: true
       goal:
@@ -20310,7 +15378,22 @@ nodes:
           header:
             frame_id: $node.parent_frame
           pose: $node.pose
-      node: r4-ca
+      node: r4.5-ca
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: WayPoint3_r6-ca
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r6-ca
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
@@ -20324,8 +15407,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -82.04999999999995
-        y: 51.900000000000006
+        x: -80.94999999999999
+        y: 51.3469869707
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -20385,21 +15468,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: WayPoint4_r6-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r6-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: WayPoint4
     parent_frame: map
@@ -20410,8 +15478,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -79.79999999999995
-        y: 50.94999999999999
+        x: -79.39999999999998
+        y: 50.7486970684
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -20441,21 +15509,6 @@ nodes:
     pointset: hatchgate_RH_demo
   node:
     edges:
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: WayPoint5_r7.5-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r7.5-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
@@ -20501,6 +15554,21 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: WayPoint5_r8.5-ca
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r8.5-ca
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: WayPoint5
     parent_frame: map
@@ -20511,8 +15579,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -77.59999999999997
-        y: 50.099999999999994
+        x: -77.69999999999999
+        y: 50.0925081433
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -20585,22 +15653,7 @@ nodes:
           pose: $node.pose
       node: r9.5-ca
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: WayPoint6_r9-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r9-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: WayPoint6
@@ -20613,7 +15666,7 @@ nodes:
         z: 0.0
       position:
         x: -75.04999999999995
-        y: 49.19999999999999
+        y: 49.0696254072
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -20661,21 +15714,6 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: WayPoint7_r11.5-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r11.5-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
       edge_id: WayPoint7_WayPoint8
       fail_policy: fail
       fluid_navigation: true
@@ -20691,7 +15729,7 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: WayPoint7_r11-ca
+      edge_id: WayPoint7_r12-ca
       fail_policy: fail
       fluid_navigation: true
       goal:
@@ -20699,7 +15737,22 @@ nodes:
           header:
             frame_id: $node.parent_frame
           pose: $node.pose
-      node: r11-ca
+      node: r12-ca
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: WayPoint7_r10.5-ca
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r10.5-ca
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
@@ -20713,8 +15766,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -72.54999999999995
-        y: 48.19999999999999
+        x: -73.09999999999997
+        y: 48.3169381107
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -20777,21 +15830,6 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: WayPoint8_r12.7-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r12.7-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
       edge_id: WayPoint8_r13-ca
       fail_policy: fail
       fluid_navigation: true
@@ -20801,6 +15839,21 @@ nodes:
             frame_id: $node.parent_frame
           pose: $node.pose
       node: r13-ca
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: WayPoint8_r14.5-ca
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r14.5-ca
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
@@ -20814,8 +15867,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -70.34999999999997
-        y: 47.30000000000001
+        x: -69.14999999999998
+        y: 46.7922638436
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -20863,21 +15916,6 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: WayPoint9_WayPoint10
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint10
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
       edge_id: WayPoint9_r15.5-ca
       fail_policy: fail
       fluid_navigation: true
@@ -20888,12 +15926,12 @@ nodes:
           pose: $node.pose
       node: r15.5-ca
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: WayPoint9_r16-ca
+      edge_id: WayPoint9_WayPoint26
       fail_policy: fail
       fluid_navigation: true
       goal:
@@ -20901,7 +15939,7 @@ nodes:
           header:
             frame_id: $node.parent_frame
           pose: $node.pose
-      node: r16-ca
+      node: WayPoint26
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
@@ -20916,7 +15954,7 @@ nodes:
         z: 0.0
       position:
         x: -66.64999999999998
-        y: 45.849999999999994
+        y: 45.8272801303
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -20946,21 +15984,6 @@ nodes:
     pointset: hatchgate_RH_demo
   node:
     edges:
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: WayPoint10_WayPoint9
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: WayPoint9
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
@@ -20994,7 +16017,7 @@ nodes:
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
       config: []
-      edge_id: WayPoint10_WayPoint22
+      edge_id: WayPoint10_WayPoint26
       fail_policy: fail
       fluid_navigation: true
       goal:
@@ -21002,22 +16025,7 @@ nodes:
           header:
             frame_id: $node.parent_frame
           pose: $node.pose
-      node: WayPoint22
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: WayPoint10_r18-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18-ca
+      node: WayPoint26
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
@@ -21031,8 +16039,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -63.049999999999955
-        y: 44.400000000000006
+        x: -57.75
+        y: 42.3919381107
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21117,8 +16125,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -57.0
-        y: 41.85000000000002
+        x: -55.39999999999998
+        y: 41.4848534202
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21203,7 +16211,7 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -56.349999999999966
+        x: -54.64999999999998
         y: 43.650000000000006
         z: 0.0
     properties:
@@ -21274,8 +16282,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -55.349999999999966
-        y: 46.30000000000001
+        x: -53.94999999999999
+        y: 45.5
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21360,8 +16368,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -54.44999999999999
-        y: 40.89999999999998
+        x: -52.25
+        y: 40.2689739414
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21461,8 +16469,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -53.849999999999966
-        y: 42.69999999999999
+        x: -51.25
+        y: 42.35000000000002
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21517,8 +16525,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -51.94999999999999
-        y: 47.75
+        x: -49.549999999999955
+        y: 46.94999999999999
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21618,8 +16626,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -52.89999999999998
-        y: 45.349999999999994
+        x: -50.549999999999955
+        y: 44.400000000000006
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21674,8 +16682,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -49.39999999999998
-        y: 46.900000000000006
+        x: -46.94999999999999
+        y: 45.94999999999999
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21745,8 +16753,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -51.849999999999966
-        y: 39.89999999999998
+        x: -49.69999999999999
+        y: 39.2846905537
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21831,8 +16839,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -51.19999999999999
-        y: 41.64999999999998
+        x: -48.849999999999966
+        y: 41.35000000000002
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21917,8 +16925,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -50.19999999999999
-        y: 44.400000000000006
+        x: -47.94999999999999
+        y: 43.55000000000001
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -21973,8 +16981,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -63.549999999999955
-        y: 43.099999999999994
+        x: -58.549999999999955
+        y: 40.55000000000001
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -22029,8 +17037,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -57.64999999999998
-        y: 40.5
+        x: -56.14999999999998
+        y: 39.60000000000002
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -22075,21 +17083,6 @@ nodes:
       recovery_behaviours_config: ''
       restrictions_planning: 'True'
       restrictions_runtime: 'True'
-    - action: move_base
-      action_type: move_base_msgs/MoveBaseGoal
-      config: []
-      edge_id: WayPoint22_r18.3-ca
-      fail_policy: fail
-      fluid_navigation: true
-      goal:
-        target_pose:
-          header:
-            frame_id: $node.parent_frame
-          pose: $node.pose
-      node: r18.3-ca
-      recovery_behaviours_config: ''
-      restrictions_planning: 'True'
-      restrictions_runtime: 'True'
     localise_by_topic: ''
     name: WayPoint22
     parent_frame: map
@@ -22100,8 +17093,8 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -62.599999999999966
-        y: 45.44999999999999
+        x: -56.849999999999966
+        y: 44.5
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
@@ -22975,7 +17968,7 @@ nodes:
           pose: $node.pose
       node: WayPoint25
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r20-c0
@@ -24614,7 +19607,7 @@ nodes:
           pose: $node.pose
       node: WayPoint24
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r22-c0
@@ -26253,7 +21246,7 @@ nodes:
           pose: $node.pose
       node: WayPoint23
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r24-c0
@@ -27813,7 +22806,7 @@ nodes:
           pose: $node.pose
       node: r24-c0
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
@@ -27828,7 +22821,7 @@ nodes:
           pose: $node.pose
       node: WayPoint24
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
@@ -27843,7 +22836,7 @@ nodes:
           pose: $node.pose
       node: WayPoint1
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: WayPoint23
@@ -27855,13 +22848,13 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -89.29999999999995
-        y: 54.75
+        x: -89.34999999999997
+        y: 54.5893322476
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
       yaw_goal_tolerance: 6.29
-    restrictions_planning: 'True'
+    restrictions_planning: robot_short
     restrictions_runtime: 'True'
     verts:
     - x: 0.689999997616
@@ -27899,7 +22892,7 @@ nodes:
           pose: $node.pose
       node: r22-c0
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
@@ -27914,7 +22907,7 @@ nodes:
           pose: $node.pose
       node: WayPoint25
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
@@ -27929,7 +22922,7 @@ nodes:
           pose: $node.pose
       node: WayPoint23
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: WayPoint24
@@ -27941,13 +22934,13 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -91.75
-        y: 55.849999999999994
+        x: -91.79999999999995
+        y: 55.5350162866
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
       yaw_goal_tolerance: 6.29
-    restrictions_planning: 'True'
+    restrictions_planning: robot_short
     restrictions_runtime: 'True'
     verts:
     - x: 0.689999997616
@@ -27985,7 +22978,7 @@ nodes:
           pose: $node.pose
       node: r20-c0
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     - action: move_base
       action_type: move_base_msgs/MoveBaseGoal
@@ -28000,7 +22993,7 @@ nodes:
           pose: $node.pose
       node: WayPoint24
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_short
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: WayPoint25
@@ -28012,13 +23005,13 @@ nodes:
         y: 0.0
         z: 0.0
       position:
-        x: -94.25
-        y: 56.80000000000001
+        x: -94.30000000000001
+        y: 56.5
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
       yaw_goal_tolerance: 6.29
-    restrictions_planning: 'True'
+    restrictions_planning: robot_short
     restrictions_runtime: 'True'
     verts:
     - x: 0.689999997616
@@ -28056,7 +23049,7 @@ nodes:
           pose: $node.pose
       node: r3-c1
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     - action: row_traversal
       action_type: move_base_msgs/MoveBaseGoal
@@ -28071,7 +23064,7 @@ nodes:
           pose: $node.pose
       node: r3-ca
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r3-cb
@@ -28089,7 +23082,7 @@ nodes:
     properties:
       xy_goal_tolerance: 0.35
       yaw_goal_tolerance: 6.29
-    restrictions_planning: 'True'
+    restrictions_planning: robot_tall
     restrictions_runtime: 'True'
     verts:
     - x: 0.689999997616
@@ -28127,7 +23120,7 @@ nodes:
           pose: $node.pose
       node: r3-cz
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     - action: row_traversal
       action_type: move_base_msgs/MoveBaseGoal
@@ -28142,7 +23135,7 @@ nodes:
           pose: $node.pose
       node: r3-c3
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r3-cy
@@ -28160,7 +23153,7 @@ nodes:
     properties:
       xy_goal_tolerance: 0.35
       yaw_goal_tolerance: 6.29
-    restrictions_planning: 'True'
+    restrictions_planning: robot_tall
     restrictions_runtime: 'True'
     verts:
     - x: 0.689999997616
@@ -28198,7 +23191,7 @@ nodes:
           pose: $node.pose
       node: r3-c3
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     - action: row_traversal
       action_type: move_base_msgs/MoveBaseGoal
@@ -28213,7 +23206,7 @@ nodes:
           pose: $node.pose
       node: r3-c1
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r3-c2
@@ -28231,7 +23224,7 @@ nodes:
     properties:
       xy_goal_tolerance: 0.35
       yaw_goal_tolerance: 6.29
-    restrictions_planning: 'True'
+    restrictions_planning: robot_tall
     restrictions_runtime: 'True'
     verts:
     - x: 0.689999997616
@@ -28269,7 +23262,7 @@ nodes:
           pose: $node.pose
       node: r3-c2
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     - action: row_traversal
       action_type: move_base_msgs/MoveBaseGoal
@@ -28284,7 +23277,7 @@ nodes:
           pose: $node.pose
       node: r3-cb
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r3-c1
@@ -28302,7 +23295,7 @@ nodes:
     properties:
       xy_goal_tolerance: 0.35
       yaw_goal_tolerance: 6.29
-    restrictions_planning: 'True'
+    restrictions_planning: robot_tall
     restrictions_runtime: 'True'
     verts:
     - x: 0.689999997616
@@ -28340,7 +23333,7 @@ nodes:
           pose: $node.pose
       node: r3-cy
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     - action: row_traversal
       action_type: move_base_msgs/MoveBaseGoal
@@ -28355,7 +23348,7 @@ nodes:
           pose: $node.pose
       node: r3-c2
       recovery_behaviours_config: ''
-      restrictions_planning: 'True'
+      restrictions_planning: robot_tall
       restrictions_runtime: 'True'
     localise_by_topic: ''
     name: r3-c3
@@ -28369,6 +23362,817 @@ nodes:
       position:
         x: -60.299999999999955
         y: 115.19999999999999
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: r9-cb
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-cb_r9-ca
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-ca
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-cb_r9-c1
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-c1
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: r9-cb
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -74.44999999999999
+        y: 53.400000000000006
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: r9-c1
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-c1_r9-cb
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-cb
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-c1_r9-c2
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-c2
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: r9-c1
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -66.19999999999999
+        y: 74.75
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: r9-c2
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-c2_r9-c1
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-c1
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-c2_r9-c3
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-c3
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: r9-c2
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -59.049999999999955
+        y: 93.30000000000001
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: r9-c3
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-c3_r9-c2
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-c2
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-c3_r9-cy
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-cy
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: r9-c3
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -51.94999999999999
+        y: 111.94999999999999
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: r9-cy
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-cy_r9-cz
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-cz
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r9-cy_r9-c3
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r9-c3
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: r9-cy
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -43.75
+        y: 133.3
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: r15-cb
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-cb_r15-c1
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-c1
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-cb_r15-ca
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-ca
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: r15-cb
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -66.0
+        y: 50.0
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: r15-c1
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-c1_r15-c2
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-c2
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-c1_r15-cb
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-cb
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: r15-c1
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -57.799999999999955
+        y: 71.44999999999999
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: r15-c2
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-c2_r15-c3
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-c3
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-c2_r15-c1
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-c1
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: r15-c2
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -50.64999999999998
+        y: 90.0
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: r15-c3
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-c3_r15-cy
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-cy
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-c3_r15-c2
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-c2
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: r15-c3
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -43.5
+        y: 108.6
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: r15-cy
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-cy_r15-cz
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-cz
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    - action: row_traversal
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: r15-cy_r15-c3
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r15-c3
+      recovery_behaviours_config: ''
+      restrictions_planning: robot_tall
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: r15-cy
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -35.299999999999955
+        y: 130.0
+        z: 0.0
+    properties:
+      xy_goal_tolerance: 0.35
+      yaw_goal_tolerance: 6.29
+    restrictions_planning: robot_tall
+    restrictions_runtime: 'True'
+    verts:
+    - x: 0.689999997616
+      y: 0.287000000477
+    - x: 0.287000000477
+      y: 0.689999997616
+    - x: -0.287000000477
+      y: 0.689999997616
+    - x: -0.689999997616
+      y: 0.287000000477
+    - x: -0.689999997616
+      y: -0.287000000477
+    - x: -0.287000000477
+      y: -0.689999997616
+    - x: 0.287000000477
+      y: -0.689999997616
+    - x: 0.689999997616
+      y: -0.287000000477
+- meta:
+    map: map_2d
+    node: WayPoint26
+    pointset: hatchgate_RH_demo
+  node:
+    edges:
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: WayPoint26_WayPoint9
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: WayPoint9
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: WayPoint26_WayPoint10
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: WayPoint10
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: WayPoint26_r18-ca
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r18-ca
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    - action: move_base
+      action_type: move_base_msgs/MoveBaseGoal
+      config: []
+      edge_id: WayPoint26_r16.5-ca
+      fail_policy: fail
+      fluid_navigation: true
+      goal:
+        target_pose:
+          header:
+            frame_id: $node.parent_frame
+          pose: $node.pose
+      node: r16.5-ca
+      recovery_behaviours_config: ''
+      restrictions_planning: 'True'
+      restrictions_runtime: 'True'
+    localise_by_topic: ''
+    name: WayPoint26
+    parent_frame: map
+    pose:
+      orientation:
+        w: 1.0
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      position:
+        x: -64.19999999999999
+        y: 44.849999999999994
         z: 0.0
     properties:
       xy_goal_tolerance: 0.35
