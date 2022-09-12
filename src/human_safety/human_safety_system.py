@@ -672,7 +672,7 @@ class hri_class:
             #self.critical_dist=0 #by default 0
             self.human_command=0 #no human command
             #self.new_goal=final_goal # the current goal is not changed
-            self.safety_action=3 # to make the robot pause the operation 
+            self.safety_action=4 # to make the robot stop operation 
             self.audio_message=11 # message for collision detection
         elif perception==False: #If no human perception messages are being published
             self.safety_action=3 # to pause robot operation 
@@ -699,8 +699,8 @@ if __name__ == '__main__':
     rospy.init_node('human_safety_system',anonymous=True)
     rospy.Subscriber("/topological_map_2", String, topo_map.MapCallback)
     #Waiting for the Topological Map...
-    #while not topo_map.map_received:
-    #    rospy.sleep(rospy.Duration.from_sec(0.05))
+    while not topo_map.map_received:
+        rospy.sleep(rospy.Duration.from_sec(0.05))
     rospy.sleep(rospy.Duration.from_sec(2))
     rospy.Subscriber('human_info',human_msg,human.human_callback)  
     rospy.Subscriber('robot_info',robot_msg,robot.robot_info_callback)  

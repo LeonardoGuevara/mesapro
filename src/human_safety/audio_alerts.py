@@ -17,6 +17,7 @@ audio_direct=parsed_yaml_file.get("directories_config").get("audio_direct") #dir
 intervals_long=parsed_yaml_file.get("audio_config").get("intervals_long") # time in which the first version of a message is repeated, in seconds
 intervals_short=parsed_yaml_file.get("audio_config").get("intervals_short") # time between two versions of the same message, in seconds
 n_languages=rospy.get_param("/hri_audio_alerts/n_languages",1) # how many version of the same message to be reproduced in a loop
+min_time_msg=3 #in seconds, minimum time between two consecutive voice message plays
 #General purposes variables
 version=0 #to know which language its been used, initially is English
 pub_hz=0.01 #main loop frequency
@@ -54,7 +55,7 @@ class hri_class:
         new_audio=self.safety_message
         current=self.current_audio
         change=self.change_audio
-        if current!=new_audio:
+        if current!=new_audio and (time.time()-self.time_audio>=min_time_msg or new_audio==11):
             #self.past_audio=self.current_audio
             #print("OLD",current)
             current=new_audio
